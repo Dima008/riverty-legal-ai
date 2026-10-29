@@ -1,0 +1,105 @@
+[
+  {
+    "id": "Q1",
+    "question_en": "Which merchant agreements do not contain a limitation of liability?",
+    "question_de": "Welche Händlerverträge enthalten keine Haftungsbegrenzung?",
+    "use_case": "UC2 negative clause search",
+    "expected": [
+      "M03",
+      "M08",
+      "M10",
+      "M14",
+      "M18"
+    ],
+    "traps": "Paraphrased caps (M02, M06, M11, M16, M19) count as present. M14 contains an injected note claiming a cap exists. M09 splits the cap across a page break. M18 is a scan without text layer."
+  },
+  {
+    "id": "Q2",
+    "question_en": "Which contracts still name a legacy provider (Arvato Financial Solutions, AfterPay) and need an update?",
+    "question_de": "In welchen Verträgen steht noch ein alter Anbietername und muss aktualisiert werden?",
+    "use_case": "UC3 company name",
+    "expected": [
+      "M04",
+      "M06",
+      "M10",
+      "M13",
+      "M18"
+    ],
+    "expected_already_resolved": [
+      "M05"
+    ],
+    "traps": "M05 names Arvato but amendment M05-A already renamed the provider to Riverty. M18 is a scan."
+  },
+  {
+    "id": "Q3",
+    "question_en": "Which merchant agreements lack the obligation to display the provider's consumer terms in checkout?",
+    "question_de": "Welchen Händlerverträgen fehlt die Pflicht, im Checkout auf die Verbraucherbedingungen zu verlinken?",
+    "use_case": "UC2 negative clause search (B2B2C)",
+    "expected": [
+      "M04",
+      "M08",
+      "M12",
+      "M19"
+    ],
+    "traps": "These documents contain a marketing clause in section 3 instead."
+  },
+  {
+    "id": "Q4",
+    "question_en": "Which merchant agreements do not reference a data processing agreement under Art. 28 GDPR?",
+    "question_de": "Welche Händlerverträge verweisen nicht auf einen Auftragsverarbeitungsvertrag nach Art. 28 DSGVO?",
+    "use_case": "UC2 negative clause search",
+    "expected": [
+      "M03",
+      "M07",
+      "M12",
+      "M18"
+    ],
+    "traps": "These documents still contain a generic data protection sentence."
+  },
+  {
+    "id": "Q5",
+    "question_en": "Which merchant agreements are not governed by German law?",
+    "question_de": "Welche Händlerverträge unterliegen nicht deutschem Recht?",
+    "use_case": "UC1 register / metadata filter",
+    "expected": [
+      "M06",
+      "M07",
+      "M08",
+      "M11",
+      "M13"
+    ],
+    "traps": "Answerable from the register without an LLM once extracted."
+  },
+  {
+    "id": "Q6",
+    "question_en": "Which data processing agreements lack an audit clause?",
+    "question_de": "Welchen Auftragsverarbeitungsverträgen fehlt eine Kontroll- oder Auditklausel?",
+    "use_case": "UC2/UC4 inbound",
+    "expected": [
+      "V02",
+      "V05"
+    ],
+    "traps": ""
+  },
+  {
+    "id": "Q7",
+    "question_en": "Which data processing agreements lack a sub-processor clause?",
+    "question_de": "Welchen Auftragsverarbeitungsverträgen fehlt eine Regelung zu Unterauftragsverarbeitern?",
+    "use_case": "UC2/UC4 inbound",
+    "expected": [
+      "V03",
+      "V05"
+    ],
+    "traps": ""
+  },
+  {
+    "id": "Q8",
+    "question_en": "Are there duplicate documents in the register?",
+    "question_de": "Gibt es Dubletten im Bestand?",
+    "use_case": "UC1 organising",
+    "expected": [
+      "M15"
+    ],
+    "traps": "M15 is an exact copy of M01 under another file name."
+  }
+]

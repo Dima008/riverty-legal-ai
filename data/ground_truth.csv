@@ -1,0 +1,28 @@
+doc_id,family_id,side,doc_type,language,format,files,date,provider_name_in_doc,merchant,legacy_provider_name,legacy_name_resolved_by_amendment,liability_cap,governing_law,consumer_terms_clause,dpa_reference,subprocessor_clause,audit_clause,special_case
+M01,M01,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M01_Nordlicht.pdf,2023-03-15,Riverty GmbH,Nordlicht Outdoor GmbH,False,False,standard,DE,True,True,,,
+M02,M02,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M02_Casa.pdf,2023-06-01,Riverty GmbH,Casa Verde Living GmbH,False,False,paraphrased,DE,True,True,,,
+M03,M03,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M03_Bergmann.pdf,2024-01-10,Riverty GmbH,Bergmann Mode GmbH,False,False,absent,DE,True,False,,,
+M04,M04,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M04_Velo.pdf,2019-05-20,Arvato Financial Solutions GmbH,Velo Werk GmbH,True,False,standard,DE,False,True,,,
+M05,M05,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M05_Lumen.pdf,2020-09-01,Arvato Financial Solutions GmbH,Lumen Interiors GmbH,True,True,standard,DE,True,True,,,amendment
+M05-A,M05,outbound_merchant,amendment,EN,pdf_text,raw/merchant/M05-A_Lumen_amendment.pdf,2022-10-04,Arvato Financial Solutions GmbH -> Riverty GmbH,Lumen Interiors GmbH,False,True,,,,,,,amendment_document
+M06,M06,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M06_Fjord.pdf,2018-11-12,AfterPay B.V.,Fjord Electronics B.V.,True,False,paraphrased,NL,True,True,,,
+M07,M07,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M07_Kaffeehaus.pdf,2023-09-04,Riverty GmbH,Kaffeehaus Online B.V.,False,False,standard,NL,True,False,,,
+M08,M08,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M08_Tulip.pdf,2024-02-28,Riverty GmbH,Tulip Garden Supplies B.V.,False,False,absent,NL,False,True,,,
+M09,M09,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M09_Sportwelt.pdf,2023-11-30,Riverty GmbH,Sportwelt 24 GmbH,False,False,standard,DE,True,True,,,page_break
+M10,M10,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M10_Gruener.pdf,2021-04-15,Arvato Financial Solutions GmbH,Gruener Garten GmbH,True,False,absent,DE,True,True,,,
+M11,M11,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M11_Polar.pdf,2024-05-06,Riverty GmbH,Polar Kitchenware Ltd,False,False,paraphrased,EN,True,True,,,
+M12,M12,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M12_Atelier.pdf,2023-01-23,Riverty GmbH,Atelier Rosa GmbH,False,False,standard,DE,False,False,,,
+M13,M13,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M13_Hansen.pdf,2017-08-08,AfterPay B.V.,Hansen Books B.V.,True,False,standard,NL,True,True,,,
+M14,M14,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M14_Urban.pdf,2024-03-18,Riverty GmbH,Urban Feet GmbH,False,False,absent,DE,True,True,,,prompt_injection
+M15,M01,outbound_merchant,merchant_agreement,EN,pdf_text,raw/merchant/M15_Nordlicht.pdf,2023-03-15,Riverty GmbH,Nordlicht Outdoor GmbH,False,False,standard,DE,True,True,,,duplicate_of_M01
+M16,M16,outbound_merchant,merchant_agreement,EN,pdf_image_only,raw/scans/M16_Studio_scan.pdf,2023-07-19,Riverty GmbH,Studio Kiel GmbH,False,False,paraphrased,DE,True,True,,,scan_pdf
+M17,M17,outbound_merchant,merchant_agreement,DE,pdf_text,raw/merchant/M17_Alpenblick.pdf,2023-10-02,Riverty GmbH,Alpenblick Shop GmbH,False,False,standard,DE,True,True,,,
+M18,M18,outbound_merchant,merchant_agreement,DE,pdf_image_only,raw/scans/M18_Leder_scan.pdf,2018-02-14,Arvato Financial Solutions GmbH,Leder & Co. GmbH,True,False,absent,DE,True,False,,,scan_pdf
+M19,M19,outbound_merchant,merchant_agreement,DE,pdf_text,raw/merchant/M19_Tierfreund.pdf,2024-04-11,Riverty GmbH,Tierfreund Versand GmbH,False,False,paraphrased,DE,False,True,,,
+M20,M20,outbound_merchant,merchant_agreement,DE,jpeg,raw/scans/M20_Buerowelt_p1.jpg;raw/scans/M20_Buerowelt_p2.jpg,2023-12-05,Riverty GmbH,Buerowelt Direkt GmbH,False,False,standard,DE,True,True,,,scan_jpeg
+V01,V01,inbound_vendor,data_processing_agreement,EN,pdf_text,raw/vendor_dpa/V01_CloudLedger_DPA.pdf,2023-02-01,Riverty GmbH,CloudLedger Ltd,False,False,,DE,,,True,True,
+V02,V02,inbound_vendor,data_processing_agreement,EN,pdf_text,raw/vendor_dpa/V02_Paperflow_DPA.pdf,2023-08-15,Riverty GmbH,Paperflow SaaS GmbH,False,False,,DE,,,True,False,
+V03,V03,inbound_vendor,data_processing_agreement,EN,pdf_text,raw/vendor_dpa/V03_DataNest_DPA.pdf,2024-01-09,Riverty GmbH,DataNest B.V.,False,False,,DE,,,False,True,
+V04,V04,inbound_vendor,data_processing_agreement,EN,pdf_text,raw/vendor_dpa/V04_ServiceLine_DPA.pdf,2022-12-12,Riverty GmbH,ServiceLine Solutions GmbH,False,False,,DE,,,True,True,
+V05,V05,inbound_vendor,data_processing_agreement,EN,pdf_text,raw/vendor_dpa/V05_Archivo_DPA.pdf,2024-06-03,Riverty GmbH,Archivo Digital S.L.,False,False,,DE,,,False,False,
+V06,V06,inbound_vendor,data_processing_agreement,DE,pdf_text,raw/vendor_dpa/V06_Druckhaus_DPA.pdf,2023-05-22,Riverty GmbH,Druckhaus Weber GmbH,False,False,,DE,,,True,True,
