@@ -1,0 +1,53 @@
+"""Configuration: paths, environment, prices and thresholds."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / "data"
+VAR = ROOT / "var"
+DB_PATH = VAR / "register.sqlite"
+
+# Source folders. In production a Microsoft Graph connector on the SharePoint
+# library replaces the watch folder; the rest of the pipeline stays the same.
+SOURCE_DIRS = [DATA / "raw", DATA / "cuad_subset"]
+WATCH_DIR = DATA / "inbox"
+
+# Deterministic thresholds
+MIN_TEXT_CHARS_PER_PAGE = 30        # below this a page is treated as image and sent to OCR
+OCR_LOW_QUALITY_CONFIDENCE = 70.0   # mean word confidence (0-100) below this -> LOW_QUALITY
+OCR_DPI = 200
+OCR_LANGUAGES = "deu+eng"
+QUOTE_MATCH_MIN_SCORE = 90          # fuzzy match score (0-100) for citation verification
+
+PROMPT_VERSION = "extract-v2"   # v2: doc type definitions, one quote per clause type, checker
+
+# Prices in USD per 1M tokens (Azure Global Standard). Source: azurespeed.com, checked
+# 2026-10-29 - verify against the Azure price list before using numbers externally.
+PRICES_PER_MILLION = {
+    "gpt-4.1-mini": {"input": 0.40, "cached_input": 0.10, "output": 1.60},
+    "text-embedding-3-small": {"input": 0.02, "cached_input": 0.02, "output": 0.0},
+}
+
+
+def load_env(path: Path = ROOT / ".env") -> None:
+    """Minimal .env loader (no extra dependency). Existing variables win."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+load_env()
+
+AZURE_OPENAI_ENDPOINT = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
+AZURE_OPENAI_API_KEY = os.environ.get("AZURE_OPENAI_API_KEY", "")
+AZURE_OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-10-21")
+CHAT_DEPLOYMENT = os.environ.get("AZURE_OPENAI_CHAT_DEPLOYMENT", "gpt-4.1-mini")
+EMBED_DEPLOYMENT = os.environ.get("AZURE_OPENAI_EMBED_DEPLOYMENT", "text-embedding-3-small")

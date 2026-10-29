@@ -1,0 +1,25 @@
+Gold questions (answered from the register, no model call)
+id   precision  recall  found / expected / to review
+Q1        1.00    0.80  ['M03', 'M10', 'M14', 'M18'] / ['M03', 'M08', 'M10', 'M14', 'M18'] / ['M14', 'M18']
+Q2        1.00    1.00  ['M04', 'M06', 'M10', 'M13', 'M18'] / ['M04', 'M06', 'M10', 'M13', 'M18'] / []  resolved by amendment: ['M05']
+Q3        0.80    1.00  ['C04', 'M04', 'M08', 'M12', 'M19'] / ['M04', 'M08', 'M12', 'M19'] / ['C04']
+Q4        0.80    1.00  ['C04', 'M03', 'M07', 'M12', 'M18'] / ['M03', 'M07', 'M12', 'M18'] / []
+Q5        0.83    1.00  ['C04', 'M06', 'M07', 'M08', 'M11', 'M13'] / ['M06', 'M07', 'M08', 'M11', 'M13'] / []
+Q6        1.00    1.00  ['V02', 'V05'] / ['V02', 'V05'] / []
+Q7        1.00    1.00  ['V03', 'V05'] / ['V03', 'V05'] / []
+Q8        1.00    1.00  ['M15'] / ['M15'] / []
+
+Metadata vs ground truth (own contracts)
+  governing_law 27/27, effective_date 27/27, doc_type 27/27
+
+CUAD (public contracts, labels by lawyers): limitation of liability
+  C03: model ABSENT, CUAD label: cap
+  C09: model UNCLEAR, CUAD label: cap
+  C10: model UNCLEAR, CUAD label: cap
+  agreement 17/20 (TP 7, TN 10, FP 0, FN 3, unclear 2)
+
+Cost so far: $0.1031 in 88 calls (425065 prompt / 19840 completion tokens)
+  embed    text-embedding-3-small     41 calls  $0.0045
+  extract  gpt-4.1-mini               47 calls  $0.0986
+
+RESULT: MISSED contracts - see above

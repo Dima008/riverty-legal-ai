@@ -18,10 +18,10 @@ the model (guardrail sandwich). Nothing with external effect happens without app
 | --- | --- |
 | `data/` | Gold-standard test set: synthetic merchant agreements and DPAs with known answers, a CUAD subset, 8 gold questions. See `data/README.md` |
 | `tools/generate_goldset.py` | Deterministic generator for the synthetic test documents |
-| `pipeline/` | Ingestion, OCR, extraction into the register, hybrid index (in progress) |
+| `pipeline/` | Ingestion, OCR, chunking, extraction with checks, families, hybrid index. See `docs/pipeline.md` |
 | `api/` | FastAPI backend: planner, portfolio check, triage, approval, audit (in progress) |
 | `web/` | React/TypeScript legal workbench (in progress) |
-| `eval/` | Recall and precision on the gold questions (in progress) |
+| `eval/` | `check_register.py`: gold questions, metadata and CUAD agreement; results in `eval/results/` |
 | `docs/adr/` | Architecture decision records (in progress) |
 
 ## Target architecture (Azure)
@@ -33,10 +33,20 @@ Azure Container Apps, Entra ID, Key Vault, API Management as AI gateway, Terrafo
 The prototype runs locally with the same interfaces (adapters), so each component can be
 swapped for its Azure service.
 
+## Quick start
+
+```bash
+pip install -r requirements.txt          # plus tesseract-ocr with deu + eng language data
+cp .env.example .env                     # Azure OpenAI endpoint, key, deployments
+python -m pipeline.run                   # build the register (idempotent)
+python -m eval.check_register            # compare with the gold set
+python -m pipeline.run --watch           # auto-ingest files dropped into data/inbox
+```
+
 ## Status
 
 - [x] Gold-standard test set
-- [ ] Pipeline
+- [x] Pipeline (recall 1.0 on all 8 gold questions, ~$0.12 per full run)
 - [ ] Backend
 - [ ] Frontend
 - [ ] Evaluation
