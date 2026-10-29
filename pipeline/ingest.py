@@ -9,7 +9,9 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 import re
+import shutil
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -20,6 +22,13 @@ from PIL import Image
 
 from . import config
 from .store import audit, now, transaction
+
+# Tesseract binary: TESSERACT_CMD from .env, else PATH, else the default Windows install location
+_WINDOWS_TESSERACT = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+if os.environ.get("TESSERACT_CMD"):
+    pytesseract.pytesseract.tesseract_cmd = os.environ["TESSERACT_CMD"]
+elif not shutil.which("tesseract") and _WINDOWS_TESSERACT.exists():
+    pytesseract.pytesseract.tesseract_cmd = str(_WINDOWS_TESSERACT)
 
 IMAGE_EXT = {".jpg", ".jpeg", ".png"}
 PAGE_SUFFIX = re.compile(r"_p(\d+)$", re.IGNORECASE)

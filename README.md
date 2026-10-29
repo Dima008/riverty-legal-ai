@@ -22,7 +22,7 @@ the model (guardrail sandwich). Nothing with external effect happens without app
 | `api/` | FastAPI backend: planner, portfolio check, triage, approval, audit (in progress) |
 | `web/` | React/TypeScript legal workbench (in progress) |
 | `eval/` | `check_register.py`: gold questions, metadata and CUAD agreement; results in `eval/results/` |
-| `docs/adr/` | Architecture decision records (in progress) |
+| `docs/` | `pipeline.md` (how it works, results), `setup-windows.md` (local setup); ADRs in `docs/adr/` (in progress) |
 
 ## Target architecture (Azure)
 
@@ -36,7 +36,7 @@ swapped for its Azure service.
 ## Quick start
 
 ```bash
-pip install -r requirements.txt          # plus tesseract-ocr with deu + eng language data
+pip install -r requirements.txt          # plus tesseract-ocr with deu + eng (Windows: docs/setup-windows.md)
 cp .env.example .env                     # Azure OpenAI endpoint, key, deployments
 python -m pipeline.run                   # build the register (idempotent)
 python -m eval.check_register            # compare with the gold set
