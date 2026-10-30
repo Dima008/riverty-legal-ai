@@ -14,6 +14,21 @@ the interview. Work as a mentor: explain what you do and why, keep steps small, 
 larger step with one short check question. **Talk to Dima in German; code, comments, docs
 and the presentation are in English.**
 
+## Context – read first
+
+Planning happened before this repo was opened in VS Code. Read these before doing anything:
+
+- `docs/context/briefing.md` – everything discussed: working style, problem analysis,
+  approach, target architecture, MVP canvas (states per step), frontend and presentation
+  plan, governance and adoption, status, schedule, where things live
+- `docs/context/case-study.md` – the original task, verbatim
+- `docs/context/decisions.md` – the 46 decisions so far (snapshot of Notion)
+- `docs/pipeline.md`, `docs/failure-cases.md` – how the pipeline works, every error found
+
+Notion (page "Riverty Case Study") is the source of truth for decisions, roadmap and the
+coverage matrix. If the Notion MCP server is connected, read and update it directly; if not,
+ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/mcp` and `/mcp`.
+
 ## Core design (do not change without discussing)
 
 - **Compile, don't search.** Every contract is read once, completely, into a structured
@@ -41,7 +56,7 @@ and the presentation are in English.**
 | `pipeline/catalogue.py` | Legal's playbook as data: clause definitions, required per doc type, keywords. Changing it = bump `PROMPT_VERSION` in `config.py` |
 | `eval/check_register.py` | Gold questions Q1–Q8, metadata, CUAD agreement; results in `eval/results/` |
 | `data/` | Synthetic gold set (every page watermarked "SYNTHETIC TEST DOCUMENT"), CUAD subset (CC BY 4.0), `ground_truth.csv`, `gold_queries.json` |
-| `docs/` | `pipeline.md`, `setup-windows.md`, ADRs later in `docs/adr/` |
+| `docs/` | `pipeline.md`, `failure-cases.md`, `setup-windows.md`, `context/` (task, briefing, decisions); ADRs later in `docs/adr/` |
 | `var/register.sqlite` | Generated register (git-ignored) |
 
 ```bash
@@ -65,10 +80,17 @@ python -m pipeline.show [M08]       # overview of the register or one contract w
   decision in the commit message and tell Dima so it can be logged.
 - AI contribution stays visible in the git history (Co-Authored-By trailer).
 - Show costs: every model call is recorded in `llm_calls`; the UI shows cost per run.
+- Never put chat transcripts or the Azure endpoint/resource name into the repo.
+- Do not copy material from the AWS agentic workshop slides (confidential); reuse techniques only.
+- New errors found go into `docs/failure-cases.md` with verbatim evidence (they are shown in
+  the presentation).
 
-## Status and next steps (2026-10-29)
+## Status and next steps (2026-10-30)
 
-Done: gold set, pipeline (recall/precision 1.0 on Q1–Q8, CUAD 19/20, ~$0.12 per full run).
+Done: gold set, pipeline (recall/precision 1.0 on Q1–Q8, CUAD 19/20, ~$0.12 per full run),
+register viewer (`pipeline.show`), error catalogue F1–F8, ablation (model alone: Q1 recall
+0.80; with checks: 1.00). Explanations for Dima in Notion: "Prototyp: Was wir gebaut haben",
+"Konzepte verständlich erklärt".
 
 Next:
 1. **Local setup on Dima's laptop** (`docs/setup-windows.md`) – the live demo runs there.
@@ -78,6 +100,10 @@ Next:
    highlight (word boxes in `pages.words_json`) → triage (CONFIRM / REVIEW / FOUR_EYES) →
    approval → archive copy via a mock storage API (write-only, idempotent by document hash)
    → audit log. Show coverage ("47 of 47 contracts checked") and cost per run.
-3. **Step 6 – Evaluation**: several runs (variance at temperature 0), retrieval quality,
-   error catalogue.
-4. Known gap: documents deleted at the source stay in the register (data lifecycle).
+3. **Step 6 – Evaluation**: held-out test set (we tuned on the gold set), several runs
+   (variance at temperature 0), retrieval quality.
+4. Presentation website (chapters and minutes in `docs/context/briefing.md`, section 7),
+   PDF fallback, dress rehearsal.
+5. Open items: MCP server over `pipeline.queries`, planner (function calling), handwritten
+   example (Dima provides `data/raw/handwritten/H01.jpg`), deletion sync (known gap),
+   decision 21 "observations, not legal judgments" still to be confirmed by Dima.
