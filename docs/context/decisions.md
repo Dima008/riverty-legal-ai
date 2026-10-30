@@ -105,7 +105,7 @@ Begründung: Riverty teilt keine echten Verträge. 20 synthetische Händlervertr
 Verworfen: Klein starten nur mit synthetischen Varianten; nur CUAD (nur Englisch).
 
 ### 21. Abweichung ist kein Rechtsverstoß: Agent meldet nur Beobachtungen
-Architektur · **Vorschlag** · Hauptpunkt
+Architektur · Entschieden (von Dima bestätigt am 30.10., in Notion ausstehend) · Hauptpunkt
 Begründung: Aus dem Workshop-Learning „Mismatch ist nicht gleich Fraud“; rechtliche Bewertung trifft nur die Juristin.
 Verworfen: Agent bewertet Wirksamkeit oder Rechtsverstöße.
 
@@ -130,7 +130,7 @@ Begründung: Weniger als eine Woche Zeit: lokal ist schnell und demo-sicher; das
 Verworfen: Komplett auf Azure deployen (rund ein Tag mehr, Einrichtungsrisiko).
 
 ### 26. EU-Region und EU-Datenzone für die Modelle im Betrieb
-Governance · **Vorschlag** · Hauptpunkt
+Governance · Entschieden (von Dima bestätigt am 30.10., in Notion ausstehend) · Hauptpunkt
 Begründung: Vertragsdaten eines europäischen Finanzinstituts; DSGVO. Zielbild für den Betrieb; im Prototyp bewusst Global Standard mit synthetischen Daten, weil das neue Abo kein EU-Kontingent hat.
 Verworfen: Global Standard (Verarbeitung weltweit).
 
@@ -338,3 +338,28 @@ Verworfen: Getrennte Folien (PowerPoint, reveal.js – zwei Dinge synchron halte
 Präsentation · Entschieden · Hauptpunkt
 Begründung: Wunsch von Dima, Probleme live zu zeigen (fehlende Prüfung, nicht genutzte Technik). Jede Schutzschicht hat einen Schalter; die gespeicherten Modellantworten laufen ohne diese Schicht durch die Prüfungen – auf einer Kopie im Arbeitsspeicher, ohne Modellaufruf, in 0,7 s, jedes Mal gleich, also sicher für die Live-Demo. Zwei Invarianten als Tests: ohne Abschalten exakt das Register; eine Schutzschicht macht das System nur vorsichtiger. Ergebnis ehrlich: Einzeln abgeschaltet bleibt Q1 bei 1,0, weil sich Vokabelprüfung und Checker überlappen (Defense in Depth); beide aus → 0,6 (M08, M10); Recall first aus → 0,6; Injection-Schutz aus → M14 ohne Vier-Augen-Prüfung; Nachtragsprüfung aus → C11 fehlt in allen Antworten.
 Verworfen: Live-Modellaufrufe mit schlechtem Prompt als Hauptdemo (Kosten, Dauer, Schwankung – bleibt Option für einen Vertrag); Neuberechnung aus gespeicherten Markierungen (zweite Wahrheit); Wiederholung im Produktionsregister.
+
+### 68 (in Notion ausstehend). Storyline der Webseite: 10 Kapitel in 5 Akten (Why · How · Proof · Operate · Live), 17:15 min, Q1 als roter Faden
+Präsentation · Entschieden · Hauptpunkt
+Begründung: Ergebnis eines Workflows mit drei unabhängigen Entwürfen (Story-, Demo-, Prüfer-Sicht), bewertet von zwei Jury-Agenten (Wirkung, Machbarkeit) und zusammengeführt; von Dima freigegeben. Drei rote Fäden: eine Frage (Q1) durch alle Kapitel, eine Pipeline-Karte, die mit Fehlern und Feedback-Schleife wiederkommt, fünf Testverträge als Besetzung (M18, M08, M14, C11, M15). Jedes Diagramm sagt, was es zeigt, warum es existiert und warum es so aussieht. 2:45 min Puffer für Fragen, 15-Minuten-Fassung (~13:30) vorbereitet. Hauptweg der Demo ohne Modellaufruf, mit Snapshot-Rückfall und PDF.
+Verworfen: Werkzeug zuerst, Vortrag danach (Demo-Entwurf als Hauptlinie – zu wenig Herangehensweise); 18:45 min (zu wenig Puffer); Architektur vor der Pipeline (die Pipeline-Karte ist die Grundlage für Fehler- und Feedback-Bild).
+
+### 69 (in Notion ausstehend). Kein Modell-Umschalter im Frontend: Nur-Lese-Modellkarte und Checkliste „Modellwechsel vorschlagen“
+Governance · Entschieden · Kurz erwähnen
+Begründung: Ein Modellwechsel leitet jeden Befund neu ab und ist damit ein Release, keine Einstellung (Entscheidungen 40, 42, 43). Läufe sind Schnappschüsse einer Registerversion; Modelle pro Nutzer machten Antworten zweier Juristen unvergleichbar (56). Live-Aufrufe bringen Kosten, Wartezeit (p95 36 s) und Schwankung (F7) vor das Panel. Der Vergleich ist gemessen (64, 65). Stattdessen: Karte „gpt-4.1-mini · extract-v2 · Gate-Ergebnis“ und ein Knopf, der die Release-Checkliste zeigt (Auswertung, Freigabe durch Legal, gestaffelter Rollout, Rückweg).
+Verworfen: Modellauswahl für Juristen; Umschalter nur für den Präsentator (Live-Risiko).
+
+### 70 (in Notion ausstehend). Repo-Audit umsetzen: erst die bestätigten Fehler (je Beleg, Test, Fix), dann Lesbarkeit; keine Ordner-Umzüge vor dem Interview
+Vorgehen · Entschieden · Nur auf Nachfrage
+Begründung: Audit-Workflow mit Gegenprüfung: 61 Punkte bestätigt, 14 verworfen, darunter echte Fehler mit Demo-Risiko (gleichzeitige API-Aufrufe → 500 und leeres Audit-Log; erneutes Einlesen entfernt die Vier-Augen-Markierung von M14; BM25-Filter liefert 0 Treffer). Fehler werden erst mit wörtlichem Beleg nachgestellt und im Fehlerkatalog aufgenommen, dann mit Test behoben. Lesbarkeit: README neu, docs/approach.md (englischer Text der Kapitel), docs/diagrams.md (Diagramm-Index), kürzerer Status in CLAUDE.md, Kommentare, die sagen, was der Code heute tut.
+Verworfen: Alles auf einmal vor der Webseite (kostet einen Tag); Ordner umbauen (Risiko kurz vor der Generalprobe).
+
+### 71 (in Notion ausstehend). Archiv-Button bleibt klickbar, auch vor der Freigabe: der Server lehnt ab (409) und protokolliert die Ablehnung
+Präsentation · Entschieden · Kurz erwähnen
+Begründung: Bisher sperrte die Oberfläche den Knopf, die Server-Sperre (Tool-Gate, Entscheidungen 2, 57) wurde nie vorgeführt. Klickbar mit Schloss-Symbol und Hinweis zeigt die Demo: „Der Button ist nicht die Kontrolle, der Server ist es.“ Die Ablehnung erscheint im Audit-Log.
+Verworfen: Sperre nur in der Oberfläche (beweist nichts über den Server).
+
+### 72 (in Notion ausstehend). Held-out-Testset: 10 weitere CUAD-Verträge (Zufall mit festem Seed) und 2–4 von Dima geschriebene Verträge, vor dem ersten Lauf versiegelt
+Analyse · Entschieden · Hauptpunkt
+Begründung: Prompt und Prüfungen wurden am Goldstandard verbessert (Overfitting-Risiko). Von Hand geschriebene Verträge brechen die Muster des Generators (neue Fallen: Haftungsgrenze im Anhang, per Verweis, Namensvariante „arvato infoscore“). Manifest mit SHA-256 und erwarteten Antworten wird committet, bevor gemessen wird; gemessen wird einmal mit eingefrorener Konfiguration, das Ergebnis wird gezeigt, wie es kommt.
+Verworfen: Nur weitere synthetische Verträge vom selben Generator; Messen vor dem Versiegeln.

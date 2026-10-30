@@ -7,6 +7,23 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · Storyline approved: 10 chapters in five acts, 17:15 min
+
+- **Problem:** The chapter list was a draft (four acts, 18:45 min) – too little buffer for
+  questions, and architecture and operations sat under "Proof".
+- **Cause:** It was written before the site workflow had compared the three outlines.
+- **Technique and why:** Adopted the synthesis Dima approved (decision 68): acts Why · How · Proof ·
+  Operate · Live, new titles, leads and minutes in `story/chapters.ts`, the act list exported from
+  there so the rail follows it. Dima also confirmed decisions 21 and 26 and decided 69–72 (no model
+  switch in the frontend, bugs before readability, a clickable archive button, a sealed held-out set).
+- **Rejected alternative:** Keep 18:45 min (2 min less for questions); architecture before the
+  pipeline (the pipeline map is the base picture for chapters 6 and 8).
+- **Metric before → after:** Planned time 18:45 → 17:15 min (buffer 1:15 → 2:45); acts 4 → 5.
+  Story walkthrough 12 of 12 checks, tsc green.
+- **Links:** decisions 21, 26, 68–72 (Notion pending); `web/src/story/chapters.ts`
+
+---
+
 ## 2026-10-30 · "Switch a safeguard off" as a panel in the proof chapter
 
 - **Problem:** The replay existed only as API and CLI. In the talk it has to be clickable,

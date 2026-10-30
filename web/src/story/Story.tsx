@@ -12,10 +12,8 @@ import {
 } from "@fluentui/react-icons";
 import { useEffect, useRef, type ReactNode } from "react";
 import { navigate } from "../routing";
-import { CHAPTERS, TOTAL_MINUTES, type Chapter } from "./chapters";
+import { ACTS, CHAPTERS, TOTAL_MINUTES, type Chapter } from "./chapters";
 import { WhatIf } from "./WhatIf";
-
-const ACTS: Chapter["act"][] = ["Why", "How", "Proof", "Live"];
 
 /** 1.25 minutes -> "1:15" (speaking time as on a stopwatch). */
 const mmss = (minutes: number) =>
