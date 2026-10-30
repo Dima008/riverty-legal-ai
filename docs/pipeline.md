@@ -54,4 +54,4 @@ relevance check and the checker do (both fired independently in v2).
 Remaining CUAD difference (C03): lawyers labelled a termination-payment formula as a cap;
 under our playbook definition it is not. A definition question for Legal, not a model error.
 
-Raw outputs: `eval/results/`.
+Raw outputs: `eval/results/`. Every error we found, with verbatim evidence: `docs/failure-cases.md`.

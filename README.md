@@ -22,7 +22,7 @@ the model (guardrail sandwich). Nothing with external effect happens without app
 | `api/` | FastAPI backend: planner, portfolio check, triage, approval, audit (in progress) |
 | `web/` | React/TypeScript legal workbench (in progress) |
 | `eval/` | `check_register.py`: gold questions, metadata and CUAD agreement; results in `eval/results/` |
-| `docs/` | `pipeline.md` (how it works, results), `setup-windows.md` (local setup); ADRs in `docs/adr/` (in progress) |
+| `docs/` | `pipeline.md` (how it works, results), `failure-cases.md` (error catalogue with evidence), `setup-windows.md` (local setup); ADRs in `docs/adr/` (in progress) |
 
 ## Target architecture (Azure)
 

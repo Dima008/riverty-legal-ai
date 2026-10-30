@@ -26,6 +26,34 @@ def pr(found: set, expected: set) -> tuple[float, float]:
     return precision, recall
 
 
+CLAUSE_QUESTIONS = {
+    "Q1": ("liability_limitation", "merchant_agreement"),
+    "Q3": ("consumer_terms_checkout", "merchant_agreement"),
+    "Q4": ("dpa_reference", "merchant_agreement"),
+    "Q6": ("audit_clause", "data_processing_agreement"),
+    "Q7": ("subprocessor_clause", "data_processing_agreement"),
+}
+
+
+def ablation(con, gold: dict) -> None:
+    """Same questions, answered from what the model said (model_status) instead of the checked status.
+    Shows what the checks are worth - computed from stored data, no model call."""
+    print("\nAblation: model alone (model_status) vs. model + checks (status)")
+    print(f"{'id':4} {'recall model':>12} {'recall checked':>15}  missed by the model alone")
+    for qid, (clause, doc_type) in CLAUSE_QUESTIONS.items():
+        expected = set(gold[qid]["expected"])
+        found = {}
+        for col in ("model_status", "status"):
+            found[col] = {r[0] for r in con.execute(
+                f"SELECT c.doc_id FROM clauses c JOIN metadata m ON m.doc_id = c.doc_id "
+                f"JOIN documents d ON d.doc_id = c.doc_id WHERE d.duplicate_of IS NULL AND m.is_amendment = 0 "
+                f"AND m.doc_type = ? AND c.clause_type = ? AND c.{col} != 'PRESENT'", (doc_type, clause))}
+        r_model = pr(found["model_status"], expected)[1]
+        r_checked = pr(found["status"], expected)[1]
+        missed = sorted(expected - found["model_status"])
+        print(f"{qid:4} {r_model:12.2f} {r_checked:15.2f}  {missed or '-'}")
+
+
 def main() -> None:
     con = connect()
     gold = {q["id"]: q for q in json.load(open(config.DATA / "gold_queries.json", encoding="utf-8"))}
@@ -54,6 +82,8 @@ def main() -> None:
         all_ok &= r == 1.0
         extra = f"  resolved by amendment: {sorted({x['doc_id'] for x in legacy['resolved']})}" if qid == "Q2" else ""
         print(f"{qid:4} {p:9.2f} {r:7.2f}  {sorted(found)} / {sorted(expected)} / {review}{extra}")
+
+    ablation(con, gold)
 
     print("\nMetadata vs ground truth (own contracts)")
     meta = {r["doc_id"]: dict(r) for r in con.execute("SELECT * FROM metadata")}
