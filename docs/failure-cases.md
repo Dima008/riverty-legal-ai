@@ -17,7 +17,7 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F7 | Same contract, same prompt, different answer (M10) | extraction | checks catch both variants | accepted, measured in step 6 |
 | F8 | Gold label disagrees with our definition (CUAD C03) | definition | evaluation | question for Legal |
 | F9 | Same scan, other machine, different OCR text (M18) | ingest | nobody at first - found by the offline smoke test on the laptop | no impact on gold set, cause open |
-| F10 | Services agreement flagged as amendment (C11) | extraction | nobody at first - found by reading the families log | open |
+| F10 | Services agreement flagged as amendment, silently dropped from all queries (C11) | extraction | nobody at first - found by reading the families log | fixed (consistency check), automated test missing |
 
 ---
 
@@ -257,12 +257,44 @@ in the register, so `C16: C16` is correct but reads like a self-reference.
 `is_amendment` says yes) and no check compares them. Whether the cloud run had the same value is
 unknown: the evaluation does not cover `is_amendment` on CUAD documents.
 
-**Layer.** Extraction (missing consistency check). **Impact.** None on Q1-Q8. In the families
-step C11 can no longer be the base agreement of a later amendment.
+**Layer.** Extraction (missing consistency check).
 
-**Fix.** Open, proposal for Dima: (1) deterministic consistency check `doc_type` vs.
-`is_amendment`, contradiction -> review flag; (2) show an amendment without a base agreement as
-"base agreement not in register" - for Legal that is a finding (incomplete contract family).
+**Impact - a silent miss.** Register queries skip amendments (`queries.BASE`:
+`m.is_amendment = 0`), so C11 disappears from every portfolio question. C11 has no limitation of
+liability, yet the question "which other commercial agreements lack one?" does not list it:
+
+```
+C11 clause status: ('ABSENT', 0.9)
+missing_clause(liability_limitation, other_commercial_agreement): ['C03', 'C12', 'C13', 'C14', 'C15', 'C17', 'C18', 'C19', 'C20']
+C11 in result: False
+other_commercial_agreement: 19 in register, 18 visible to queries
+```
+
+No check noticed it, and Q1-Q8 do not cover it (they ask about merchant agreements and DPAs). A
+coverage line "18 of 19 checked, 1 excluded as amendment (C11)" would have made it visible.
+
+**Fix** (deterministic, no model call).
+1. `extract.check_metadata`: a document counts as an amendment only if `doc_type` and
+   `is_amendment` agree. On a contradiction it is treated as a contract - it stays visible to
+   every query (recall first) - and gets a review flag. The model's answer stays in `raw_json`.
+2. `families.py`: an amendment whose base agreement is not in the register gets the flag
+   `amendment_base_not_in_register` instead of pointing to itself - an incomplete contract
+   family is a finding for Legal.
+
+**Proof** (`python -m pipeline.run --reassess`, 0 model calls, then the same query):
+
+```
+C11    type=other_commercial_agreement  is_amendment=0 family=C11    flags=['amendment_contradiction: doc_type=other_commercial_agreement, is_amendment=true']
+C16    type=amendment                   is_amendment=1 family=C16    flags=['amendment_base_not_in_register']
+M05-A  type=amendment                   is_amendment=1 family=M05    flags=[]
+missing_clause(liability_limitation, other_commercial_agreement): ['C03', 'C11', 'C12', 'C13', 'C14', 'C15', 'C17', 'C18', 'C19', 'C20']
+other_commercial_agreement visible to queries: 19 of 19
+```
+
+Evaluation afterwards identical to the run before (recall and precision 1.00 on Q1-Q8).
+
+**Lesson.** Every filter that excludes documents can hide a miss. Exclusions must be visible:
+the workbench shows coverage as "checked / in scope / excluded, and why".
 
 **Reproduce.** `python -m pipeline.show C11`. Automated test missing.
 

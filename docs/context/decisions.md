@@ -253,3 +253,8 @@ Verworfen: Erklärung nur statisch als Folie; alle Stationen gleich ausführlich
 Vorgehen · Entschieden · Nur auf Nachfrage
 Begründung: requirements.txt hatte nur Mindestversionen; auf dem Laptop installierte pip neue Hauptversionen (openai 3.41, PyMuPDF 2.0, numpy 2.5, pillow 13). Der Lauf damit war grün (Recall/Precision 1,0 auf Q1–Q8), also werden genau diese Versionen fixiert. Upgrade nur bewusst, danach Evaluierung. Im Betrieb: Container-Image mit Lock-Datei (siehe F9: andere Umgebung, anderer OCR-Text).
 Verworfen: Mindestversionen behalten (Demo kann morgen anders laufen); vollständige Lock-Datei aller transitiven Pakete (für den Prototyp zu viel).
+
+### 51. Widerspruch in den Metadaten macht ein Dokument nie unsichtbar: im Zweifel Vertrag statt Nachtrag, plus Prüfhinweis
+Architektur · Entschieden · Kurz erwähnen
+Begründung: Fehlerfall F10: Das Modell markierte den Dienstleistungsvertrag C11 als Nachtrag (doc_type sagt nein, is_amendment sagt ja). Register-Abfragen überspringen Nachträge, also verschwand C11 still aus jeder Antwort, obwohl ihm die Haftungsbegrenzung fehlt (18 von 19 sichtbar). Neue deterministische Prüfung: Nachtrag nur, wenn beide Felder übereinstimmen; sonst als Vertrag behandeln (Recall zuerst) und zur Prüfung markieren. Nachträge ohne Hauptvertrag im Register (C16) werden als unvollständige Vertragsfamilie markiert, ein Befund für Legal. Ohne Modellkosten per --reassess eingespielt; Evaluierung unverändert 1,0. Lehre: Jeder Filter, der Dokumente ausschließt, kann einen Treffer verstecken; Ausschlüsse müssen in der Abdeckungsanzeige sichtbar sein.
+Verworfen: Dem Feld is_amendment vertrauen (Vertrag bleibt unsichtbar); Prompt nachschärfen und neu extrahieren (Kosten, behebt den Widerspruch nicht sicher).

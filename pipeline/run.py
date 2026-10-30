@@ -38,7 +38,7 @@ def run_once(con, adapter, only: list[str] | None = None, force: bool = False, l
         result.update(extract.run(con, adapter, todo, log=log))
         fam = families.run(con)
         log(f"families: duplicates={fam['duplicates']} amendments={fam['amendments']} "
-            f"legacy name hits={fam['legacy_name_hits']}")
+            f"base agreement not in register={fam['orphan_amendments']} legacy name hits={fam['legacy_name_hits']}")
         index.contextualise(con, result["extracted"])
     embedded = index.embed_missing(con, adapter)
     if embedded:

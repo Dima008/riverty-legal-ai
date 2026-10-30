@@ -320,9 +320,24 @@ def assess(con, doc_id: str, result: dict, checks: dict, text: str) -> list[dict
     return rows
 
 
+def check_metadata(result: dict) -> tuple[bool, list[str]]:
+    """Deterministic consistency check on the document metadata (failure case F10).
+
+    A document counts as an amendment only if both model fields agree. Register queries skip
+    amendments, so a false "amendment" would silently drop a contract from every answer. On a
+    contradiction the document is treated as a contract (stays visible: recall first) and
+    flagged for review. The model's own answer stays in raw_json."""
+    said = bool(result["amendment"]["is_amendment"])
+    typed = result["doc_type"] == "amendment"
+    if said == typed:
+        return said, []
+    return False, [f"amendment_contradiction: doc_type={result['doc_type']}, is_amendment={str(said).lower()}"]
+
+
 def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], text_sha: str, injected: bool,
            actor: str = "pipeline") -> None:
     a = result["amendment"]
+    is_amendment, doc_flags = check_metadata(result)
     with transaction(con):
         con.execute(
             "INSERT OR REPLACE INTO metadata (doc_id, doc_type, title, own_entity_name, current_own_entity_name,"
@@ -331,7 +346,7 @@ def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], text_
             " extracted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (doc_id, result["doc_type"], result["title"], result["own_entity_name"], result["own_entity_name"],
              result["counterparty_name"], json.dumps(result["parties"], ensure_ascii=False),
-             result["effective_date"], result["governing_law"], result["language"], int(a["is_amendment"]),
+             result["effective_date"], result["governing_law"], result["language"], int(is_amendment),
              a["amended_agreement_date"], a["renames_from"], a["renames_to"],
              json.dumps({"extraction": result, "checks": checks}, ensure_ascii=False), text_sha,
              config.CHAT_DEPLOYMENT, config.PROMPT_VERSION, now()))
@@ -345,10 +360,11 @@ def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], text_
                  r["quote_score"], r["page"], r["char_start"], r["char_end"], r["section"], r["chunk_id"],
                  r["rationale"], r["confidence"], json.dumps(r["flags"], ensure_ascii=False),
                  config.CHAT_DEPLOYMENT, config.PROMPT_VERSION))
-        flags = ["prompt_injection_suspected"] if injected else []
+        flags = (["prompt_injection_suspected"] if injected else []) + doc_flags
         con.execute("UPDATE documents SET flags=? WHERE doc_id=?", (json.dumps(flags), doc_id))
         audit(con, actor, "extracted", doc_id, model=config.CHAT_DEPLOYMENT, prompt_version=config.PROMPT_VERSION,
-              statuses={r["clause_type"]: r["status"] for r in rows}, injection_suspected=injected)
+              statuses={r["clause_type"]: r["status"] for r in rows}, injection_suspected=injected,
+              metadata_flags=doc_flags)
 
 
 def reassess(con, log=print) -> int:

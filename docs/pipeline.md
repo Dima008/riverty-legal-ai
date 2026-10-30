@@ -33,6 +33,8 @@ batches and merged (PRESENT anywhere wins, then UNCLEAR, else ABSENT).
 | Checker call sees only definition + quote (four-eyes principle) | semantic misreading (M08, C04, C08, C11, C12) | UNCLEAR |
 | Narrow absence signals for ABSENT | overlooked clause | confidence 0.6 -> review |
 | OCR quality, suspected injection in document | weak evidence | confidence capped |
+| `doc_type` and `is_amendment` must agree (F10) | contract wrongly marked as amendment - queries skip amendments, so it would vanish silently (C11) | treated as contract, review flag |
+| Amendment without base agreement in the register | incomplete contract family (C16) | flag `amendment_base_not_in_register` |
 
 The confidence comes from these signals, not from the model. Every finding keeps
 `model_status` (what the model said) next to `status` (what the register says).

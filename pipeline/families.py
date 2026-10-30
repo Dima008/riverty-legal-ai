@@ -18,6 +18,7 @@ from .ingest import normalise_for_hash
 from .store import audit, transaction
 
 NEAR_DUPLICATE_RATIO = 98
+ORPHAN_FLAG = "amendment_base_not_in_register"   # incomplete family: a finding for Legal
 
 
 def _same_party(a: str | None, b: str | None) -> bool:
@@ -30,7 +31,7 @@ def _name_pattern(name: str) -> re.Pattern:
 
 def run(con) -> dict:
     docs = {r["doc_id"]: dict(r) for r in con.execute(
-        "SELECT d.doc_id, d.ingested_at, d.text_sha256, m.doc_type, m.counterparty_name, m.effective_date, m.is_amendment,"
+        "SELECT d.doc_id, d.ingested_at, d.text_sha256, d.flags, m.doc_type, m.counterparty_name, m.effective_date, m.is_amendment,"
         " m.amended_agreement_date, m.renames_from, m.renames_to, m.own_entity_name, t.text, t.page_offsets_json"
         " FROM documents d JOIN metadata m ON m.doc_id = d.doc_id JOIN doc_text t ON t.doc_id = d.doc_id")}
     family = {d: d for d in docs}
@@ -62,6 +63,8 @@ def run(con) -> dict:
         base = (dated or candidates or [None])[0]
         if base:
             family[am["doc_id"]] = base["doc_id"]
+    orphans = [am["doc_id"] for am in amendments if family[am["doc_id"]] == am["doc_id"]]
+    linked = {am["doc_id"]: family[am["doc_id"]] for am in amendments if am["doc_id"] not in orphans}
 
     # 3. current name of our own entity after applying the family's amendments in date order
     current = {d: docs[d]["own_entity_name"] for d in docs}
@@ -91,12 +94,15 @@ def run(con) -> dict:
 
     with transaction(con):
         for doc_id in docs:
-            con.execute("UPDATE documents SET family_id=?, duplicate_of=? WHERE doc_id=?",
-                        (family[doc_id], duplicate_of.get(doc_id), doc_id))
+            flags = [f for f in json.loads(docs[doc_id]["flags"] or "[]") if f != ORPHAN_FLAG]
+            if doc_id in orphans:
+                flags.append(ORPHAN_FLAG)
+            con.execute("UPDATE documents SET family_id=?, duplicate_of=?, flags=? WHERE doc_id=?",
+                        (family[doc_id], duplicate_of.get(doc_id), json.dumps(flags), doc_id))
             con.execute("UPDATE metadata SET current_own_entity_name=? WHERE doc_id=?", (current[doc_id], doc_id))
         con.execute("DELETE FROM name_hits")
         con.executemany("INSERT INTO name_hits VALUES (?,?,?,?,?,?,?)", hits)
-        audit(con, "pipeline", "families_built", "*", duplicates=duplicate_of,
-              amendments={a["doc_id"]: family[a["doc_id"]] for a in amendments}, legacy_name_hits=len(hits))
-    return {"duplicates": duplicate_of, "amendments": {a["doc_id"]: family[a["doc_id"]] for a in amendments},
+        audit(con, "pipeline", "families_built", "*", duplicates=duplicate_of, amendments=linked,
+              orphan_amendments=orphans, legacy_name_hits=len(hits))
+    return {"duplicates": duplicate_of, "amendments": linked, "orphan_amendments": orphans,
             "legacy_name_hits": len(hits)}
