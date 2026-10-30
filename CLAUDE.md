@@ -57,6 +57,9 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 | `eval/check_register.py` | Gold questions Q1–Q8, metadata, CUAD agreement; results in `eval/results/` |
 | `data/` | Synthetic gold set (every page watermarked "SYNTHETIC TEST DOCUMENT"), CUAD subset (CC BY 4.0), `ground_truth.csv`, `gold_queries.json` |
 | `docs/` | `pipeline.md`, `failure-cases.md`, `setup-windows.md`, `context/` (task, briefing, decisions); ADRs later in `docs/adr/` |
+| `pipeline/evidence.py` | Maps a verified quote back onto the page's word boxes (highlight, also across page breaks) |
+| `api/` | FastAPI: `register.py` read-only register + pipeline-explorer endpoints; workflow follows |
+| `tests/` | pytest against the built register; check invariants, not one model answer (F7) |
 | `var/register.sqlite` | Generated register (git-ignored) |
 | `.claude/skills/` | Project skills: `record-failure`, `log-decision`, `run-eval` |
 | `.githooks/pre-commit` | Secret guard (keys, real Azure endpoints, `.env` files) |
@@ -67,6 +70,8 @@ python -m pipeline.run --watch      # auto-ingest files dropped into data/inbox
 python -m pipeline.run --reassess   # replay deterministic checks on stored model output, no cost
 python -m eval.check_register       # must stay at recall 1.0 on Q1–Q8
 python -m pipeline.show [M08]       # overview of the register or one contract with all evidence
+uvicorn api.main:app --reload --port 8010   # Workbench API, docs at http://127.0.0.1:8010/docs (8000 is taken on the laptop)
+python -m pytest                    # API tests against the built register, no model calls
 ```
 
 ## Rules
@@ -99,23 +104,29 @@ register viewer (`pipeline.show`), error catalogue F1–F8, ablation (model alon
 
 Local setup on Dima's laptop done (2026-10-30): Python 3.12 `.venv`, Tesseract 5.4 with
 `deu` via `TESSDATA_PREFIX`, register built, evaluation green on the laptop
-(`eval/results/2026-10-30_extract-v2_laptop.txt`, $0.12). New failure cases F9 (OCR differs
-between machines) and F10 (C11 flagged as amendment) are open. Package versions pinned.
+(`eval/results/2026-10-30_extract-v2_laptop.txt`, $0.12). Package versions pinned. Failure
+cases F9 (OCR differs between machines, no impact, cause open) and F10 (C11 flagged as
+amendment, silently dropped from queries; fixed, decision 51).
 
-Next:
-1. Fix F10 (consistency check doc_type vs. is_amendment; amendments without base agreement).
-2. **Step 5 – Legal Workbench** plus **pipeline explorer** (decision 49): every pipeline step
-   with a diagram and a live example from the register, so the API also returns intermediate
-   results (chunks, check signals, `model_status` next to `status`, search rankings).: FastAPI backend in `api/` over `pipeline.queries` and
-   `pipeline.search`; React/TypeScript frontend in `web/`. Flow: question → plan (which
-   register query / which contracts) → per-contract result with status, quote and page
-   highlight (word boxes in `pages.words_json`) → triage (CONFIRM / REVIEW / FOUR_EYES) →
-   approval → archive copy via a mock storage API (write-only, idempotent by document hash)
-   → audit log. Show coverage ("47 of 47 contracts checked") and cost per run.
-3. **Step 6 – Evaluation**: held-out test set (we tuned on the gold set), several runs
+API step 1 done: read-only register and pipeline-explorer endpoints (`/summary`,
+`/documents/...` incl. findings with guardrail layers, highlight boxes, page images, chunks
+with fixed-size comparison, prompt, `/search` with BM25/vector/RRF lists), 12 tests green.
+API decisions 52–55: server-rendered page image + word boxes, triage rule, two simulated
+reviewers, planner without model first.
+
+Next (Step 5 – Legal Workbench). Flow: question → plan (which register query / which
+contracts) → per-contract result with status, quote and page highlight → triage (CONFIRM /
+REVIEW / FOUR_EYES) → approval → archive copy via a mock storage API (write-only, idempotent
+by document hash) → audit log. Show coverage and cost per run.
+1. **API step 2**: `POST /runs` with the fixed check types (missing clause, legacy names, law,
+   duplicates) and coverage "checked / in scope / excluded + reason" (lesson from F10).
+2. **API step 3**: triage, review (two simulated reviewers via header), audit, archive copy to
+   the storage mock. **Step 4**: model planner (function calling over the same check types).
+3. **Frontend** `web/` (Vite + React + TS): Workbench plus **pipeline explorer** (decision 49).
+4. **Step 6 – Evaluation**: held-out test set (we tuned on the gold set), several runs
    (variance at temperature 0), retrieval quality.
-4. Presentation website (chapters and minutes in `docs/context/briefing.md`, section 7),
+5. Presentation website (chapters and minutes in `docs/context/briefing.md`, section 7),
    PDF fallback, dress rehearsal.
-5. Open items: MCP server over `pipeline.queries`, planner (function calling), handwritten
+6. Open items: MCP server over `pipeline.queries`, planner (function calling), handwritten
    example (Dima provides `data/raw/handwritten/H01.jpg`), deletion sync (known gap),
    decision 21 "observations, not legal judgments" still to be confirmed by Dima.

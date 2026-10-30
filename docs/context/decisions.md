@@ -258,3 +258,23 @@ Verworfen: Mindestversionen behalten (Demo kann morgen anders laufen); vollstän
 Architektur · Entschieden · Kurz erwähnen
 Begründung: Fehlerfall F10: Das Modell markierte den Dienstleistungsvertrag C11 als Nachtrag (doc_type sagt nein, is_amendment sagt ja). Register-Abfragen überspringen Nachträge, also verschwand C11 still aus jeder Antwort, obwohl ihm die Haftungsbegrenzung fehlt (18 von 19 sichtbar). Neue deterministische Prüfung: Nachtrag nur, wenn beide Felder übereinstimmen; sonst als Vertrag behandeln (Recall zuerst) und zur Prüfung markieren. Nachträge ohne Hauptvertrag im Register (C16) werden als unvollständige Vertragsfamilie markiert, ein Befund für Legal. Ohne Modellkosten per --reassess eingespielt; Evaluierung unverändert 1,0. Lehre: Jeder Filter, der Dokumente ausschließt, kann einen Treffer verstecken; Ausschlüsse müssen in der Abdeckungsanzeige sichtbar sein.
 Verworfen: Dem Feld is_amendment vertrauen (Vertrag bleibt unsichtbar); Prompt nachschärfen und neu extrahieren (Kosten, behebt den Widerspruch nicht sicher).
+
+### 52. Belegansicht: Server rendert das Seitenbild, Browser markiert das Zitat über die gespeicherten Wortkoordinaten (statt PDF.js)
+Architektur · Entschieden · Nur auf Nachfrage
+Begründung: Wortkoordinaten pro Seite liegen schon im Register (pages.words_json, aus Textschicht und OCR). Ein Seitenbild plus Markierungsrahmen funktioniert für PDF und JPEG-Scan gleich, braucht deutlich weniger Frontend-Code und keine PDF-Bibliothek im Browser.
+Verworfen: PDF.js im Browser (mehr Code, Scans brauchen trotzdem eigene Darstellung).
+
+### 53. Triage-Regel: FOUR_EYES bei Injection-Verdacht oder Metadaten-Widerspruch, REVIEW bei UNCLEAR oder Konfidenz unter 0,8, sonst CONFIRM mit Stichprobe
+Prozess · Entschieden · Kurz erwähnen
+Begründung: Konkretisiert Entscheidung 13 (Human-in-the-Loop risikobasiert): Prüfaufwand dort, wo ein Fehler wahrscheinlich oder ein Angriff möglich ist. Die Regel nutzt nur deterministische Signale aus dem Register, keine Selbsteinschätzung des Modells. Schwellenwert konfigurierbar.
+Verworfen: Alles manuell freigeben (kein Zeitgewinn) oder nichts (kein Schutz); Triage durch das Modell.
+
+### 54. Zwei simulierte Prüferinnen per Auswahl im UI statt echter Anmeldung; im Betrieb Entra ID
+Governance · Entschieden · Nur auf Nachfrage
+Begründung: Audit-Log und Vier-Augen-Prinzip brauchen unterscheidbare Personen. Echte Anmeldung braucht einen Microsoft-365-Tenant (wie Entscheidung 35). Die API liest die Person aus einem Header; im Betrieb aus dem Entra-ID-Token, Rollen aus Entra-Gruppen. Offen gesagt: Die Auswahl ist keine Sicherheit, sie zeigt nur den Ablauf.
+Verworfen: Ohne Nutzer (kein Vier-Augen-Prinzip zeigbar); Testtenant mit Entra ID (Einrichtungszeit).
+
+### 55. Planer zuerst ohne Modell (Beispielfragen und manuelle Auswahl der Prüfart), Modell-Planer mit Function Calling als letzter API-Schritt
+Architektur · Entschieden · Kurz erwähnen
+Begründung: Der End-to-end-Ablauf (Lauf, Abdeckung, Triage, Freigabe, Archiv) steht zuerst und ist demo-sicher. Der Modell-Planer wählt danach nur aus derselben festen Liste von Prüfarten und fragt bei Unklarheit nach; fällt er aus, bleiben die Beispielfragen. Leitsatz: so viel deterministisch wie möglich, so viel Agent wie nötig.
+Verworfen: Modell-Planer zuerst (Demo hängt am Modell); freie SQL-Erzeugung durch das Modell.

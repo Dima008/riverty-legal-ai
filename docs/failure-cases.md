@@ -307,6 +307,7 @@ the workbench shows coverage as "checked / in scope / excluded, and why".
 | No quota for the newest models in the EU data zone on the trial account | gpt-4.1-mini Global Standard for the prototype; EU data zone required for production |
 | HTTP 429 rate limit on embeddings | honour `Retry-After`, batches of 16 |
 | SQLite "bad parameter or other API misuse" under parallel extraction | worker threads never touch the shared connection; one connection per thread for cost logging |
+| First API smoke test on the laptop "passed" against the wrong server: port 8000 belongs to another local app (`/health` answered `{"status":"ok","scenario":"sunny_surplus"}`), our uvicorn failed with WinError 10048 | API runs on port 8010; `/health` now names the service (`"service": "legal-workbench-api"`) and the test checks it |
 
 ## Caveat for the presentation
 

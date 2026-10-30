@@ -35,31 +35,56 @@ def _allowed(con, filters: dict | None) -> set[str] | None:
     return {r[0] for r in con.execute(sql, args)}
 
 
-def hybrid_search(con, adapter, query: str, filters: dict | None = None, k: int = 10) -> list[dict]:
-    allowed = _allowed(con, filters)
-    ranked: dict[str, float] = {}
+def bm25_ranking(con, query: str, allowed: set[str] | None, depth: int = 50) -> list[str]:
+    """Full-text list: chunk ids ordered by BM25 (exact words; rare words count more)."""
+    fts_query = _fts_query(query)
+    if not fts_query:
+        return []
+    rows = con.execute("SELECT chunk_id, doc_id FROM chunks_fts WHERE chunks_fts MATCH ? ORDER BY bm25(chunks_fts) "
+                       "LIMIT 200", (fts_query,)).fetchall()
+    return [r["chunk_id"] for r in rows if allowed is None or r["doc_id"] in allowed][:depth]
 
-    fts = con.execute("SELECT chunk_id, doc_id FROM chunks_fts WHERE chunks_fts MATCH ? ORDER BY bm25(chunks_fts) "
-                      "LIMIT 200", (_fts_query(query),)).fetchall() if _fts_query(query) else []
-    fts = [r["chunk_id"] for r in fts if allowed is None or r["doc_id"] in allowed]
-    for rank, cid in enumerate(fts[:50]):
-        ranked[cid] = ranked.get(cid, 0) + 1 / (RRF_K + rank + 1)
 
+def vector_ranking(con, adapter, query: str, allowed: set[str] | None, depth: int = 50) -> list[tuple[str, float]]:
+    """Meaning list: (chunk id, cosine similarity), most similar first (finds paraphrases)."""
     qv = np.asarray(adapter.embed([query], purpose="search")[0], dtype=np.float32)
     rows = con.execute("SELECT e.chunk_id, c.doc_id, e.vector FROM embeddings e JOIN chunks c ON c.chunk_id = e.chunk_id "
                        "WHERE e.model = ?", (config.EMBED_DEPLOYMENT,)).fetchall()
     rows = [r for r in rows if allowed is None or r["doc_id"] in allowed]
-    if rows:
-        mat = np.vstack([np.frombuffer(r["vector"], dtype=np.float32) for r in rows])
-        sims = mat @ qv / (np.linalg.norm(mat, axis=1) * np.linalg.norm(qv) + 1e-9)
-        for rank, i in enumerate(np.argsort(-sims)[:50]):
-            cid = rows[i]["chunk_id"]
-            ranked[cid] = ranked.get(cid, 0) + 1 / (RRF_K + rank + 1)
+    if not rows:
+        return []
+    mat = np.vstack([np.frombuffer(r["vector"], dtype=np.float32) for r in rows])
+    sims = mat @ qv / (np.linalg.norm(mat, axis=1) * np.linalg.norm(qv) + 1e-9)
+    return [(rows[i]["chunk_id"], float(sims[i])) for i in np.argsort(-sims)[:depth]]
 
-    top = sorted(ranked.items(), key=lambda x: -x[1])[:k]
-    out = []
-    for cid, score in top:
-        c = con.execute("SELECT chunk_id, doc_id, section_title, page_start, page_end, text FROM chunks "
-                        "WHERE chunk_id=?", (cid,)).fetchone()
-        out.append({**dict(c), "score": round(score, 4)})
-    return out
+
+def rrf(*rankings: list[str]) -> list[tuple[str, float]]:
+    """Reciprocal Rank Fusion: score = sum of 1 / (60 + rank) over all lists. Only ranks count,
+    so BM25 scores and cosine similarities never have to be calibrated against each other."""
+    scores: dict[str, float] = {}
+    for ranking in rankings:
+        for rank, cid in enumerate(ranking):
+            scores[cid] = scores.get(cid, 0) + 1 / (RRF_K + rank + 1)
+    return sorted(scores.items(), key=lambda x: -x[1])
+
+
+def _chunk(con, cid: str) -> dict:
+    return dict(con.execute("SELECT chunk_id, doc_id, section_title, page_start, page_end, text FROM chunks "
+                            "WHERE chunk_id=?", (cid,)).fetchone())
+
+
+def hybrid_search(con, adapter, query: str, filters: dict | None = None, k: int = 10,
+                  explain: bool = False) -> list[dict] | dict:
+    """Top-k chunks for open questions. explain=True also returns both input lists (pipeline explorer)."""
+    allowed = _allowed(con, filters)
+    bm25 = bm25_ranking(con, query, allowed)
+    vector = vector_ranking(con, adapter, query, allowed)
+    fused = [{**_chunk(con, cid), "score": round(score, 4)} for cid, score in rrf(bm25, [c for c, _ in vector])[:k]]
+    if not explain:
+        return fused
+    return {
+        "bm25": [{**_chunk(con, cid), "rank": i + 1} for i, cid in enumerate(bm25[:k])],
+        "vector": [{**_chunk(con, cid), "rank": i + 1, "similarity": round(sim, 4)}
+                   for i, (cid, sim) in enumerate(vector[:k])],
+        "fused": fused,
+    }
