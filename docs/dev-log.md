@@ -7,6 +7,28 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · Monitoring: cost, latency, pipeline state, review workload, override rate
+
+- **Problem:** Nothing showed how the system behaves in operation: what model calls cost and how
+  long they take, whether documents failed, how much review work is open and how often
+  reviewers overrule the system – the numbers the briefing names for the monthly review with Legal.
+- **Cause:** The data existed (`llm_calls`, the register's audit log, the workflow database,
+  stored evaluation runs) but no view combined it.
+- **Technique and why:** `GET /monitoring`: model calls per purpose (calls, cost, tokens,
+  p50 / p95 / max latency) and per day; pipeline (status, flags, extraction failures, last
+  ingest, prompt versions); workflow (runs, triage, review states, open and disputed rows,
+  decisions, override rate = rejected + corrected / all decisions, archive copies and refusals);
+  quality of every stored evaluation run. Computed on request, no extra storage.
+- **Rejected alternative:** A separate metrics store or Application Insights already in the
+  prototype (target in Azure, overhead now); counting overrides per run only (hides the trend).
+- **Metric before → after:** Monitored signals 0 → 4 groups. First readings: extraction p50 5.0 s,
+  p95 36.1 s; checker p50 1.7 s; one embedding call 40 s (rate-limit retry); 3 flagged documents
+  (M14 injection, C11 contradiction, C16 base missing); 0 extraction failures. Test: 1 confirmation
+  + 1 rejection → override rate 0.5, 3 rows open. 49 tests green.
+- **Links:** decision 63 (Notion pending); `api/quality.py`
+
+---
+
 ## 2026-10-30 · Compare two contracts: duplicate against original, contract against contract
 
 - **Problem:** Dima wants to look into the contract a duplicate is similar to, and to compare any

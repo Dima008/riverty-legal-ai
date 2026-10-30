@@ -313,3 +313,8 @@ Verworfen: Textbericht im Frontend parsen; zweite Auswertung nur für die API.
 Analyse · Entschieden · Kurz erwähnen
 Begründung: Wunsch von Dima, bei Dubletten in den ähnlichen Vertrag schauen zu können; zugleich die zweite Bedeutung von „vergleichen“ (Vertrag gegen Vertrag, vgl. Entscheidung 16). Ohne Modell: Beziehung (Dublette, Familie), gleiche Datei / gleicher Text per Hash, Ähnlichkeit, Metadaten-Unterschiede, jede Playbook-Klausel für beide, Text je Abschnitt gepaart (Nummer, sonst ähnlichster Text) mit Wortunterschieden. M15 vs M01: identischer Text in anderer Datei; M01 vs M02: 92,8 %, Haftungsklausel nur 43,8 % ähnlich, aber in beiden als vorhanden erkannt.
 Verworfen: Modell beschreibt Unterschiede (Kosten, kann Unterschiede erfinden); ein Diff über den ganzen Text (für Juristen unlesbar).
+
+### 63 (in Notion ausstehend). Monitoring aus vorhandenen Daten: Kosten, Latenz, Pipeline-Zustand, Prüflast und Korrekturquote
+Governance · Entschieden · Kurz erwähnen
+Begründung: Wunsch von Dima; setzt den Monitoring-Baustein aus Governance & Einführung um (Recall, Korrekturquote, Prüflast, Kosten; monatliche Durchsicht mit Legal). GET /monitoring rechnet bei Abruf aus llm_calls, Audit-Log, Workflow-Datenbank und gespeicherten Auswertungen: Aufrufe je Zweck mit Kosten, Tokens und Latenz (p50/p95/max), Dokumentstatus und Markierungen, offene und strittige Fälle, Entscheidungen und Korrekturquote, Archivkopien, Qualität je Lauf. Im Betrieb: Azure Monitor / Application Insights.
+Verworfen: Eigener Metrikspeicher oder Application Insights schon im Prototyp (Aufwand); Korrekturquote nur je Lauf (verdeckt den Trend).
