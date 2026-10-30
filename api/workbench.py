@@ -48,13 +48,16 @@ def db_path() -> Path:
 def connect() -> sqlite3.Connection:
     path = db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(path, timeout=30)
+    # FastAPI opens, uses and closes the connection in separate thread-pool calls that can run on
+    # different threads (F13). Each connection still serves only one request at a time.
+    con = sqlite3.connect(path, timeout=30, check_same_thread=False)
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)
     return con
 
 
 def get_wb() -> Iterator[sqlite3.Connection]:
+    """A fresh workflow-database connection per request (same pattern as deps.get_con)."""
     con = connect()
     try:
         yield con

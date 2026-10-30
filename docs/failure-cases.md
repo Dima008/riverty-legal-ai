@@ -20,7 +20,7 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F10 | Services agreement flagged as amendment, silently dropped from all queries (C11) | extraction | nobody at first - found by reading the families log | fixed (consistency check), automated test missing |
 | F11 | The checker varies too: a general audit right accepted in one run, rejected in the next (C05, C08, C20, gpt-4.1) | checks / definition | `eval.repeat` stability report (model comparison) | question for Legal, direction safe |
 | F12 | Bigger model reports an exclusion of punitive damages as limitation of liability, CUAD label says no cap (C13, gpt-4.1) | definition | evaluation (CUAD agreement 19 → 18 of 20) | question for Legal |
-| F13 | Two requests at the same time break the workflow database; the audit log then shows "No actions yet." | api, frontend | nobody at first - found by the repo audit, reproduced: 215 of 360 concurrent requests → 500 | open |
+| F13 | Two requests at the same time break the workflow database; the audit log then shows "No actions yet." | api, frontend | nobody at first - found by the repo audit, reproduced: 215 of 360 concurrent requests → 500 | fixed, regression test |
 | F14 | A forced re-ingest removes a contract from search, drops its injection flag and turns the original into the copy (M01, M14) | ingest / run | nobody at first - found by the repo audit, reproduced on a register copy | open |
 | F15 | With a document-type filter, keyword search cuts before it filters: the BM25 list comes back empty, hybrid search silently turns vector-only | index/search | nobody at first - found by the repo audit, reproduced on a register copy | open |
 | F16 | "Not governed by US law" reports every contract under a US state's law; the coverage assertion can never fail | queries | nobody at first - found by the repo audit, reproduced on a register copy | open |
@@ -453,10 +453,22 @@ passes `check_same_thread=False`. The UI hides the failure: `AuditLog.tsx:35`
 
 **Layer.** API (and frontend for the silent empty state). Sequential tests can never see it.
 
-**Fix.** Open.
+**Fix.** `api/workbench.py` opens the connection with `check_same_thread=False`, like the
+register connection. Each connection is still opened, used and closed by exactly one request, so
+the check protected nothing here. The audit log and the what-if table now show an error instead
+of an empty state (fail loudly, decision 44).
 
-**Reproduce.** Scripts in the repro folder of the session (`repro_inprocess.py`,
-`repro_uvicorn.py`); a regression test with concurrent requests is part of the fix.
+**Proof.** The regression test was written first and failed:
+
+```
+tests/test_api_concurrency.py  (10 concurrent GETs, three bursts, /runs and /audit)
+before:  AssertionError: assert [200, 'Progra...ngError', ...] == [200, 200, 20...200, 200, ...]
+after:   55 passed
+real uvicorn, the same repro script, three runs (keep-alive and not):
+         180 of 180 concurrent requests -> 200; 0 "Exception in ASGI application", 0 x 500
+```
+
+**Reproduce.** `python -m pytest tests/test_api_concurrency.py` (automated test).
 
 ---
 

@@ -7,6 +7,29 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · F13: two requests at once no longer break the workflow database
+
+- **Problem:** When two requests overlapped – two reviewers, a refresh during a review – many
+  failed with HTTP 500, and the audit log then showed "No actions yet.": the traceability screen
+  silently claimed that nothing had happened. Found by the repo audit, not by any test.
+- **Cause:** The workflow-database connection was opened without `check_same_thread=False`.
+  FastAPI opens, uses and closes a sync `yield` dependency in separate thread-pool calls that can
+  run on different threads. The UI turned the failed request into an empty list.
+- **Technique and why:** The same flag the register connection already uses – one connection
+  still serves exactly one request, so the check guarded nothing. A regression test fires 10
+  concurrent requests three times on /runs and /audit; it was written first and failed. The audit
+  log and the what-if table show errors instead of empty states (fail loudly, decision 44).
+- **Rejected alternative:** A lock around every request (serialises the API for nothing); one
+  shared connection (state shared between requests); an async SQLite driver (a new dependency
+  days before the interview).
+- **Metric before → after:** Concurrent requests failing on a real uvicorn server: 215 of 360 →
+  0 of 180 (three runs, 0 server exceptions). In-process: 38 of 60 raised → 0 (test). Tests
+  53 → 55 green.
+- **Links:** failure case F13; `api/workbench.py`, `tests/test_api_concurrency.py`,
+  `web/src/AuditLog.tsx`
+
+---
+
 ## 2026-10-30 · Storyline approved: 10 chapters in five acts, 17:15 min
 
 - **Problem:** The chapter list was a draft (four acts, 18:45 min) – too little buffer for

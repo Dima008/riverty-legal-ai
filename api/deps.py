@@ -24,8 +24,9 @@ def current_user(x_user: str | None = Header(None, description="Simulated review
 
 
 def get_con() -> Iterator[sqlite3.Connection]:
-    """A fresh connection per request. SQLite connections must not be shared between threads
-    (engineering issue in docs/failure-cases.md), and FastAPI runs requests in a thread pool."""
+    """A fresh connection per request, never shared between requests (engineering issue in
+    docs/failure-cases.md). Within one request FastAPI may open, use and close it on different
+    threads of its pool, which pipeline/store.connect allows (F13)."""
     con = connect()
     try:
         yield con

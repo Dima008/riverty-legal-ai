@@ -1,5 +1,5 @@
 // Who did what, when and why – every run, review and archive attempt (also refused ones).
-import { Avatar, Button } from "@fluentui/react-components";
+import { Avatar, Button, MessageBar, MessageBarBody } from "@fluentui/react-components";
 import {
   Archive20Regular,
   ArrowSync16Regular,
@@ -30,9 +30,14 @@ function summary(e: AuditEvent): string {
 }
 
 export function AuditLog() {
-  const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [events, setEvents] = useState<AuditEvent[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  // A failed request is shown as an error, never as "No actions yet." (F13: an empty audit log
+  // on the traceability screen would silently claim that nothing happened).
   const reload = useCallback(() => {
-    api.audit().then(setEvents).catch(() => setEvents([]));
+    api.audit()
+      .then((e) => { setEvents(e); setError(null); })
+      .catch((e: Error) => setError(e.message));
   }, []);
   useEffect(reload, [reload]);
 
@@ -46,9 +51,14 @@ export function AuditLog() {
         </div>
         <Button icon={<ArrowSync16Regular />} onClick={reload}>Refresh</Button>
       </div>
-      {events.length === 0 && <p className="lead">No actions yet.</p>}
+      {error && (
+        <MessageBar intent="error">
+          <MessageBarBody>The audit log could not be loaded: {error}</MessageBarBody>
+        </MessageBar>
+      )}
+      {!error && events?.length === 0 && <p className="lead">No actions yet.</p>}
       <ol className="audit-list">
-        {events.map((e, i) => (
+        {(events ?? []).map((e, i) => (
           <li key={i} className={`audit-item a-${e.action}`}>
             <span className="audit-icon">{ICON[e.action] ?? <PersonCircle20Regular />}</span>
             <div className="audit-body">

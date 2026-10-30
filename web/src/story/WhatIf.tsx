@@ -2,7 +2,7 @@
 // the safeguards you switch off, on a copy of the register: no model call, the same result every
 // time (eval/what_if.py, GET /what-if). Shows which contracts would slip through and which cases
 // would no longer get a second look.
-import { Button, Spinner, Switch } from "@fluentui/react-components";
+import { Button, MessageBar, MessageBarBody, Spinner, Switch } from "@fluentui/react-components";
 import { useEffect, useState } from "react";
 import { api, type WhatIfLayer, type WhatIfResult, type WhatIfRow, type WhatIfSide } from "../api";
 import { flagLabel, STATUS_SHORT, TRIAGE_LABEL } from "../labels";
@@ -26,6 +26,7 @@ export function WhatIf() {
   const [off, setOff] = useState<string[]>([]);
   const [result, setResult] = useState<WhatIfResult | null>(null);
   const [table, setTable] = useState<WhatIfRow[] | null>(null);
+  const [tableError, setTableError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const key = [...off].sort().join(",");
@@ -37,7 +38,7 @@ export function WhatIf() {
     api.catalogue()
       .then((c) => setClauses(Object.fromEntries(Object.entries(c.clauses).map(([k, v]) => [k, v.label]))))
       .catch(() => undefined);
-    api.whatIfEveryLayer().then(setTable).catch(() => setTable([]));
+    api.whatIfEveryLayer().then(setTable).catch((e: Error) => setTableError(e.message));
   }, []);
 
   useEffect(() => {
@@ -99,7 +100,9 @@ export function WhatIf() {
 
       <section className="wi-table-wrap">
         <div className="section-title small">Each safeguard switched off on its own – click a row to try it</div>
-        {!table ? (
+        {tableError ? (
+          <MessageBar intent="error"><MessageBarBody>The table could not be computed: {tableError}</MessageBarBody></MessageBar>
+        ) : !table ? (
           <Spinner size="tiny" label="Replaying the register once per safeguard (about 8 seconds)…" />
         ) : (
           <div className="wi-scroll">
