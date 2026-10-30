@@ -53,6 +53,7 @@ def test_model_alone_matches_the_evaluation_ablation(con):
 def test_what_if_api():
     layers = client.get("/what-if/layers").json()
     assert {layer["id"] for layer in layers["layers"]} == LAYER_IDS
+    assert {row["layer"] for row in client.get("/what-if/every-layer").json()} == LAYER_IDS | {"model_alone"}
     r = client.get("/what-if", params={"off": "checker"}).json()
     assert r["off"] == ["checker"] and [q["id"] for q in r["questions"]] == [f"Q{i}" for i in range(1, 9)]
     assert client.get("/what-if", params={"off": "checker,nonsense"}).status_code == 422

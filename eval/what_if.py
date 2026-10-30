@@ -159,6 +159,7 @@ def every_layer(con: sqlite3.Connection) -> list[dict]:
         r = what_if(con, off)
         rows.append({
             "layer": layer_id, "off": r["off"],
+            "recall_before": {q["id"]: q["recall"][0] for q in r["questions"]},
             "recall": {q["id"]: q["recall"][1] for q in r["questions"]},
             "precision": {q["id"]: q["precision"][1] for q in r["questions"]},
             **r["summary"],

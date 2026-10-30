@@ -7,6 +7,30 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · "Switch a safeguard off" as a panel in the proof chapter
+
+- **Problem:** The replay existed only as API and CLI. In the talk it has to be clickable,
+  readable for lawyers and fast enough to answer while the panel watches.
+- **Cause:** The first version returned the layer list together with the table "each layer off on
+  its own" (7.8 s on the first call), so the switches would have waited for it.
+- **Technique and why:** One switch per safeguard, grouped like the sandwich, each with what it
+  guards against and its failure cases (F1, F7, …). Presets for the beats of the story (both
+  quote checks off, recall first off, injection guard off, the model alone). Results in lawyers'
+  terms: "M08, M10 slip through", tiles "3/5" per question, and a table of what a lawyer would
+  see differently (status and review level before and after, signals no longer raised). Below,
+  the table "each safeguard off on its own" – a click on a row switches exactly that layer off.
+  The layer list is its own instant endpoint; the table loads in the background and is cached.
+  Placed in the chapter "Measured, not claimed" for now.
+- **Rejected alternative:** A chart of recall per layer (hides which contract slips through and
+  who loses the second look); a separate lab page outside the story (breaks the flow of the talk).
+- **Metric before → after:** Switches visible: 0 → 8. Time per click (API): 0.69–0.81 s; table:
+  7.8 s on the first call, then 0.004 s. Edge walkthrough (`whatif.mjs`): 7 of 7 checks pass
+  (presets, switch, table row, arrow keys on a switch do not turn the page, phone width 390 px:
+  horizontal overflow 193 px → 0), 0 console errors. Tests 53 green, build green.
+- **Links:** decision 67; `web/src/story/WhatIf.tsx`, `web/src/api.ts`, `api/quality.py`
+
+---
+
 ## 2026-10-30 · What if a safeguard were missing? Live failure demo by replay
 
 - **Problem:** Dima wants to show problems live – a missing check, a technique not used, a weak

@@ -13,6 +13,7 @@ import {
 import { useEffect, useRef, type ReactNode } from "react";
 import { navigate } from "../routing";
 import { CHAPTERS, TOTAL_MINUTES, type Chapter } from "./chapters";
+import { WhatIf } from "./WhatIf";
 
 const ACTS: Chapter["act"][] = ["Why", "How", "Proof", "Live"];
 
@@ -132,6 +133,7 @@ export function Story({ chapterId }: { chapterId: string }) {
 
 function ChapterBody({ chapter }: { chapter: Chapter }) {
   if (chapter.id === "live") return <ToolLaunch />;
+  if (chapter.id === "proof") return <WhatIf />;
   return <div className="story-draft">The content of this chapter follows once the storyline is approved.</div>;
 }
 

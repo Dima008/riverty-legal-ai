@@ -202,6 +202,61 @@ export interface Matrix {
   rows: MatrixRow[];
 }
 
+// What if a safeguard were missing (eval/what_if.py): replay on a copy of the register.
+export interface WhatIfLayer {
+  id: string;
+  group: string;
+  label: string;
+  guards: string;
+  failures: string[];
+}
+
+export interface WhatIfQuestion {
+  id: string;
+  question: string;
+  expected: string[];
+  recall: [number, number];      // [all safeguards, switched off]
+  precision: [number, number];
+  missed: string[];
+  wrongly_reported: string[];
+}
+
+export interface WhatIfSide {
+  status: string;
+  confidence: number | null;
+  reported: boolean;
+  triage: Triage | null;
+}
+
+export interface WhatIfChange {
+  doc_id: string;
+  clause_type: string;
+  before: WhatIfSide;
+  after: WhatIfSide;
+  no_longer_raised: string[];
+}
+
+export interface WhatIfSummary {
+  questions_changed: number;
+  contracts_missed: string[];
+  findings_changed: number;
+  second_look_lost: number;
+}
+
+export interface WhatIfResult {
+  off: string[];
+  questions: WhatIfQuestion[];
+  changes: WhatIfChange[];
+  summary: WhatIfSummary;
+}
+
+export interface WhatIfRow extends WhatIfSummary {
+  layer: string;
+  off: string[];
+  recall_before: Record<string, number>;
+  recall: Record<string, number>;
+}
+
 export interface ArchiveResult {
   doc_id: string;
   approved_by: string[];
@@ -271,4 +326,7 @@ export const api = {
     request<{ page: number; boxes: number[][] }>(`/documents/${id}/pages/${page}/locate?q=${encodeURIComponent(q)}`),
   text: (id: string) => request<DocText>(`/documents/${id}/text`),
   pageImageUrl: (id: string, page: number) => `/api/documents/${id}/pages/${page}/image`,
+  whatIfLayers: () => request<{ layers: WhatIfLayer[]; model_alone: string[] }>("/what-if/layers"),
+  whatIf: (off: string[]) => request<WhatIfResult>(`/what-if?off=${encodeURIComponent(off.join(","))}`),
+  whatIfEveryLayer: () => request<WhatIfRow[]>("/what-if/every-layer"),
 };

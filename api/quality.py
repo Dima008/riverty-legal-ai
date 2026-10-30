@@ -74,9 +74,16 @@ def evaluation(con: sqlite3.Connection = Depends(get_con)) -> dict:
 
 
 @router.get("/what-if/layers")
-def what_if_layers(con: sqlite3.Connection = Depends(get_con)) -> dict:
-    """The safeguards that can be switched off, and what each one alone changes on Q1-Q8."""
-    return {"layers": LAYERS, "model_alone": sorted(MODEL_ALONE), "every_layer": every_layer(con)}
+def what_if_layers() -> dict:
+    """The safeguards that can be switched off (instant, for the switches)."""
+    return {"layers": LAYERS, "model_alone": sorted(MODEL_ALONE)}
+
+
+@router.get("/what-if/every-layer")
+def what_if_every_layer(con: sqlite3.Connection = Depends(get_con)) -> list[dict]:
+    """Each safeguard switched off on its own, then the model alone: what changes on Q1-Q8.
+    About 8 s on the first call, then cached until the register changes."""
+    return every_layer(con)
 
 
 @router.get("/what-if")
