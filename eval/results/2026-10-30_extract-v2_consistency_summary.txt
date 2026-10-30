@@ -1,0 +1,19 @@
+Repeated runs: consistency (3 runs, {'extraction': [{'model': 'gpt-4.1-mini', 'prompt_version': 'extract-v2'}], 'documents': 47})
+Findings with the same status in every run: model said 233/235, after the checks 233/235
+
+id           recall per run        precision per run
+Q1           1.00 1.00 1.00           1.00 1.00 1.00
+Q2           1.00 1.00 1.00           1.00 1.00 1.00
+Q3           1.00 1.00 1.00           1.00 1.00 1.00
+Q4           1.00 1.00 1.00           1.00 1.00 1.00
+Q5           1.00 1.00 1.00           1.00 1.00 1.00
+Q6           1.00 1.00 1.00           1.00 1.00 1.00
+Q7           1.00 1.00 1.00           1.00 1.00 1.00
+Q8           1.00 1.00 1.00           1.00 1.00 1.00
+
+Q1 recall of the model alone per run: [1.0, 0.8, 0.8]
+Cost per run: [0.1123, 0.1082, 0.0914] USD · duration per run: [101, 127, 134] s
+
+Findings that changed between runs (2):
+  M08    liability_limitation     model said ['ABSENT', 'ABSENT', 'PRESENT'] -> register ['ABSENT', 'ABSENT', 'UNCLEAR']
+  M10    liability_limitation     model said ['ABSENT', 'PRESENT', 'ABSENT'] -> register ['ABSENT', 'UNCLEAR', 'ABSENT']

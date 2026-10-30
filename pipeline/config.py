@@ -8,7 +8,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 VAR = ROOT / "var"
-DB_PATH = VAR / "register.sqlite"
+# REGISTER_DB points a run at another register file, e.g. an evaluation run (eval/repeat.py),
+# so the production register is never touched by experiments.
+DB_PATH = Path(os.environ.get("REGISTER_DB", VAR / "register.sqlite"))
 
 # Source folders. In production a Microsoft Graph connector on the SharePoint
 # library replaces the watch folder; the rest of the pipeline stays the same.
@@ -51,3 +53,11 @@ AZURE_OPENAI_API_KEY = os.environ.get("AZURE_OPENAI_API_KEY", "")
 AZURE_OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-10-21")
 CHAT_DEPLOYMENT = os.environ.get("AZURE_OPENAI_CHAT_DEPLOYMENT", "gpt-4.1-mini")
 EMBED_DEPLOYMENT = os.environ.get("AZURE_OPENAI_EMBED_DEPLOYMENT", "text-embedding-3-small")
+
+
+def check_prices() -> None:
+    """Fail loudly: a model without a price would be logged as $0 and the cost view would lie."""
+    missing = [d for d in (CHAT_DEPLOYMENT, EMBED_DEPLOYMENT) if d not in PRICES_PER_MILLION]
+    if missing:
+        raise RuntimeError(f"No price for {missing} in config.PRICES_PER_MILLION - "
+                           "add the Azure price per 1M tokens before running.")

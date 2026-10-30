@@ -14,7 +14,7 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F4 | Correct quotes rejected because the model joined them with "..." (C09, C10) | checks | evaluation (CUAD) | fixed |
 | F5 | Absence signals too broad: "haft" in "mangelhaft" | checks | inspection of review flags | fixed |
 | F6 | A new copy turned the original into the duplicate | families | end-to-end test with the inbox | fixed, automated test still missing |
-| F7 | Same contract, same prompt, different answer (M10) | extraction | checks catch both variants | accepted, measured in step 6 |
+| F7 | Same contract, same prompt, different answer (M08, M10) | extraction | checks catch every variant | measured: 2 of 235 findings flip between runs, all caught |
 | F8 | Gold label disagrees with our definition (CUAD C03) | definition | evaluation | question for Legal |
 | F9 | Same scan, other machine, different OCR text (M18) | ingest | nobody at first - found by the offline smoke test on the laptop | no impact on gold set, cause open |
 | F10 | Services agreement flagged as amendment, silently dropped from all queries (C11) | extraction | nobody at first - found by reading the families log | fixed (consistency check), automated test missing |
@@ -173,9 +173,24 @@ Ablation  id   recall model  recall checked  missed by the model alone
           Q1           0.60            1.00  ['M08', 'M10']
 ```
 
-**Lesson.** One run is not a measurement. Model-alone recall on Q1 was 0.80 in one run and 0.60
-in the next; with the checks it was 1.00 both times. The checks make the result stable, not the
-model. Step 6 measures consistency over several runs.
+Runs D-F (`python -m eval.repeat --runs 3 --label consistency`, three fresh registers, same
+model and prompt, 2026-10-30, `eval/results/2026-10-30_extract-v2_consistency_summary.txt`):
+
+```
+Findings with the same status in every run: model said 233/235, after the checks 233/235
+Q1-Q8 recall and precision: 1.00 in every run
+Q1 recall of the model alone per run: [1.0, 0.8, 0.8]
+Findings that changed between runs (2):
+  M08    liability_limitation     model said ['ABSENT', 'ABSENT', 'PRESENT'] -> register ['ABSENT', 'ABSENT', 'UNCLEAR']
+  M10    liability_limitation     model said ['ABSENT', 'PRESENT', 'ABSENT'] -> register ['ABSENT', 'UNCLEAR', 'ABSENT']
+```
+
+Over all five runs (cloud, laptop, D, E, F) the model alone found 0.80, 0.60, 1.00, 0.80 and
+0.80 of the contracts without a liability cap; with the checks 1.00 every time. Only the two
+hardest traps flip, and every wrong "present" became "unclear", never a silent miss.
+
+**Lesson.** One run is not a measurement. The model varies on exactly the cases that are hard
+for it; the checks make the result stable, not the model.
 
 ---
 
@@ -307,6 +322,7 @@ the workbench shows coverage as "checked / in scope / excluded, and why".
 | No quota for the newest models in the EU data zone on the trial account | gpt-4.1-mini Global Standard for the prototype; EU data zone required for production |
 | HTTP 429 rate limit on embeddings | honour `Retry-After`, batches of 16 |
 | SQLite "bad parameter or other API misuse" under parallel extraction | worker threads never touch the shared connection; one connection per thread for cost logging |
+| Found while preparing the model comparison (code reading, no wrong number yet): a deployment without an entry in `PRICES_PER_MILLION` was logged with cost $0 - silently, so the cost view would have shown a bigger model as free | `config.check_prices()` - the pipeline refuses to start without a price for every configured model (fail loudly, like F2) |
 | First API smoke test on the laptop "passed" against the wrong server: port 8000 belongs to another local app (`/health` answered `{"status":"ok","scenario":"sunny_surplus"}`), our uvicorn failed with WinError 10048 | API runs on port 8010; `/health` now names the service (`"service": "legal-workbench-api"`) and the test checks it |
 
 ## Caveat for the presentation

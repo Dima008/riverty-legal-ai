@@ -112,8 +112,9 @@ computed from these signals, never asked from the model. Every finding keeps `mo
 
 **What went wrong.** F1: in M08 the model filed the data-protection clause as a limitation of
 liability – with a real quote. Quote verification passed; vocabulary check and checker caught
-it. F7: the same prompt at temperature 0 gives different answers (M10). Model alone: Q1
-recall 0.80 in one run, 0.60 in the next; with the checks 1.00 both times.
+it. F7: the same prompt at temperature 0 gives different answers. Measured over five runs: 233
+of 235 findings are stable; only M08 and M10 flip. The model alone found 0.80, 0.60, 1.00,
+0.80, 0.80 of Q1; with the checks 1.00 every time (`eval/repeat.py`).
 
 **Live.** `GET /documents/M08/findings` → `liability_limitation.layers`:
 

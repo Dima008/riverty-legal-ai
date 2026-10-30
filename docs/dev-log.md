@@ -7,6 +7,30 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · Repeated runs measure the model's variance; price guard against "free" models
+
+- **Problem:** "One run is not a measurement" (F7) – how much do the answers change between runs
+  at temperature 0, and do the checks catch it? A second model could not be compared yet.
+  Reading the cost code also showed that a model without a price was logged as $0, silently.
+- **Cause:** Every experiment would have overwritten the production register; the cost lookup
+  fell back to price 0 instead of failing.
+- **Technique and why:** `REGISTER_DB` points a run at another register file; `pipeline.run
+  --no-index` skips the search index; `eval/repeat.py` builds N fresh registers (optionally with
+  another deployment), evaluates each like production and writes a summary: answers per question
+  per run, and which findings flipped – before and after the checks. `config.check_prices()`
+  stops the pipeline before the first call if a configured model has no price (fail loudly, F2).
+- **Rejected alternative:** Re-extract into the production register (loses the reference run);
+  measure variance only on Q1 (hides which findings flip); warn about a missing price in the log.
+- **Metric before → after:** Runs compared: 2 → 5. Findings stable in every run: 233 of 235;
+  only M08 and M10 flip, every wrong "present" became "unclear". Recall and precision 1.0 on
+  Q1–Q8 in all runs; model alone on Q1: 1.00 / 0.80 / 0.80. Cost per run $0.112 / $0.108 / $0.091
+  (cached prompt tokens 47k → 62k → 118k), 101–134 s per run. Missing price: logged as $0 →
+  refused before start. 49 tests green.
+- **Links:** failure case F7 (now measured), engineering issue "price"; decision 64 (Notion
+  pending); `eval/repeat.py`, `pipeline/config.py`, `pipeline/run.py`
+
+---
+
 ## 2026-10-30 · Monitoring: cost, latency, pipeline state, review workload, override rate
 
 - **Problem:** Nothing showed how the system behaves in operation: what model calls cost and how

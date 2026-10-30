@@ -13,7 +13,7 @@ import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from .config import DB_PATH, VAR
+from .config import DB_PATH
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS documents (
@@ -91,7 +91,7 @@ def now() -> str:
 
 
 def connect() -> sqlite3.Connection:
-    VAR.mkdir(parents=True, exist_ok=True)
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)

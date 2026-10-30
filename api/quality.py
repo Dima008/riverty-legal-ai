@@ -43,21 +43,32 @@ def _summary(name: str, data: dict) -> dict:
     }
 
 
+def _load(path) -> dict | None:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        return None
+
+
 def stored_runs() -> list[dict]:
-    """Every stored evaluation run, oldest first; files that are not evaluation results are skipped."""
+    """Every stored evaluation run, oldest first (files without gold-question results are skipped)."""
     runs = []
     for path in sorted(RESULTS.glob("*.json")):
-        try:
-            runs.append(_summary(path.name, json.loads(path.read_text(encoding="utf-8"))))
-        except (ValueError, KeyError):
-            continue
+        data = _load(path)
+        if data and isinstance(data.get("questions"), list):
+            runs.append(_summary(path.name, data))
     return runs
+
+
+def repeated_runs() -> list[dict]:
+    """Summaries of repeated runs and model comparisons written by eval/repeat.py."""
+    return [d for p in sorted(RESULTS.glob("*_summary.json")) if (d := _load(p)) and "stable_status" in d]
 
 
 @router.get("/evaluation")
 def evaluation(con: sqlite3.Connection = Depends(get_con)) -> dict:
-    """Live evaluation of the current register plus every stored run."""
-    return {"live": evaluate(con), "runs": stored_runs(), "caveat": CAVEAT}
+    """Live evaluation of the current register, every stored run and the repeated-run summaries."""
+    return {"live": evaluate(con), "runs": stored_runs(), "repeats": repeated_runs(), "caveat": CAVEAT}
 
 
 # ---------------------------------------------------------------------------- monitoring

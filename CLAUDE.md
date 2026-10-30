@@ -71,7 +71,9 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 python -m pipeline.run              # build/update the register (idempotent: file hash + prompt version)
 python -m pipeline.run --watch      # auto-ingest files dropped into data/inbox
 python -m pipeline.run --reassess   # replay deterministic checks on stored model output, no cost
-python -m eval.check_register       # must stay at recall 1.0 on Q1–Q8
+python -m eval.check_register       # must stay at recall 1.0 on Q1–Q8 (--json to store the numbers)
+python -m eval.repeat --runs 3 --label consistency   # fresh registers in var/eval_runs, compare runs (~$0.11 each)
+python -m eval.repeat --runs 1 --label gpt-4.1 --chat-deployment gpt-4.1   # another model (price in config first)
 python -m pipeline.show [M08]       # overview of the register or one contract with all evidence
 uvicorn api.main:app --reload --port 8010   # Workbench API, docs at http://127.0.0.1:8010/docs (8000 is taken on the laptop)
 python -m pytest                    # API tests against the built register, no model calls
