@@ -2,7 +2,8 @@
 - /evaluation: the evaluation against the gold set, live from the register and from stored runs
   in eval/results/*.json (repeated runs, other models);
 - /monitoring: what operations watches - cost, tokens and latency of every model call, the state
-  of the pipeline, the review workload and how often reviewers overrule the system.
+  of the pipeline, the review workload and how often reviewers overrule the system;
+- /what-if: the register replayed with safeguards switched off (live failure demo, on a copy).
 """
 
 from __future__ import annotations
@@ -11,9 +12,10 @@ import json
 import sqlite3
 from collections import Counter
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from eval.check_register import evaluate
+from eval.what_if import LAYERS, MODEL_ALONE, every_layer, what_if
 from pipeline import config, queries
 from pipeline.store import now
 
@@ -69,6 +71,24 @@ def repeated_runs() -> list[dict]:
 def evaluation(con: sqlite3.Connection = Depends(get_con)) -> dict:
     """Live evaluation of the current register, every stored run and the repeated-run summaries."""
     return {"live": evaluate(con), "runs": stored_runs(), "repeats": repeated_runs(), "caveat": CAVEAT}
+
+
+@router.get("/what-if/layers")
+def what_if_layers(con: sqlite3.Connection = Depends(get_con)) -> dict:
+    """The safeguards that can be switched off, and what each one alone changes on Q1-Q8."""
+    return {"layers": LAYERS, "model_alone": sorted(MODEL_ALONE), "every_layer": every_layer(con)}
+
+
+@router.get("/what-if")
+def what_if_replay(off: str = Query("", description="Layer ids, comma-separated, e.g. checker,clause_vocabulary"),
+                   con: sqlite3.Connection = Depends(get_con)) -> dict:
+    """The stored model answers replayed with these layers switched off - on a copy of the
+    register, without a model call. Shows which contracts would slip through and who would no
+    longer take a second look."""
+    try:
+        return what_if(con, [x for x in off.split(",") if x])
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 # ---------------------------------------------------------------------------- monitoring

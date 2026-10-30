@@ -42,7 +42,12 @@ def pr(found: set, expected: set) -> tuple[float, float]:
 
 
 # ---------------------------------------------------------------------------- compute
-def _gold_questions(con, gold: dict) -> list[dict]:
+def load_gold() -> dict:
+    """The gold questions Q1-Q8 with their expected contracts (data/gold_queries.json)."""
+    return {q["id"]: q for q in json.loads((config.DATA / "gold_queries.json").read_text(encoding="utf-8"))}
+
+
+def gold_questions(con, gold: dict) -> list[dict]:
     """Q1-Q8 answered from the register, compared with the expected contracts."""
     legacy = queries.legacy_names(con)
     answers = {
@@ -147,12 +152,12 @@ def _cuad(con, cuad: dict) -> dict:
 
 def evaluate(con) -> dict:
     """Every number of the evaluation, as data. No model call."""
-    gold = {q["id"]: q for q in json.loads((config.DATA / "gold_queries.json").read_text(encoding="utf-8"))}
+    gold = load_gold()
     with open(config.DATA / "ground_truth.csv", encoding="utf-8") as f:
         truth = {r["doc_id"]: r for r in csv.DictReader(f)}
     with open(config.DATA / "cuad_subset" / "labels.csv", encoding="utf-8") as f:
         cuad = {r["doc_id"]: r for r in csv.DictReader(f)}
-    questions = _gold_questions(con, gold)
+    questions = gold_questions(con, gold)
     models = con.execute("SELECT DISTINCT model, prompt_version FROM metadata").fetchall()
     return {
         "config": {"extraction": [{"model": m[0], "prompt_version": m[1]} for m in models],

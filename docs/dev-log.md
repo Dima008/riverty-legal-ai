@@ -7,6 +7,37 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · What if a safeguard were missing? Live failure demo by replay
+
+- **Problem:** Dima wants to show problems live – a missing check, a technique not used, a weak
+  prompt. "The checker catches F1" was only told, never shown; and live model calls with a bad
+  prompt cost money, take time and can vary (F7) in front of the panel.
+- **Cause:** The checks ran as one fixed stack; a layer could not be removed without editing code.
+- **Technique and why:** Every safeguard got a switch (`off` in `extract.assess` / `reassess`,
+  default: nothing off). `eval/what_if.py` copies the register into memory (SQLite backup),
+  replays the stored model answers with the chosen layers off, re-links the families and
+  answers Q1–Q8 exactly as production does – no model call, the same result every time. Layers
+  are cut by purpose, not by code line: "injection guard" removes the quote fence, the confidence
+  cap and the four-eyes flag together. Two invariants are tests: with nothing switched off the
+  replay equals the register, and a safeguard only ever adds caution (switching one off never
+  finds more, reports more or sends more to a human). "Model alone" computed this way equals the
+  evaluation's ablation. API: `GET /what-if?off=…`, `GET /what-if/layers`; CLI `python -m eval.what_if`.
+- **Rejected alternative:** Live calls with weakened prompts as the main demo (cost, latency,
+  variance; stays an option for one contract); recomputing "without layer X" from the stored
+  flags (a second copy of the confidence logic); replaying into the production register.
+- **Metric before → after:** Safeguards that can be shown switched off: 0 → 8. Replay with nothing
+  off = register: 235 of 235 findings identical, 0.72 s; table of all layers 7.8 s (then cached).
+  One layer off at a time, Q1–Q8 recall stays 1.00 – the checks overlap: vocabulary check and
+  checker both catch M08 and M10. Both off → Q1 0.60 (M08, M10 slip through); recall first off →
+  Q1 0.60; injection guard off → M14 loses the four-eyes check (3 findings); absence signals off
+  → 5 findings lose their review; amendment check off → C11 drops out of every answer (F10); quote
+  check and OCR guard → no change on today's data (every model quote exists; no low-quality scan
+  yet – the handwritten H01 will test it). Tests 49 → 53 green; evaluation unchanged.
+- **Links:** decision 67 (Notion pending); `eval/what_if.py`, `pipeline/extract.py`,
+  `api/quality.py`, `tests/test_what_if.py`; explorer station 4
+
+---
+
 ## 2026-10-30 · One website: the case study first, the tool as the last stop
 
 - **Problem:** Presentation and tool should be one website: click through from the case study to

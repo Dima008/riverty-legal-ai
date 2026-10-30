@@ -75,6 +75,7 @@ python -m eval.check_register       # must stay at recall 1.0 on Q1–Q8 (--json
 python -m eval.repeat --runs 3 --label consistency   # fresh registers in var/eval_runs, compare runs (~$0.11 each)
 python -m eval.repeat --runs 1 --label gpt-4.1 --chat-deployment gpt-4.1   # another model (price in config first)
 python -m pipeline.show [M08]       # overview of the register or one contract with all evidence
+python -m eval.what_if [checker ...]   # what if a safeguard were missing: replay on a copy, no model call
 uvicorn api.main:app --reload --port 8010   # Workbench API, docs at http://127.0.0.1:8010/docs (8000 is taken on the laptop)
 python -m pytest                    # API tests against the built register, no model calls
 cd web && npm run dev               # Workbench UI on http://localhost:5173 (proxies /api to 8010; API_URL overrides)

@@ -255,14 +255,16 @@ def check_findings(adapter, doc_id: str, result: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------- deterministic checks
-def assess(con, doc_id: str, result: dict, checks: dict, text: str) -> list[dict]:
-    """Run every check on every finding and keep all signals, so we can see which layer caught what."""
+def assess(con, doc_id: str, result: dict, checks: dict, text: str,
+           off: frozenset[str] = frozenset()) -> list[dict]:
+    """Run every check on every finding and keep all signals, so we can see which layer caught what.
+    `off` switches layers off for the what-if demo (eval/what_if.py); production never passes it."""
     doc = con.execute("SELECT status FROM documents WHERE doc_id=?", (doc_id,)).fetchone()
     offsets = json.loads(con.execute("SELECT page_offsets_json FROM doc_text WHERE doc_id=?",
                                      (doc_id,)).fetchone()[0])
     chunks = con.execute("SELECT chunk_id, section_title, char_start, char_end FROM chunks WHERE doc_id=? "
                          "ORDER BY seq", (doc_id,)).fetchall()
-    injected = catalogue.injection_spans(text)
+    injected = [] if "injection_guard" in off else catalogue.injection_spans(text)
     rows = []
     for key, c in result["clauses"].items():
         status, quote, flags, failed = c["status"], c["quote"], [], []
@@ -270,11 +272,11 @@ def assess(con, doc_id: str, result: dict, checks: dict, text: str) -> list[dict
         if status == "PRESENT":
             if quote:
                 score, start, end = locate_quote(quote, text)
-            if score < config.QUOTE_MATCH_MIN_SCORE:
+            if score < config.QUOTE_MATCH_MIN_SCORE and "quote_found" not in off:
                 failed.append(("quote_not_verified", 0.4))
             if start >= 0 and any(s <= start < e or s < end <= e for s, e in injected):
                 failed.append(("quote_in_suspected_injection", 0.2))
-            if quote and not catalogue.keyword_hits(key, quote):
+            if quote and not catalogue.keyword_hits(key, quote) and "clause_vocabulary" not in off:
                 failed.append(("quote_lacks_clause_terms", 0.4))
             verdict = checks.get(key)
             if verdict is None:
@@ -289,7 +291,7 @@ def assess(con, doc_id: str, result: dict, checks: dict, text: str) -> list[dict
             else:
                 confidence = 0.95 if verdict else 0.8
         elif status == "ABSENT":
-            hits = catalogue.absence_signals(key, text)
+            hits = [] if "absence_signals" in off else catalogue.absence_signals(key, text)
             if hits:
                 confidence = 0.6
                 s, e = hits[0]
@@ -298,10 +300,11 @@ def assess(con, doc_id: str, result: dict, checks: dict, text: str) -> list[dict
                 confidence = 0.9
         else:
             confidence = 0.3
-        if doc["status"] == "LOW_QUALITY":
+        ocr = None if "ocr_guard" in off else doc["status"]
+        if ocr == "LOW_QUALITY":
             confidence = min(confidence, 0.5)
             flags.append("low_ocr_quality")
-        elif doc["status"] == "OCR_DONE":
+        elif ocr == "OCR_DONE":
             confidence -= 0.05
             flags.append("ocr_text")
         if injected:
@@ -335,9 +338,12 @@ def check_metadata(result: dict) -> tuple[bool, list[str]]:
 
 
 def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], text_sha: str, injected: bool,
-           actor: str = "pipeline") -> None:
+           actor: str = "pipeline", off: frozenset[str] = frozenset()) -> None:
     a = result["amendment"]
-    is_amendment, doc_flags = check_metadata(result)
+    if "amendment_check" in off:   # what-if only: trust the model's amendment flag as it is
+        is_amendment, doc_flags = bool(a["is_amendment"]), []
+    else:
+        is_amendment, doc_flags = check_metadata(result)
     with transaction(con):
         con.execute(
             "INSERT OR REPLACE INTO metadata (doc_id, doc_type, title, own_entity_name, current_own_entity_name,"
@@ -367,16 +373,19 @@ def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], text_
               metadata_flags=doc_flags)
 
 
-def reassess(con, log=print) -> int:
+def reassess(con, log=print, off: frozenset[str] = frozenset()) -> int:
     """Replay the deterministic checks on the stored model output - no model call, no cost.
-    Used after tuning a check; the model answers stay exactly as they were."""
+    Used after tuning a check; the model answers stay exactly as they were. `off` is for the
+    what-if demo on a copy of the register (eval/what_if.py): those layers are left out."""
     rows = con.execute("SELECT m.doc_id, m.raw_json, m.text_sha256, t.text FROM metadata m "
                        "JOIN doc_text t ON t.doc_id = m.doc_id").fetchall()
     for r in rows:
         raw = json.loads(r["raw_json"])
-        assessed = assess(con, r["doc_id"], raw["extraction"], raw["checks"], r["text"])
+        checks = {} if "checker" in off else raw["checks"]   # without the checker: no verdicts
+        injected = "injection_guard" not in off and bool(catalogue.injection_spans(r["text"]))
+        assessed = assess(con, r["doc_id"], raw["extraction"], checks, r["text"], off)
         _store(con, r["doc_id"], raw["extraction"], raw["checks"], assessed, r["text_sha256"],
-               bool(catalogue.injection_spans(r["text"])), actor="pipeline:reassess")
+               injected, actor="pipeline:reassess", off=off)
     log(f"reassessed {len(rows)} documents without model calls")
     return len(rows)
 

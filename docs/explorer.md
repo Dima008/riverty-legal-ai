@@ -138,6 +138,13 @@ flags the phrase, the document is marked as containing text addressed to softwar
 FOUR_EYES. The evidence view jumps to page 3 and highlights exactly that note
 (`GET /documents/M14/findings/liability_limitation/highlight` → `kind: signal`).
 
+**Switch it off (live failure demo).** Every layer has a switch. The stored model answers are
+replayed without it on a copy of the register – no model call, 0.7 s, same result every time.
+`GET /what-if?off=clause_vocabulary,checker` → Q1 recall 1.00 → 0.60, M08 and M10 slip through.
+One layer alone changes nothing on Q1: the vocabulary check and the checker overlap (defense in
+depth). `GET /what-if?off=injection_guard` → M14 loses its four-eyes check.
+`GET /what-if/layers` → the table "each layer off on its own" (`python -m eval.what_if`).
+
 **Diagram.** A vertical stack: model on top, one row per check with ✓ / ✗, register result at
 the bottom. Click a contract to replay its finding through the stack. In the workbench this is
 "Model proposed → n checks, m failed → Register says" plus the checks as a timeline.
