@@ -4,8 +4,9 @@
 
 Port 8010, not the default 8000: on the demo laptop another local app already uses 8000.
 
-Step 1: read-only register and pipeline-explorer endpoints. The workflow (runs, triage,
-approval, archive copy) follows in the next steps.
+register.py: read-only register and pipeline-explorer endpoints (step 1).
+workflow.py: runs over the whole portfolio with coverage and triage (step 2); review,
+approval and archive copy follow in step 3.
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pipeline import config
 
-from . import register
+from . import register, workflow
 
 app = FastAPI(
     title="Legal Workbench API",
@@ -27,6 +28,7 @@ app = FastAPI(
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
                    allow_methods=["*"], allow_headers=["*"])
 app.include_router(register.router)
+app.include_router(workflow.router)
 
 
 @app.get("/health")

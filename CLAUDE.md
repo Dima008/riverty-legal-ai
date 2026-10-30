@@ -58,7 +58,8 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 | `data/` | Synthetic gold set (every page watermarked "SYNTHETIC TEST DOCUMENT"), CUAD subset (CC BY 4.0), `ground_truth.csv`, `gold_queries.json` |
 | `docs/` | `pipeline.md`, `failure-cases.md`, `setup-windows.md`, `context/` (task, briefing, decisions); ADRs later in `docs/adr/` |
 | `pipeline/evidence.py` | Maps a verified quote back onto the page's word boxes (highlight, also across page breaks) |
-| `api/` | FastAPI: `register.py` read-only register + pipeline-explorer endpoints; workflow follows |
+| `pipeline/portfolio.py` | Portfolio checks: fixed check types, coverage (never drop a contract silently), triage |
+| `api/` | FastAPI: `register.py` read-only register + explorer; `workflow.py` runs, audit; `workbench.py` workflow DB |
 | `tests/` | pytest against the built register; check invariants, not one model answer (F7) |
 | `var/register.sqlite` | Generated register (git-ignored) |
 | `.claude/skills/` | Project skills: `record-failure`, `log-decision`, `run-eval` |
@@ -114,13 +115,18 @@ with fixed-size comparison, prompt, `/search` with BM25/vector/RRF lists), 12 te
 API decisions 52–55: server-rendered page image + word boxes, triage rule, two simulated
 reviewers, planner without model first.
 
+API step 2 done: `pipeline/portfolio.py` (fixed check types, plan validation, coverage
+"in scope = checked + excluded with reason", triage) and `api/workflow.py` (`/checks`,
+`/examples`, `/users`, `POST /runs`, `/runs`, `/audit`). Runs are stored as snapshots in
+`var/workbench.sqlite`, separate from the register (decision 56, still "Vorschlag"). All 8
+gold questions pass through `POST /runs`; 32 tests green.
+
 Next (Step 5 – Legal Workbench). Flow: question → plan (which register query / which
 contracts) → per-contract result with status, quote and page highlight → triage (CONFIRM /
 REVIEW / FOUR_EYES) → approval → archive copy via a mock storage API (write-only, idempotent
 by document hash) → audit log. Show coverage and cost per run.
-1. **API step 2**: `POST /runs` with the fixed check types (missing clause, legacy names, law,
-   duplicates) and coverage "checked / in scope / excluded + reason" (lesson from F10).
-2. **API step 3**: triage, review (two simulated reviewers via header), audit, archive copy to
+1. ~~API step 2~~ done (see above).
+2. **API step 3**: review (two simulated reviewers via header), audit, archive copy to
    the storage mock. **Step 4**: model planner (function calling over the same check types).
 3. **Frontend** `web/` (Vite + React + TS): Workbench plus **pipeline explorer** (decision 49).
 4. **Step 6 – Evaluation**: held-out test set (we tuned on the gold set), several runs
