@@ -20,6 +20,11 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F10 | Services agreement flagged as amendment, silently dropped from all queries (C11) | extraction | nobody at first - found by reading the families log | fixed (consistency check), automated test missing |
 | F11 | The checker varies too: a general audit right accepted in one run, rejected in the next (C05, C08, C20, gpt-4.1) | checks / definition | `eval.repeat` stability report (model comparison) | question for Legal, direction safe |
 | F12 | Bigger model reports an exclusion of punitive damages as limitation of liability, CUAD label says no cap (C13, gpt-4.1) | definition | evaluation (CUAD agreement 19 → 18 of 20) | question for Legal |
+| F13 | Two requests at the same time break the workflow database; the audit log then shows "No actions yet." | api, frontend | nobody at first - found by the repo audit, reproduced: 215 of 360 concurrent requests → 500 | open |
+| F14 | A forced re-ingest removes a contract from search, drops its injection flag and turns the original into the copy (M01, M14) | ingest / run | nobody at first - found by the repo audit, reproduced on a register copy | open |
+| F15 | With a document-type filter, keyword search cuts before it filters: the BM25 list comes back empty, hybrid search silently turns vector-only | index/search | nobody at first - found by the repo audit, reproduced on a register copy | open |
+| F16 | "Not governed by US law" reports every contract under a US state's law; the coverage assertion can never fail | queries | nobody at first - found by the repo audit, reproduced on a register copy | open |
+| F17 | A new file named like an existing contract (M03_copy.pdf) is merged into it, and the second contract is never read | ingest | nobody at first - found by the repo audit, reproduced in a temporary folder | open |
 
 ---
 
@@ -417,6 +422,185 @@ the disagreements, not only the score.
 
 ---
 
+F13–F17 were found by the repository audit (a workflow of reviewers with an adversarial second
+check, 2026-10-30) and then reproduced one by one, read-only, on copies of the databases
+(`var/register.sqlite` and `var/workbench.sqlite` had the same SHA-256 before and after).
+
+## F13 - Two requests at once break the workflow database (api)
+
+**Symptom.** When two requests to the workflow database overlap – two reviewers, two windows,
+a refresh during a review – many fail with HTTP 500. The audit log then shows "No actions yet."
+instead of an error: the traceability screen silently claims nothing happened.
+
+**Evidence** (10 concurrent GET /runs and GET /audit in-process, then against a real uvicorn):
+
+```
+burst 1/3 (10 concurrent) /runs: ['500', '500', '200', '500', '200', '500', '500', '200', '200', '500']  -> 4/10 ok
+burst 3/3 (10 concurrent) /audit: ['500', '500', '500', '500', '500', '200', '200', '500', '500', '500']  -> 2/10 ok
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread.
+The object was created in thread id 10288 and this is thread id 27320.
+  status sent 500 | ProgrammingError at api/workflow.py:122  rows = wb.execute("SELECT ts, actor, action, target, details_json FROM audit ...
+  status sent 200 | ProgrammingError at api/workbench.py:62  con.close()
+real uvicorn: 215 of 360 concurrent requests -> 500 "Internal Server Error"; 100 of 100 sequential -> 200
+```
+
+**Root cause.** `api/workbench.py:51` opens the connection with `sqlite3.connect(path, timeout=30)`.
+FastAPI runs the setup of a sync `yield` dependency, the endpoint and the teardown as separate
+thread-pool calls, which can land on different threads, and Python's SQLite binding refuses a
+connection used from another thread. The register connection (`pipeline/store.py:95`) already
+passes `check_same_thread=False`. The UI hides the failure: `AuditLog.tsx:35`
+`api.audit().then(setEvents).catch(() => setEvents([]))`.
+
+**Layer.** API (and frontend for the silent empty state). Sequential tests can never see it.
+
+**Fix.** Open.
+
+**Reproduce.** Scripts in the repro folder of the session (`repro_inprocess.py`,
+`repro_uvicorn.py`); a regression test with concurrent requests is part of the fix.
+
+---
+
+## F14 - A forced re-ingest damages two contracts (M01, M14)
+
+**Symptom.** `python -m pipeline.run --only M01,M14 --force` reports success, but afterwards
+neither contract can be found by search, M14 has lost its injection flag, and at the next
+families pass M01 – the original – becomes the duplicate of its copy M15 (F6 again).
+
+**Evidence** (on a register copy, 2026-10-30):
+
+```
+$ REGISTER_DB=<copy> python -m pipeline.run --only M01,M14 --force
+ingested 2: M01, M14
+chunks: 25
+run cost: $0.0000 in 0 model calls
+
+before  M14: chunks=13  chunks_fts=13  embeddings=13  flags='["prompt_injection_suspected"]'
+after   M14: chunks=13  chunks_fts=0   embeddings=0   flags=None
+        M01: chunks_fts 12 -> 0, embeddings 12 -> 0, flags '[]' -> None,
+             ingested_at '2026-10-30T12:09:08+00:00' -> '2026-10-30T18:12:20+00:00'
+search 'Urban Feet': before top5=['M14:001', 'M14:012', ...] -> after top5=[]
+governing_law_not NL: M14 FOUR_EYES -> CONFIRM
+a later plain `python -m pipeline.run`: nothing printed, damage persists
+after `--reassess` (next families pass): M01 duplicate_of='M15'
+  Q8   1.00 1.00 ['M15'] / ['M15']  ->  Q8   0.00 0.00 ['M01'] / ['M15']
+```
+
+**Root cause.** Four steps that are each reasonable on their own:
+1. `--force` blanks the file hash, so ingest re-reads the file (`run.py:28-31`), and the
+   documents row is rewritten with `INSERT OR REPLACE` without the flags column – flags,
+   duplicate link and the first ingest time are lost (`ingest.py:183-189`).
+2. Re-chunking deletes the document's full-text rows and embeddings (`chunking.py:150-152`).
+3. The text hash did not change, so the document is not "pending" and extraction is skipped
+   (`run.py:36`). Only the extraction branch rebuilds the full-text rows and context lines
+   (`index.contextualise`), embeddings need the context line, and the injection flag is written
+   only by extraction (`extract.py:369-370`).
+4. Families keep the earlier-ingested document as the original (`families.py:41-42`); the
+   re-ingest made M01 the later one.
+
+**Layer.** Ingest / run orchestration. The evaluation did not see the damage until families ran
+again; three tests then failed (Q8, coverage, summary).
+
+**Fix.** Open.
+
+**Reproduce.** On a copy only (`REGISTER_DB`), never on `var/register.sqlite`.
+
+---
+
+## F15 - Keyword search cuts before it filters (index/search)
+
+**Symptom.** `GET /search` with a document type can return an empty keyword (BM25) list
+although the filtered contracts contain matching chunks. The fused result is then 100 %
+vector hits – hybrid search silently became vector search, with no warning in the response.
+
+**Evidence** (register copy, fake zero-vector adapter, no model call):
+
+```
+q='neither side has to pay more than the fees of the last year' doc_type=data_processing_agreement
+  (1) search.bm25_ranking(con, q, allowed): 0 hits
+  (2) direct FTS restricted to the allowed doc ids: 31 matching chunks
+  whole register: 853 matching chunks; doc types of the global top 200:
+  {'merchant_agreement': 28, 'other_commercial_agreement': 170, 'amendment': 2}
+GET /search {'q': 'total fees paid in the twelve months', 'doc_type': 'data_processing_agreement', 'k': 5}
+  -> HTTP 200; bm25: []; fused from the vector list: 5/5
+sweep: 39 of 116 (query, doc_type) pairs return a shorter BM25 list than the filtered query (10 empty, 29 short)
+```
+
+**Root cause.** `search.py:43-45` takes the top 200 BM25 hits of the whole register and filters
+by document afterwards; the vector ranking filters first (`search.py:53`). Related but separate:
+the query builder keeps common words longer than two letters ("the", "and", "has"), so long
+queries match almost every chunk, and the tokenizer does not stem ("audit" does not match
+"audits").
+
+**Layer.** Index/search. Register questions Q1–Q8 do not use search; the live search station
+(explorer station 6) does.
+
+**Fix.** Open.
+
+**Reproduce.** `bm25_ranking` against a copy with `allowed` for `data_processing_agreement`.
+
+---
+
+## F16 - "Not governed by US law" lists every US contract; the coverage assertion cannot fail
+
+**Symptom.** A Workbench run "contracts not governed by US law" reports all 14 checked contracts
+under a US state's law as "other governing law" and routes them as routine (CONFIRM).
+Asking for a state (US-NY) is refused.
+
+**Evidence** (register copy):
+
+```
+governing_law values: DE 21, NL 4, US-CA 4, GB 3, US-NY 3, None 2, US-TX 2, CA-BC 1, IL 1, US-AR 1, US-DE 1, ...
+run_check governing_law_not law=US:
+  counts {'other_law': 43, 'law_unknown': 1, 'same_law': 0}
+  C01  governing_law=US-CA  status=OTHER_LAW  triage=CONFIRM
+  C03  governing_law=US-NY  status=OTHER_LAW  triage=CONFIRM
+POST /runs law=US-NY -> 422 "law must be a two-letter country code, e.g. DE"
+coverage assert: never fired in 2000 fuzzed run_check calls; removed under python -O
+```
+
+**Root cause.** `portfolio.py:175` compares `law == params["law"]`, but the register stores ISO
+3166 codes with a subdivision for federal states (`US-CA`, `CA-BC`), as the extraction schema
+asks. The coverage assertion (`portfolio.py:210`) counts two lists built by the same loop, so it
+is true by construction; the module docstring presents it as the F10 safeguard.
+
+**Layer.** Queries (portfolio check). Q5 asks about DE and is not affected.
+
+**Fix.** Open.
+
+**Reproduce.** `portfolio.run_check` with `{"check": "governing_law_not", "params": {"law": "US"}}`.
+
+---
+
+## F17 - A file named like an existing contract is merged into it (ingest)
+
+**Symptom.** A file whose name starts with an existing id (`M03_copy.pdf`, `M03_Bergmann_v2.pdf`)
+does not become a document of its own. It is grouped under M03, only the first file is read,
+and the second contract never appears – not even as excluded with a reason.
+
+**Evidence** (temporary folders, `ingest.discover`):
+
+```
+source folder: ['M03_Bergmann.pdf']  inbox: ['M03_Bergmann_v2.pdf']   (a copy of M04_Velo.pdf)
+  1 document(s): doc_id='M03' kind='pdf' files=['M03_Bergmann.pdf', 'M03_Bergmann_v2.pdf']
+  read_pages(merged M03): text mentions 'Velo': False; mentions 'Bergmann': True
+source folder: ['M03_Bergmann.pdf', 'M03_notes.txt']
+  doc_id='M03' kind='txt' files=['M03_Bergmann.pdf', 'M03_notes.txt']
+  read_pages(M03): first 40 chars of page 1: '%PDF-1.4\n%���� ReportLab Generated PDF d'
+today's data: only M20 is grouped (M20_Buerowelt_p1.jpg, M20_Buerowelt_p2.jpg) - as intended
+```
+
+**Root cause.** `ingest.py:72-76` derives the id from the leading pattern of every file name and
+puts every file with that id into one group – meant for the pages of one JPEG scan. `read_pages`
+reads only `files[0]` (`ingest.py:106`, `114`), and the group's kind is the last file's extension.
+
+**Layer.** Ingest. Latent: today's register is not affected; the inbox demo and every new file are.
+
+**Fix.** Open.
+
+**Reproduce.** `ingest.discover([folder])` on a temporary folder with two files sharing an id.
+
+---
+
 ## Engineering issues (short)
 
 | Issue | Fix |
@@ -425,6 +609,7 @@ the disagreements, not only the score.
 | HTTP 429 rate limit on embeddings | honour `Retry-After`, batches of 16 |
 | SQLite "bad parameter or other API misuse" under parallel extraction | worker threads never touch the shared connection; one connection per thread for cost logging |
 | Found while preparing the model comparison (code reading, no wrong number yet): a deployment without an entry in `PRICES_PER_MILLION` was logged with cost $0 - silently, so the cost view would have shown a bigger model as free | `config.check_prices()` - the pipeline refuses to start without a price for every configured model (fail loudly, like F2) |
+| Found by the repo audit (2026-10-30): `test_reason_required_for_review_rows_and_corrections` relied on M08 being a REVIEW row in Q1. M08 is CONFIRM (ABSENT, 0.9) in 4 of 5 repeat registers (F7), so after a rebuild the suite turns red without a code change: `assert 201 == 422` | Open: the test is to use M14 (four eyes in every build because of the injected note) and pick rows by role, not by name |
 | First API smoke test on the laptop "passed" against the wrong server: port 8000 belongs to another local app (`/health` answered `{"status":"ok","scenario":"sunny_surplus"}`), our uvicorn failed with WinError 10048 | API runs on port 8010; `/health` now names the service (`"service": "legal-workbench-api"`) and the test checks it |
 
 ## Caveat for the presentation
