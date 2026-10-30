@@ -63,8 +63,9 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 | `tests/` | pytest against the built register; check invariants, not one model answer (F7) |
 | `web/` | Vite + React + TypeScript + Fluent UI v9: `workbench/` (ask, plan, run, coverage, evidence with page highlight, four-eyes review, archive), `AuditLog.tsx`; texts in `labels.ts` (lawyers' language) |
 | `var/register.sqlite` | Generated register (git-ignored) |
-| `.claude/skills/` | Project skills: `record-failure`, `log-decision`, `run-eval` |
-| `.githooks/pre-commit` | Secret guard (keys, real Azure endpoints, `.env` files) |
+| `.claude/skills/` | Project skills: `record-failure`, `log-decision`, `run-eval`, `dev-log`, `session-summary` |
+| `.githooks/pre-commit` | Secret guard (keys, real Azure endpoints, `.env` files) and dev-log guard |
+| `docs/dev-log.md` | One entry per work step: problem, cause, technique, rejected alternative, metric before → after |
 
 ```bash
 python -m pipeline.run              # build/update the register (idempotent: file hash + prompt version)
@@ -83,6 +84,14 @@ cd web && npm run build             # type-check (tsc) + production bundle
 - **Never commit secrets.** Keys live only in `.env` (git-ignored). Before every commit check
   that no key or personal endpoint is staged. `.githooks/pre-commit` enforces this
   (activate once per clone: `git config core.hooksPath .githooks`).
+- **Development log after every work step.** A work step is a commit that changes code or
+  behaviour. Before committing, add an entry at the top of `docs/dev-log.md` (skill `dev-log`):
+  problem, cause, technique and why, rejected alternative, metric before → after – real
+  numbers only. `.githooks/pre-commit` refuses code commits without it (`SKIP_DEVLOG=1` for
+  trivial ones). New failures also go to `docs/failure-cases.md`, new decisions to Notion.
+- **Session summary for Notion.** At the end of every session (Dima says so, or
+  `/session-summary`) write a short German summary at the top of the Notion page
+  "Sitzungsprotokolle" and refresh "Aktueller Stand" on the main page (skill `session-summary`).
 - **Record every failure when it happens.** Any wrong result, crash or surprising behaviour
   found while testing goes into `docs/failure-cases.md` right away, with verbatim evidence,
   also before the fix is known (skill `record-failure`). They are shown in the presentation.
