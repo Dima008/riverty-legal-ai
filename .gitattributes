@@ -1,0 +1,4 @@
+# Shell scripts must keep LF line endings, also when checked out on Windows (core.autocrlf);
+# with CRLF the pre-commit hook fails with "$'\r': command not found".
+.githooks/* text eol=lf
+*.sh text eol=lf

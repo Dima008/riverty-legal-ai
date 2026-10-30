@@ -1,0 +1,33 @@
+#!/bin/sh
+# Pre-commit guard: stops secrets before they reach the git history.
+# CLAUDE.md says "never commit secrets"; this hook enforces it for people and AI alike.
+# Activate once per clone:  git config core.hooksPath .githooks
+#
+# Findings name only the file, never the matched text, so a key is not echoed to the terminal.
+
+IFS='
+'
+status=0
+
+KEY_ASSIGNMENT="(api[_-]?key|secret|password)[\"' ]*[:=][\"' ]*[A-Za-z0-9+/=_-]{20,}"
+AZURE_ENDPOINT='https://[a-z0-9-]+\.(openai|cognitiveservices|services\.ai)\.azure\.com'
+AZURE_KEY_84='(^|[^A-Za-z0-9])[A-Za-z0-9]{84}([^A-Za-z0-9]|$)'
+
+for f in $(git diff --cached --name-only --diff-filter=ACMR); do
+  case "$f" in
+    .githooks/*) continue ;;                       # the patterns above would match themselves
+    *.env.example) ;;
+    .env|.env.*|*/.env|*/.env.*)
+      echo "pre-commit: $f is an env file - secrets live only in the local .env"; status=1; continue ;;
+  esac
+
+  added=$(git diff --cached -U0 --no-color -- "$f" | grep '^+[^+]')
+  [ -z "$added" ] && continue
+
+  printf '%s\n' "$added" | grep -qiE "$KEY_ASSIGNMENT" && { echo "pre-commit: $f - looks like a key assignment"; status=1; }
+  printf '%s\n' "$added" | grep -qiE "$AZURE_ENDPOINT" && { echo "pre-commit: $f - contains a real Azure endpoint (use <your-resource>)"; status=1; }
+  printf '%s\n' "$added" | grep -qE  "$AZURE_KEY_84"   && { echo "pre-commit: $f - contains an 84-character key-like string"; status=1; }
+done
+
+[ $status -ne 0 ] && echo "pre-commit: commit stopped. Remove the secret or unstage the file, then commit again."
+exit $status

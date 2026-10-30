@@ -22,7 +22,7 @@ Planning happened before this repo was opened in VS Code. Read these before doin
   approach, target architecture, MVP canvas (states per step), frontend and presentation
   plan, governance and adoption, status, schedule, where things live
 - `docs/context/case-study.md` – the original task, verbatim
-- `docs/context/decisions.md` – the 46 decisions so far (snapshot of Notion)
+- `docs/context/decisions.md` – the decision log (export of Notion, kept in sync by `log-decision`)
 - `docs/pipeline.md`, `docs/failure-cases.md` – how the pipeline works, every error found
 
 Notion (page "Riverty Case Study") is the source of truth for decisions, roadmap and the
@@ -58,6 +58,8 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 | `data/` | Synthetic gold set (every page watermarked "SYNTHETIC TEST DOCUMENT"), CUAD subset (CC BY 4.0), `ground_truth.csv`, `gold_queries.json` |
 | `docs/` | `pipeline.md`, `failure-cases.md`, `setup-windows.md`, `context/` (task, briefing, decisions); ADRs later in `docs/adr/` |
 | `var/register.sqlite` | Generated register (git-ignored) |
+| `.claude/skills/` | Project skills: `record-failure`, `log-decision`, `run-eval` |
+| `.githooks/pre-commit` | Secret guard (keys, real Azure endpoints, `.env` files) |
 
 ```bash
 python -m pipeline.run              # build/update the register (idempotent: file hash + prompt version)
@@ -70,20 +72,23 @@ python -m pipeline.show [M08]       # overview of the register or one contract w
 ## Rules
 
 - **Never commit secrets.** Keys live only in `.env` (git-ignored). Before every commit check
-  that no key or personal endpoint is staged.
+  that no key or personal endpoint is staged. `.githooks/pre-commit` enforces this
+  (activate once per clone: `git config core.hooksPath .githooks`).
+- **Record every failure when it happens.** Any wrong result, crash or surprising behaviour
+  found while testing goes into `docs/failure-cases.md` right away, with verbatim evidence,
+  also before the fix is known (skill `record-failure`). They are shown in the presentation.
 - Only synthetic or public test data. Never real Riverty contracts. Keep the watermark.
 - After any change to extraction, checks or catalogue: run `python -m eval.check_register`
-  and store the output in `eval/results/` when it is a new version.
+  and store the output in `eval/results/` when it is a new version (skill `run-eval`).
 - Every decision (also small ones: region, model, library, trade-off) is logged in the Notion
   database "Entscheidungen" (page "Riverty Case Study") with reason, rejected alternative and
-  how prominent it is in the presentation. If Notion is not connected here, list the
-  decision in the commit message and tell Dima so it can be logged.
+  how prominent it is in the presentation (skill `log-decision`, also appends to
+  `docs/context/decisions.md`). If Notion is not connected here, list the decision in the
+  commit message and tell Dima so it can be logged.
 - AI contribution stays visible in the git history (Co-Authored-By trailer).
 - Show costs: every model call is recorded in `llm_calls`; the UI shows cost per run.
 - Never put chat transcripts or the Azure endpoint/resource name into the repo.
 - Do not copy material from the AWS agentic workshop slides (confidential); reuse techniques only.
-- New errors found go into `docs/failure-cases.md` with verbatim evidence (they are shown in
-  the presentation).
 
 ## Status and next steps (2026-10-30)
 
@@ -92,9 +97,16 @@ register viewer (`pipeline.show`), error catalogue F1–F8, ablation (model alon
 0.80; with checks: 1.00). Explanations for Dima in Notion: "Prototyp: Was wir gebaut haben",
 "Konzepte verständlich erklärt".
 
+Local setup on Dima's laptop done (2026-10-30): Python 3.12 `.venv`, Tesseract 5.4 with
+`deu` via `TESSDATA_PREFIX`, register built, evaluation green on the laptop
+(`eval/results/2026-10-30_extract-v2_laptop.txt`, $0.12). New failure cases F9 (OCR differs
+between machines) and F10 (C11 flagged as amendment) are open. Package versions pinned.
+
 Next:
-1. **Local setup on Dima's laptop** (`docs/setup-windows.md`) – the live demo runs there.
-2. **Step 5 – Legal Workbench**: FastAPI backend in `api/` over `pipeline.queries` and
+1. Fix F10 (consistency check doc_type vs. is_amendment; amendments without base agreement).
+2. **Step 5 – Legal Workbench** plus **pipeline explorer** (decision 49): every pipeline step
+   with a diagram and a live example from the register, so the API also returns intermediate
+   results (chunks, check signals, `model_status` next to `status`, search rankings).: FastAPI backend in `api/` over `pipeline.queries` and
    `pipeline.search`; React/TypeScript frontend in `web/`. Flow: question → plan (which
    register query / which contracts) → per-contract result with status, quote and page
    highlight (word boxes in `pages.words_json`) → triage (CONFIRM / REVIEW / FOUR_EYES) →

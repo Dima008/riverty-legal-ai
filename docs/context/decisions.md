@@ -233,3 +233,23 @@ Verworfen: Alles weiter in der Cloud-Sitzung bauen.
 Präsentation · Entschieden · Hauptpunkt
 Begründung: Zeigt, dass wir messen, Fehler finden und an der richtigen Stelle beheben, statt Fehlerfreiheit zu behaupten. Belegt mit echten Ausgaben: M08 (KI sagt vorhanden, zwei Prüfungen widersprechen), Ablation (nur KI: Recall 0,80 bei Q1, mit Prüfungen 1,00), OCR-Stillfehler (90,8 % Konfidenz ohne Umlaute). Rahmung: Jeder Fehler erklärt eine Prüfschicht. Ehrlich dazu: am selben Testsatz verbessert, deshalb zurückgehaltener Testsatz in Schritt 6. Quelle: docs/failure-cases.md.
 Verworfen: Nur Endergebnis zeigen (Recall 1,0) und Fehler weglassen.
+
+### 47. Feste Abläufe als Projekt-Skills im Repo, Schlüsselschutz als Pre-commit-Hook statt nur als Regel
+Governance · Entschieden · Kurz erwähnen
+Begründung: Wiederkehrende Abläufe laufen in jeder Sitzung gleich: record-failure (Fehler sofort mit wörtlichem Beleg in docs/failure-cases.md, auch vor dem Fix), log-decision (Notion + decisions.md), run-eval (Auswertung, Vergleich mit dem letzten Lauf, Recall unter 1,0 = Fehlerfall). Die Regel „keine Schlüssel committen“ stand nur in CLAUDE.md; .githooks/pre-commit erzwingt sie deterministisch für Mensch und KI (Schlüssel, echte Azure-Endpunkte, .env-Dateien). Gleiches Prinzip wie im Produkt: Der Prompt bittet, die Prüfung erzwingt. Getestet: 3 erfundene Schlüssel blockiert, Platzhalter durchgelassen, keine Fehlalarme im Repo.
+Verworfen: Nur Regeln in CLAUDE.md; eigene Subagents (jetzt noch nicht nötig, später evtl. Interviewer-Agent für die Generalprobe).
+
+### 48. Demo-Laptop: Python 3.12 wie getestet, OCR-Sprachdaten im Benutzerordner ohne Admin-Rechte
+Vorgehen · Entschieden · Nur auf Nachfrage
+Begründung: Installiert war Python 3.13; Anleitung und bisherige Läufe beruhen auf 3.12, für die Demo zählt Gleichheit. Tesseract 5.4 per winget bringt nur eng/osd; deu.traineddata (tessdata_fast) liegt mit eng/osd in %LOCALAPPDATA%\Tesseract-OCR\tessdata, Verweis per TESSDATA_PREFIX in .env. Least Privilege: kein Schreiben nach Program Files nötig.
+Verworfen: Python 3.13 ungetestet; Sprachdaten mit Admin-Rechten nach Program Files kopieren.
+
+### 49. Pipeline-Explorer im Frontend: jeder Schritt mit Schaubild und echtem Beispiel aus dem Register
+Präsentation · Entschieden · Hauptpunkt
+Begründung: Konzepte sind in Notion erklärt, aber im Frontend-Plan fehlte ein Ort, die Schritte zu zeigen. Je Station: Schaubild, Erklärung, Live-Beispiel über dieselbe API wie die Demo (z. B. M09 Haftungsklausel über drei Seiten bleibt ein Abschnitt; M08 läuft sichtbar durch die Prüfschichten; dieselbe Frage als BM25-, Vektor- und RRF-Rangliste), zugehörige Entscheidung und Fehlerfall. Im Vortrag 2–3 Stationen live, Rest auf Nachfrage. Folge für die API: Sie liefert auch Zwischenergebnisse (Abschnitte, Prüfsignale, model_status neben status, Such-Ranglisten).
+Verworfen: Erklärung nur statisch als Folie; alle Stationen gleich ausführlich (sprengt 20 Minuten).
+
+### 50. Paketversionen auf den letzten grünen Lauf festschreiben (exakte Versionen statt Mindestversionen)
+Vorgehen · Entschieden · Nur auf Nachfrage
+Begründung: requirements.txt hatte nur Mindestversionen; auf dem Laptop installierte pip neue Hauptversionen (openai 3.41, PyMuPDF 2.0, numpy 2.5, pillow 13). Der Lauf damit war grün (Recall/Precision 1,0 auf Q1–Q8), also werden genau diese Versionen fixiert. Upgrade nur bewusst, danach Evaluierung. Im Betrieb: Container-Image mit Lock-Datei (siehe F9: andere Umgebung, anderer OCR-Text).
+Verworfen: Mindestversionen behalten (Demo kann morgen anders laufen); vollständige Lock-Datei aller transitiven Pakete (für den Prototyp zu viel).

@@ -16,12 +16,19 @@ winget install -e --id Microsoft.VisualStudioCode
 Open a **new** PowerShell window afterwards so PATH is updated. In VS Code install the
 extensions "Python" and "Claude Code".
 
-**German OCR data:** run `tesseract --list-langs`. If `deu` is missing (winget may install
-without the language dialog), download `deu.traineddata` from the official repository
-github.com/tesseract-ocr/tessdata_fast and copy it to `C:\Program Files\Tesseract-OCR\tessdata`
-(needs an administrator PowerShell).
+**German OCR data:** run `tesseract --list-langs`. A silent winget install brings only `eng`
+and `osd`. Download `deu.traineddata` from the official repository
+github.com/tesseract-ocr/tessdata_fast and either
+
+- copy it to `C:\Program Files\Tesseract-OCR\tessdata` (administrator PowerShell), or
+- without admin rights (what the demo laptop uses): create
+  `%LOCALAPPDATA%\Tesseract-OCR\tessdata`, copy `eng.traineddata` and `osd.traineddata` from
+  the install folder plus the downloaded `deu.traineddata` into it, and set `TESSDATA_PREFIX`
+  to that folder in `.env` (step 3).
+
 The pipeline refuses to start without it (without German data Tesseract silently reads
-"Händler" as "Handler").
+"Händler" as "Handler"). Note: OCR output can differ slightly between machines (failure case
+F9), so run the evaluation on the demo laptop itself.
 
 ## 2. Code
 
@@ -32,6 +39,7 @@ cd riverty-legal-ai
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1          # if blocked: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 pip install -r requirements.txt
+git config core.hooksPath .githooks    # secret guard before every commit
 code .
 ```
 
@@ -44,8 +52,9 @@ notepad .env
 
 Fill in endpoint, key and deployment names from the Azure portal (Azure OpenAI resource →
 Keys and Endpoint; deployments: `gpt-4.1-mini`, `text-embedding-3-small`). `.env` is
-git-ignored; never commit it. Only if Tesseract is not found, uncomment `TESSERACT_CMD`
-and `TESSDATA_PREFIX`.
+git-ignored; never commit it. Uncomment `TESSERACT_CMD` only if Tesseract is not found, and
+`TESSDATA_PREFIX` if the language data lives in your user folder (see above). Save the file as
+UTF-8 without BOM (Notepad and VS Code do this by default; PowerShell 5.1 `Set-Content` does not).
 
 ## 4. Check
 

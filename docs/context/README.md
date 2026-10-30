@@ -6,7 +6,7 @@ Everything that was discussed and decided before development moved to VS Code.
 | --- | --- |
 | `case-study.md` | the original task from Riverty, verbatim, plus their addendum |
 | `briefing.md` | condensed handover: how to work with Dima, problem analysis, approach, target architecture, MVP canvas, frontend and presentation plan, governance and adoption, status, schedule, where things live |
-| `decisions.md` | export of the decision log (46 decisions, German, verbatim) |
+| `decisions.md` | export of the decision log (German, verbatim; new entries appended by the `log-decision` skill) |
 
 **Source of truth** for decisions, roadmap and the coverage matrix is Notion (page "Riverty
 Case Study"). These files are a snapshot from 2026-10-30. With the Notion connector in Claude

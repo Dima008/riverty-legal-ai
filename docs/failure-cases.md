@@ -16,6 +16,8 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F6 | A new copy turned the original into the duplicate | families | end-to-end test with the inbox | fixed, automated test still missing |
 | F7 | Same contract, same prompt, different answer (M10) | extraction | checks catch both variants | accepted, measured in step 6 |
 | F8 | Gold label disagrees with our definition (CUAD C03) | definition | evaluation | question for Legal |
+| F9 | Same scan, other machine, different OCR text (M18) | ingest | nobody at first - found by the offline smoke test on the laptop | no impact on gold set, cause open |
+| F10 | Services agreement flagged as amendment (C11) | extraction | nobody at first - found by reading the families log | open |
 
 ---
 
@@ -158,7 +160,22 @@ automated test for this case.
 losses: the Provider bears the default risk for approved transactions …" (caught by the
 vocabulary check → UNCLEAR). Run B: model said ABSENT directly. Both end up in Q1.
 
-**Lesson.** One run is not a measurement. Step 6 measures consistency over several runs.
+Run C (first run on the demo laptop, 2026-10-30, `eval/results/2026-10-30_extract-v2_laptop.txt`):
+PRESENT again with the same quote, rejected twice:
+
+```
+liability_limitation [required]: UNCLEAR (model said PRESENT), confidence 0.35
+  signal:    quote_lacks_clause_terms
+  signal:    checker_rejected: The quote describes risk allocation for fraud losses but does not
+             limit liability by capping amounts, excluding damage categories, or setting ...
+
+Ablation  id   recall model  recall checked  missed by the model alone
+          Q1           0.60            1.00  ['M08', 'M10']
+```
+
+**Lesson.** One run is not a measurement. Model-alone recall on Q1 was 0.80 in one run and 0.60
+in the next; with the checks it was 1.00 both times. The checks make the result stable, not the
+model. Step 6 measures consistency over several runs.
 
 ---
 
@@ -167,6 +184,87 @@ vocabulary check → UNCLEAR). Run B: model said ABSENT directly. Both end up in
 CUAD lawyers labelled a termination-payment formula as "cap on liability". Under our playbook
 definition it is not. This is a definition question for Legal, not a model error – and a
 reminder that gold labels are decisions too.
+
+---
+
+## F9 - Same scan, other machine, different OCR text (M18)
+
+**Symptom.** The first ingest on the presenter's Windows laptop (2026-10-30) reads parts of the
+M18 scan differently than the cloud run did, although the German language data is installed.
+
+**Evidence.** Offline smoke test (ingest + chunking into a throwaway database, no model call).
+Same result as the cloud for the totals: 47 documents, 938 chunks. M18 page 1, verbatim:
+
+```
+HÄNDLERVERTRAG - ZAHLUNGSDIENSTLEISTUNGEN
+Dieser Händlervertrag (der »Vertrag") wird am 2018-02-14 geschlossen zwischen Arvato
+Financial Solutions GmbH (der „Anbieter“) und Leder & Co. GmbH (der Handler‘).
+2. Pflichten des Handlers
+2.1 Der Händler bindet die Zahlarten über die Checkout-Schnittstelle des Anbieters ein und
+2.2 Der Händler bestätigt jeden Versand unverzüglich.
+mean OCR confidence per page: [(1, 94.2), (2, 92.6)]
+```
+
+| | Cloud run (F2, German data installed) | Laptop |
+| --- | --- | --- |
+| Clause 2 heading | `2. Pflichten des Händlers` | `2. Pflichten des Handlers` |
+| Party definition | - | `(der Handler‘)` |
+| Body text | `über`, `Händler` | `über`, `Händler` (correct) |
+| Mean word confidence | 94.4 % | 93.4 % |
+
+Laptop setup: Tesseract 5.4.0.20240606 (UB Mannheim build), `eng.traineddata` from the installer
+(4.1 MB), `deu.traineddata` from tessdata_fast, PyMuPDF 2.0 renders the page at 200 dpi.
+
+**Root cause.** Open. The cloud ran on Linux with other Tesseract, model and PyMuPDF versions;
+which difference causes it is not measured yet.
+
+**Layer.** Ingest. **Fix.** Open.
+
+**Impact.** None on the gold set. The first full run on the laptop
+(`eval/results/2026-10-30_extract-v2_laptop.txt`) finds M18 in Q1, Q2 and Q4 as expected,
+metadata 27/27, recall and precision 1.00 on Q1-Q8.
+
+**Lesson so far.** The demo machine is a different environment than the one we measured on. The
+gold-set numbers only count for the demo after the evaluation has run on the laptop - and in
+production the OCR stack belongs in a pinned container image.
+
+**Reproduce.** Ingest M18 on the laptop and print page 1 (`python -m pipeline.show M18` once the
+register exists). Automated test missing.
+
+---
+
+## F10 - Services agreement flagged as amendment (C11)
+
+**Symptom.** The first full run on the laptop lists C11 as an amendment whose base agreement is
+missing. C11 is a services agreement.
+
+**Evidence** (pipeline log and register, 2026-10-30):
+
+```
+families: duplicates={'M15': 'M01'} amendments={'C16': 'C16', 'C11': 'C11', 'M05-A': 'M05'} legacy name hits=14
+
+(doc_id, doc_type, is_amendment, amended_agreement_date, counterparty_name)
+('C11', 'other_commercial_agreement', 1, None, 'TELCOSTAR PTE, LTD.')
+('C16', 'amendment', 1, '2015-03-09', 'AZUL LINHAS AÉREAS BRASILEIRAS S/A')
+```
+
+The only "amend" near the start of C11 is: *"(as such Exhibit may be amended or supplemented
+pursuant to the terms of this Agreement, the "Exhibit")"*. C16 is a real amendment ("Amendment
+n° 01 to the Global Maintenance Agreement ... dated March 9th, 2015"); its base agreement is not
+in the register, so `C16: C16` is correct but reads like a self-reference.
+
+**Root cause.** Open. The model's two fields contradict each other (`doc_type` says no amendment,
+`is_amendment` says yes) and no check compares them. Whether the cloud run had the same value is
+unknown: the evaluation does not cover `is_amendment` on CUAD documents.
+
+**Layer.** Extraction (missing consistency check). **Impact.** None on Q1-Q8. In the families
+step C11 can no longer be the base agreement of a later amendment.
+
+**Fix.** Open, proposal for Dima: (1) deterministic consistency check `doc_type` vs.
+`is_amendment`, contradiction -> review flag; (2) show an amendment without a base agreement as
+"base agreement not in register" - for Legal that is a finding (incomplete contract family).
+
+**Reproduce.** `python -m pipeline.show C11`. Automated test missing.
 
 ---
 
