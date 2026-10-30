@@ -56,7 +56,7 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 | `pipeline/catalogue.py` | Legal's playbook as data: clause definitions, required per doc type, keywords. Changing it = bump `PROMPT_VERSION` in `config.py` |
 | `eval/check_register.py` | Gold questions Q1–Q8, metadata, CUAD agreement; results in `eval/results/` |
 | `data/` | Synthetic gold set (every page watermarked "SYNTHETIC TEST DOCUMENT"), CUAD subset (CC BY 4.0), `ground_truth.csv`, `gold_queries.json` |
-| `docs/` | `pipeline.md`, `failure-cases.md`, `setup-windows.md`, `context/` (task, briefing, decisions); ADRs later in `docs/adr/` |
+| `docs/` | `pipeline.md`, `failure-cases.md`, **`explorer.md` (frontend explanations per step)**, `setup-windows.md`, `context/` (task, briefing, decisions); ADRs later in `docs/adr/` |
 | `pipeline/evidence.py` | Maps a verified quote back onto the page's word boxes (highlight, also across page breaks) |
 | `pipeline/portfolio.py` | Portfolio checks: fixed check types, coverage (never drop a contract silently), triage |
 | `api/` | FastAPI: `register.py` read-only register + explorer; `workflow.py` runs, audit; `workbench.py` workflow DB |
@@ -91,6 +91,9 @@ python -m pytest                    # API tests against the built register, no m
   how prominent it is in the presentation (skill `log-decision`, also appends to
   `docs/context/decisions.md`). If Notion is not connected here, list the decision in the
   commit message and tell Dima so it can be logged.
+- **Explain every step for the frontend.** When a pipeline or workflow step is added or
+  changed, update its station in `docs/explorer.md` (what, numbers, why, failure, live API
+  call, diagram) in the same commit. The pipeline explorer in the frontend is built from it.
 - AI contribution stays visible in the git history (Co-Authored-By trailer).
 - Show costs: every model call is recorded in `llm_calls`; the UI shows cost per run.
 - Never put chat transcripts or the Azure endpoint/resource name into the repo.

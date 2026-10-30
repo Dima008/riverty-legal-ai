@@ -34,6 +34,7 @@ exists. Record it **when it happens**, before fixing it, so the evidence is the 
 ## 3. Afterwards
 
 - Fix touches extraction, checks or catalogue: run the `run-eval` skill.
+- Add the case to "What went wrong" of its station in `docs/explorer.md` (frontend content).
 - Under **reproduce** name the command, and say whether an automated test exists
   ("automated test missing" otherwise).
 - Tell Dima in German in one or two sentences: what failed, in which layer, current status.

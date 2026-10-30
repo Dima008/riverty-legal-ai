@@ -280,6 +280,6 @@ Begründung: Der End-to-end-Ablauf (Lauf, Abdeckung, Triage, Freigabe, Archiv) s
 Verworfen: Modell-Planer zuerst (Demo hängt am Modell); freie SQL-Erzeugung durch das Modell.
 
 ### 56. Arbeitsstand (Läufe, Freigaben, Audit) in eigener Datenbank, getrennt vom erzeugten Register; jeder Lauf als Momentaufnahme
-Architektur · **Vorschlag** · Nur auf Nachfrage
+Architektur · Entschieden · Nur auf Nachfrage
 Begründung: Das Register ist erzeugt und wird bei neuer Prompt-Version oder --reassess neu gebaut. Was eine Prüferin gesehen und entschieden hat, darf dabei nie verloren gehen oder sich nachträglich ändern. Deshalb var/workbench.sqlite getrennt von var/register.sqlite (in Azure: eigenes PostgreSQL-Schema mit eingeschränkten Schreibrechten). Jeder Lauf speichert Plan, Abdeckung, Zeilen mit Triage und die Register-Version als Momentaufnahme; Freigaben verweisen auf den Lauf. So zeigt das Audit immer, was tatsächlich vorlag.
 Verworfen: Workflow-Tabellen im Register (gehen beim Neuaufbau verloren); nur Verweise statt Momentaufnahme (Audit zeigt den heutigen statt den damaligen Stand).
