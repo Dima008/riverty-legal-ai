@@ -7,6 +7,26 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · Compare two contracts: duplicate against original, contract against contract
+
+- **Problem:** Dima wants to look into the contract a duplicate is similar to, and to compare any
+  two contracts – the second meaning of "compare" in the task (contract against contract).
+- **Cause:** The register only stored *that* M15 is a copy of M01, not *how* the two relate.
+- **Technique and why:** `pipeline/compare.py`, deterministic: relation (duplicate, family),
+  same file / same text by hash, overall similarity, metadata differences, every playbook clause
+  for both, and the text section by section – paired by section number, otherwise by the most
+  similar text – with word-level differences. `GET /compare?a=&b=`. No model call, so it is free
+  and repeatable.
+- **Rejected alternative:** A model call that "describes the differences" (costs money, can
+  invent differences); one diff over the whole text (unreadable for a lawyer).
+- **Metric before → after:** M15 vs M01: duplicate, same text, different file, 100 %, 0 changed
+  sections. M01 vs M02 (same template): 92.8 %, 8 sections identical, 4 changed; "7. Liability" vs
+  "7. Responsibility for Damages" only 43.8 % alike although the register finds a liability cap in
+  both. 4 new tests, 47 green.
+- **Links:** decision 62 (Notion pending); `pipeline/compare.py`, `api/register.py` (`/compare`)
+
+---
+
 ## 2026-10-30 · Evaluation as data: evaluate() and render(), JSON results, GET /evaluation
 
 - **Problem:** Evaluation results existed only as a printed text report; the quality view,

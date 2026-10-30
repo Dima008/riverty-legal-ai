@@ -308,3 +308,8 @@ Verworfen: Nur Ergebnisse nach einer Frage (kein Gesamtbild); Liste ohne Maßsta
 Vorgehen · Entschieden · Nur auf Nachfrage
 Begründung: Qualitätsansicht, Monitoring und Modellvergleich brauchen die Zahlen und die Konfiguration jedes Laufs (Modell, Prompt-Version). evaluate() rechnet, render() druckt den bisherigen Bericht (zeichengleich geprüft), --json speichert die Zahlen; GET /evaluation liefert Live-Auswertung plus gespeicherte Läufe mit dem ehrlichen Hinweis, dass am selben Testsatz verbessert wurde. Ein Test stellt sicher, dass Auswertung und Workbench dieselben Verträge melden.
 Verworfen: Textbericht im Frontend parsen; zweite Auswertung nur für die API.
+
+### 62 (in Notion ausstehend). Vertragsvergleich deterministisch: Dublette gegen Original und Vertrag gegen Vertrag, Abschnitt für Abschnitt
+Analyse · Entschieden · Kurz erwähnen
+Begründung: Wunsch von Dima, bei Dubletten in den ähnlichen Vertrag schauen zu können; zugleich die zweite Bedeutung von „vergleichen“ (Vertrag gegen Vertrag, vgl. Entscheidung 16). Ohne Modell: Beziehung (Dublette, Familie), gleiche Datei / gleicher Text per Hash, Ähnlichkeit, Metadaten-Unterschiede, jede Playbook-Klausel für beide, Text je Abschnitt gepaart (Nummer, sonst ähnlichster Text) mit Wortunterschieden. M15 vs M01: identischer Text in anderer Datei; M01 vs M02: 92,8 %, Haftungsklausel nur 43,8 % ähnlich, aber in beiden als vorhanden erkannt.
+Verworfen: Modell beschreibt Unterschiede (Kosten, kann Unterschiede erfinden); ein Diff über den ganzen Text (für Juristen unlesbar).

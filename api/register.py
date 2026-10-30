@@ -17,7 +17,7 @@ import pymupdf
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, Response
 
-from pipeline import catalogue, chunking, config, extract, queries, search
+from pipeline import catalogue, chunking, compare, config, extract, queries, search
 from pipeline.chunking import page_of
 from pipeline.evidence import quote_boxes, text_boxes
 
@@ -130,6 +130,20 @@ def contract_matrix(con: sqlite3.Connection = Depends(get_con)) -> dict:
         row["former_names"] = names.get(row["doc_id"], {"open": 0, "resolved": 0})
         rows.append(row)
     return {"clauses": clauses, "rows": rows}
+
+
+@router.get("/compare")
+def compare_contracts(a: str = Query(..., description="first contract, e.g. M15"),
+                      b: str = Query(..., description="second contract, e.g. M01"),
+                      con: sqlite3.Connection = Depends(get_con)) -> dict:
+    """Two contracts side by side: relation (duplicate, family), similarity, metadata differences,
+    every playbook clause for both, and the text section by section with word differences."""
+    if a == b:
+        raise HTTPException(422, "choose two different contracts")
+    result = compare.compare(con, a, b)
+    if result is None:
+        raise HTTPException(404, f"{a} or {b} is not in the register")
+    return result
 
 
 @router.get("/catalogue")
