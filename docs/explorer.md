@@ -201,6 +201,12 @@ questions, not the architecture – it can never prove absence (37).
 
 The vector search finds "fees" similar; RRF lifts M06 because it is high in both lists.
 
+**What went wrong.** F15: with a document-type filter, BM25 took the top 200 of the whole
+register and filtered afterwards, so its list could come back empty and hybrid search silently
+became vector search. The filter is now part of the query. The demo query keeps its top 3, with
+50 instead of 26 keyword hits. Open: common words ("the", "has") count as query terms and words
+are not stemmed ("audit" ≠ "audits") – to be measured in the retrieval evaluation.
+
 **Diagram.** Three columns side by side, lines connecting the same chunk across columns.
 
 ---

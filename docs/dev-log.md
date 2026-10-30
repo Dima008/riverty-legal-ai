@@ -7,6 +7,28 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · F15: keyword search filters before it cuts
+
+- **Problem:** With a document-type filter, the keyword (BM25) list of `GET /search` could come
+  back empty although the filtered contracts contain matching passages; the fused result was then
+  pure vector search, without a warning. 39 of 116 realistic query/filter pairs were affected
+  (10 empty, 29 short). Found by the repo audit.
+- **Cause:** `bm25_ranking` took the top 200 hits of the whole register and filtered by document
+  afterwards; long queries match almost every chunk ("the", "has"), so the 200 were often all
+  from other contract types. The vector ranking already filtered first.
+- **Technique and why:** The filter is part of the full-text query (`AND doc_id IN (...)`) and
+  the cut to `depth` happens in SQL. The regression test states the invariant instead of
+  repeating the SQL: every matching passage of the filtered contracts is ranked, up to the depth,
+  and nothing else. Written first, red.
+- **Rejected alternative:** A bigger LIMIT (moves the cliff, does not remove it); filtering in
+  Python over all matches (loads every hit for each query). Stop words and stemming stay as they
+  are until the retrieval evaluation measures them.
+- **Metric before → after:** BM25 hits with the DPA filter for the test query 0 → 31; demo query
+  (merchant agreements) 26 → 50 hits, top 3 unchanged; unfiltered lists identical. Tests 57 → 59.
+- **Links:** failure case F15; `pipeline/search.py`, `tests/test_api_register.py`; explorer station 6
+
+---
+
 ## 2026-10-30 · F14, F17: reading a contract again rebuilds everything; every file is its own document
 
 - **Problem:** `pipeline.run --only M01,M14 --force` left both contracts unsearchable (search rows

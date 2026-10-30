@@ -1,4 +1,5 @@
 """Hybrid search over the register: metadata filter first, then BM25 + vectors, fused with RRF.
+With a filter, duplicates are left out (the original is searched).
 
 Exact terms (names, "Art. 28") are found by full text; paraphrases ("neither side will
 have to pay more than ...") by vectors. Reciprocal Rank Fusion combines both lists
@@ -36,13 +37,17 @@ def _allowed(con, filters: dict | None) -> set[str] | None:
 
 
 def bm25_ranking(con, query: str, allowed: set[str] | None, depth: int = 50) -> list[str]:
-    """Full-text list: chunk ids ordered by BM25 (exact words; rare words count more)."""
+    """Full-text list: chunk ids ordered by BM25 (exact words; rare words count more). The
+    metadata filter is part of the query, so it applies before the list is cut to `depth` (F15)."""
     fts_query = _fts_query(query)
-    if not fts_query:
+    if not fts_query or allowed == set():
         return []
-    rows = con.execute("SELECT chunk_id, doc_id FROM chunks_fts WHERE chunks_fts MATCH ? ORDER BY bm25(chunks_fts) "
-                       "LIMIT 200", (fts_query,)).fetchall()
-    return [r["chunk_id"] for r in rows if allowed is None or r["doc_id"] in allowed][:depth]
+    sql, args = "SELECT chunk_id FROM chunks_fts WHERE chunks_fts MATCH ?", [fts_query]
+    if allowed is not None:
+        sql += f" AND doc_id IN ({','.join('?' * len(allowed))})"
+        args += sorted(allowed)
+    rows = con.execute(sql + " ORDER BY bm25(chunks_fts) LIMIT ?", [*args, depth]).fetchall()
+    return [r["chunk_id"] for r in rows]
 
 
 def vector_ranking(con, adapter, query: str, allowed: set[str] | None, depth: int = 50) -> list[tuple[str, float]]:

@@ -22,7 +22,7 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F12 | Bigger model reports an exclusion of punitive damages as limitation of liability, CUAD label says no cap (C13, gpt-4.1) | definition | evaluation (CUAD agreement 19 → 18 of 20) | question for Legal |
 | F13 | Two requests at the same time break the workflow database; the audit log then shows "No actions yet." | api, frontend | nobody at first - found by the repo audit, reproduced: 215 of 360 concurrent requests → 500 | fixed, regression test |
 | F14 | A forced re-ingest removes a contract from search, drops its injection flag and turns the original into the copy (M01, M14) | ingest / run | nobody at first - found by the repo audit, reproduced on a register copy | fixed, regression test |
-| F15 | With a document-type filter, keyword search cuts before it filters: the BM25 list comes back empty, hybrid search silently turns vector-only | index/search | nobody at first - found by the repo audit, reproduced on a register copy | open |
+| F15 | With a document-type filter, keyword search cuts before it filters: the BM25 list comes back empty, hybrid search silently turns vector-only | index/search | nobody at first - found by the repo audit, reproduced on a register copy | fixed, regression test; stop words and stemming open |
 | F16 | "Not governed by US law" reports every contract under a US state's law; the coverage assertion can never fail | queries | nobody at first - found by the repo audit, reproduced on a register copy | open |
 | F17 | A new file named like an existing contract (M03_copy.pdf) is merged into it, and the second contract is never read | ingest | nobody at first - found by the repo audit, reproduced in a temporary folder | fixed, regression test |
 
@@ -570,9 +570,22 @@ queries match almost every chunk, and the tokenizer does not stem ("audit" does 
 **Layer.** Index/search. Register questions Q1–Q8 do not use search; the live search station
 (explorer station 6) does.
 
-**Fix.** Open.
+**Fix.** The document filter is part of the full-text query (`AND doc_id IN (...)`), and the
+list is cut to the requested depth in SQL. Without a filter the output is unchanged. The module
+docstring now says that duplicates are left out whenever a filter is set. Not changed (open, for
+the retrieval evaluation): common words as query terms and the missing stemming.
 
-**Reproduce.** `bm25_ranking` against a copy with `allowed` for `data_processing_agreement`.
+**Proof.** The regression test was written first and failed:
+
+```
+tests/test_api_register.py::test_keyword_search_filters_before_it_cuts
+  data_processing_agreement: AssertionError: assert 0 == 31
+  merchant_agreement:        AssertionError: assert 26 == 50
+after:  59 passed; unfiltered BM25 list identical to before (checked);
+        demo query (merchant agreements) top 3 unchanged ['M02:008', 'M06:008', 'M11:008'], 50 hits instead of 26
+```
+
+**Reproduce.** `python -m pytest tests/test_api_register.py -k keyword_search` (automated test).
 
 ---
 

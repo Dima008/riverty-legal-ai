@@ -164,3 +164,20 @@ def test_search_returns_both_rankings_and_the_fused_one():
         app.dependency_overrides.clear()
     assert r["vector"][0]["chunk_id"] == "M09:008" and r["vector"][0]["similarity"] > 0.99
     assert r["bm25"] and len(r["fused"]) == 5
+
+
+@pytest.mark.parametrize("doc_type, query", [
+    ("data_processing_agreement", "total fees paid in the twelve months"),
+    ("merchant_agreement", "neither side has to pay more than the fees of the last year"),
+])
+def test_keyword_search_filters_before_it_cuts(doc_type, query):
+    """F15: with a document-type filter, BM25 took the top 200 of the whole register and filtered
+    afterwards - the keyword list came back empty or short although the filtered contracts match."""
+    from pipeline import search
+    con = connect()
+    allowed = search._allowed(con, {"doc_type": doc_type})
+    matching = [r["chunk_id"] for r in con.execute("SELECT chunk_id, doc_id FROM chunks_fts WHERE chunks_fts MATCH ?",
+                                                    (search._fts_query(query),)) if r["doc_id"] in allowed]
+    ranked = search.bm25_ranking(con, query, allowed, depth=50)
+    assert len(ranked) == min(50, len(matching)) > 0
+    assert set(ranked) <= set(matching)
