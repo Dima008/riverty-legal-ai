@@ -1,7 +1,8 @@
 """API step 3: review with the four-eyes principle, batch rules, and the gated archive copy.
 
 Scenario from the demo: Q1 (merchant agreements without a limitation of liability). M14 carries
-an injected note (FOUR_EYES), M08 is unclear (REVIEW), M03 and M18 are CONFIRM rows.
+an injected note, so it is FOUR_EYES in every build; M03 and M18 are CONFIRM rows. M08 and M10
+move between REVIEW and CONFIRM from build to build (F7), so no test relies on their triage.
 """
 
 from __future__ import annotations
@@ -68,11 +69,12 @@ def test_disagreement_is_escalated(run):
 
 def test_reason_required_for_review_rows_and_corrections(run):
     rid = run["run_id"]
-    assert _review(rid, "M08", A, reason=None).status_code == 422               # REVIEW row
-    assert _review(rid, "M08", A, decision="CORRECTED").status_code == 422      # needs corrected_status
-    r = _review(rid, "M08", A, decision="CORRECTED", corrected_status="ABSENT",
-                reason="6.2 is data protection, there is no cap")
-    assert r.status_code == 201 and r.json()["review"]["state"] == "CORRECTED"
+    assert _review(rid, "M14", A, reason=None).status_code == 422               # four-eyes row
+    assert _review(rid, "M14", A, decision="CORRECTED").status_code == 422      # needs corrected_status
+    correction = {"decision": "CORRECTED", "corrected_status": "PRESENT", "reason": "test: cap found in annex 2"}
+    r = _review(rid, "M14", A, **correction)
+    assert r.status_code == 201 and r.json()["review"]["state"] == "IN_REVIEW"  # 1 of 2
+    assert _review(rid, "M14", B, **correction).json()["review"]["state"] == "CORRECTED"
 
 
 def test_no_bulk_confirmation_of_critical_rows(run):

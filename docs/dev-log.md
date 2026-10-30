@@ -7,6 +7,25 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · Review test no longer depends on one model answer
+
+- **Problem:** `test_reason_required_for_review_rows_and_corrections` passed on today's register
+  and failed on 4 of 5 repeat registers (`assert 201 == 422`) – the suite could turn red after a
+  rebuild without any code change. That breaks the rule "tests check invariants, not one model
+  answer" (F7). Found by the repo audit.
+- **Cause:** The test assumed M08 is a REVIEW row in Q1. M08 is UNCLEAR (REVIEW) in two builds and
+  ABSENT at 0.9 (CONFIRM) in four.
+- **Technique and why:** Use M14, which is FOUR_EYES in every build because its injected note is
+  found deterministically in the text; the test now also checks that a correction on a four-eyes
+  row needs a second reviewer. The module docstring names which rows are stable and which move.
+- **Rejected alternative:** Pick "the first REVIEW row" at run time (Q1 may have none in some
+  builds, and the test would silently test nothing); pin the register (hides the problem).
+- **Metric before → after:** `tests/test_api_review.py` against six registers (production, five
+  repeat runs): 2 of 6 → 6 of 6 fully green. Tests 60 green.
+- **Links:** engineering issue in `docs/failure-cases.md`; `tests/test_api_review.py`
+
+---
+
 ## 2026-10-30 · F16: the law check compares the country; the coverage guarantee is named, not asserted
 
 - **Problem:** "Contracts not governed by US law" reported all 14 checked contracts under a US
