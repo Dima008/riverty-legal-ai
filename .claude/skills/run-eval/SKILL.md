@@ -17,7 +17,9 @@ description: Run the register evaluation (gold questions Q1-Q8, ablation, metada
      Dima decides.
    - No change: say so in one line.
 4. Save the output as `eval/results/<YYYY-MM-DD>_<PROMPT_VERSION>[_<label>].txt` when the prompt
-   version, the checks or the result changed (label e.g. `reassess`, `run2`). Do not store
+   version, the checks or the result changed (label e.g. `reassess`, `run2`), and the numbers
+   next to it with `python -m eval.check_register --json eval/results/<same name>.json` – the
+   quality view (`GET /evaluation`) and model comparisons read the JSON files. Do not store
    identical repeats.
 5. Report to Dima in German: recall and precision per question, the difference to the last
    result, cost of the run.

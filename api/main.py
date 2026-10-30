@@ -8,6 +8,7 @@ register.py: read-only register and pipeline-explorer endpoints (step 1).
 workflow.py: runs over the whole portfolio with coverage and triage (step 2).
 review.py: review with the four-eyes principle and the gated archive copy (step 3).
 storage_mock.py: write-only stand-in for the contract storage API, mounted at /storage-mock.
+quality.py: the evaluation against the gold set, live and from stored runs.
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pipeline import config
 
-from . import register, review, storage_mock, workflow
+from . import quality, register, review, storage_mock, workflow
 
 app = FastAPI(
     title="Legal Workbench API",
@@ -31,6 +32,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http
 app.include_router(register.router)
 app.include_router(workflow.router)
 app.include_router(review.router)
+app.include_router(quality.router)
 # Stand-in for the contract storage service: a separate app, reached over HTTP like the real one
 app.mount("/storage-mock", storage_mock.app)
 

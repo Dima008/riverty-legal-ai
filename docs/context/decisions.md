@@ -303,3 +303,8 @@ Verworfen: Nur Regel in CLAUDE.md (nichts erzwingt sie); Claude-Code-Stop-Hook n
 Präsentation · Entschieden · Hauptpunkt
 Begründung: Beantwortet Dimas Fragen „Wo sehe ich die Verträge?“ und „Was vergleiche ich?“ auf einen Blick: Der Maßstab ist das Playbook von Legal (catalogue.py), jede Spalte eine Klausel mit Definition, Pflicht je Vertragstyp sichtbar. Zellen: gefunden / fehlt / unklar, blass wenn für den Typ nicht verlangt, Punkt wenn die Prüfungen das Modell überstimmt haben. Dazu Spalte Firmenname (offen / erledigt) – beide Pilotfragen in einer Ansicht. Klick öffnet die Vertragsakte mit Originalseite, allen Befunden, Prüfschichten und Definition. Ohne Modellaufruf. Geprüft: Matrix ergibt für Q1 genau die Gold-Antwort; 9 Händlerverträge mit Pflichtlücke = Vereinigung von Q1, Q3, Q4; 3 AV-Verträge = Q6 und Q7; 5 alte Namen = Q2.
 Verworfen: Nur Ergebnisse nach einer Frage (kein Gesamtbild); Liste ohne Maßstab; Vertragsakte als eigene Seite (Kontextverlust).
+
+### 61 (in Notion ausstehend). Auswertung als Daten: jeder Lauf als JSON mit Konfiguration, Live-Auswertung über die API
+Vorgehen · Entschieden · Nur auf Nachfrage
+Begründung: Qualitätsansicht, Monitoring und Modellvergleich brauchen die Zahlen und die Konfiguration jedes Laufs (Modell, Prompt-Version). evaluate() rechnet, render() druckt den bisherigen Bericht (zeichengleich geprüft), --json speichert die Zahlen; GET /evaluation liefert Live-Auswertung plus gespeicherte Läufe mit dem ehrlichen Hinweis, dass am selben Testsatz verbessert wurde. Ein Test stellt sicher, dass Auswertung und Workbench dieselben Verträge melden.
+Verworfen: Textbericht im Frontend parsen; zweite Auswertung nur für die API.

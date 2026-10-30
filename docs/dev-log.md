@@ -7,6 +7,26 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · Evaluation as data: evaluate() and render(), JSON results, GET /evaluation
+
+- **Problem:** Evaluation results existed only as a printed text report; the quality view,
+  monitoring and the planned model comparison need the numbers, and the configuration of each
+  run (model, prompt version) was not recorded with it.
+- **Cause:** `eval/check_register.py` computed and printed in one function.
+- **Technique and why:** `evaluate()` returns every number as data (questions, ablation,
+  metadata, CUAD, cost, configuration read from the register); `render()` prints the old report;
+  `--json` stores the numbers next to the text. `GET /evaluation` serves the live evaluation and
+  all stored runs, with the honest caveat (tuned on the same set). A test checks that the
+  evaluation and the workbench (`POST /runs`) report the same contracts.
+- **Rejected alternative:** Parse the text report in the UI (brittle); a second evaluation
+  implementation for the API (two answers to one question).
+- **Metric before → after:** Report byte-identical to the old version (33 lines, empty diff).
+  Machine-readable runs: 0 → 1 (`2026-10-30_extract-v2_laptop.json`). Evaluation and workbench
+  agree on 8 of 8 questions (new test). 43 tests green.
+- **Links:** decision 61 (Notion pending); `eval/check_register.py`, `api/quality.py`
+
+---
+
 ## 2026-10-30 · Contract register as a matrix against the playbook, with a contract file
 
 - **Problem:** Dima could not see the contracts at all without asking a question first, nor
