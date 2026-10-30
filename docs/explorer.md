@@ -218,14 +218,18 @@ are not stemmed ("audit" ≠ "audits") – to be measured in the retrieval evalu
 **In our system.** A fixed list of check types (missing clause, legacy names, governing law,
 duplicates); a plan names the check and its parameters, anything else is rejected. Every
 contract in scope is either checked or excluded with a reason (duplicate, amendment, type
-unknown, not extracted); `checked + excluded = in scope` is asserted on every run. No model
+unknown, not extracted): the scope is read from all documents, also those never extracted, and
+each contract lands in exactly one of the two lists; the tests count it against the register. No model
 call: a question costs $0 – reading the contracts was paid once ($0.12 for 47).
 
 **Why this way.** Compile, don't search (4); negative search checks every contract, with
 coverage (5); filters, not vector search, select contracts (17).
 
 **What went wrong.** F10 – a filter that excludes documents can hide a miss. Since then every
-exclusion is listed with its reason.
+exclusion is listed with its reason. F16 – "not governed by US law" compared "US" with "US-NY"
+and reported every contract under a US state's law; the check now compares the country. The
+coverage "assertion" the docstring relied on could never fail and was removed - the real
+guarantees are named instead.
 
 **Live.** `POST /runs` with the plan of Q1 (`GET /examples`):
 "20 merchant agreements in scope · 19 checked · excluded: M15 (duplicate of M01, the original

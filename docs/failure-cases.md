@@ -23,7 +23,7 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F13 | Two requests at the same time break the workflow database; the audit log then shows "No actions yet." | api, frontend | nobody at first - found by the repo audit, reproduced: 215 of 360 concurrent requests → 500 | fixed, regression test |
 | F14 | A forced re-ingest removes a contract from search, drops its injection flag and turns the original into the copy (M01, M14) | ingest / run | nobody at first - found by the repo audit, reproduced on a register copy | fixed, regression test |
 | F15 | With a document-type filter, keyword search cuts before it filters: the BM25 list comes back empty, hybrid search silently turns vector-only | index/search | nobody at first - found by the repo audit, reproduced on a register copy | fixed, regression test; stop words and stemming open |
-| F16 | "Not governed by US law" reports every contract under a US state's law; the coverage assertion can never fail | queries | nobody at first - found by the repo audit, reproduced on a register copy | open |
+| F16 | "Not governed by US law" reports every contract under a US state's law; the coverage assertion can never fail | queries | nobody at first - found by the repo audit, reproduced on a register copy | fixed, regression test |
 | F17 | A new file named like an existing contract (M03_copy.pdf) is merged into it, and the second contract is never read | ingest | nobody at first - found by the repo audit, reproduced in a temporary folder | fixed, regression test |
 
 ---
@@ -614,9 +614,22 @@ is true by construction; the module docstring presents it as the F10 safeguard.
 
 **Layer.** Queries (portfolio check). Q5 asks about DE and is not affected.
 
-**Fix.** Open.
+**Fix.** The check compares the country part of the code (`US-NY` → `US`); `queries.by_law`, used
+by the evaluation for Q5, does the same in SQL (`substr(governing_law, 1, 2)`). The assertion was
+removed; the module docstring and explorer station 7 now name the three real guarantees (scope
+read from all documents incl. unextracted ones, unknown types always in scope, one list per
+contract), and the tests count scope = checked + excluded against the register.
 
-**Reproduce.** `portfolio.run_check` with `{"check": "governing_law_not", "params": {"law": "US"}}`.
+**Proof.** The regression test on the hand-made register was written first and failed
+(`assert ('A1' not in {'A1': 'OTHER_LAW', 'I1': 'OTHER_LAW'})`). After the fix, on the register:
+
+```
+law=US counts           {'other_law': 29, 'law_unknown': 1, 'same_law': 14}   (before: 43 / 1 / 0)
+Q5 (DE, merchant) counts {'other_law': 5, 'law_unknown': 0, 'same_law': 14}   (unchanged)
+evaluation identical; 60 passed
+```
+
+**Reproduce.** `python -m pytest tests/test_portfolio.py -k law_check` (automated test).
 
 ---
 

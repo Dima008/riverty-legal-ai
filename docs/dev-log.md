@@ -7,6 +7,27 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · F16: the law check compares the country; the coverage guarantee is named, not asserted
+
+- **Problem:** "Contracts not governed by US law" reported all 14 checked contracts under a US
+  state's law as "other law" and routed them as routine. And the coverage assertion, presented in
+  the docstring as the F10 safeguard, could never fail (it counted two lists built by the same
+  loop) and disappears under `python -O`. Found by the repo audit.
+- **Cause:** The register stores ISO 3166 codes with the state for federal countries (US-NY,
+  CA-BC), as the extraction schema asks; the check and `queries.by_law` compared the full code.
+- **Technique and why:** Compare the country part (`law.split("-")[0]`, in SQL `substr(.., 1, 2)`).
+  Replace the tautological assertion by naming the three mechanisms that really guarantee
+  coverage, which the tests already check against the register. Regression test on the
+  hand-made register, written first.
+- **Rejected alternative:** Accept "US-NY" as a parameter (a lawyer asks about a country first;
+  states can come later); keep the assertion as decoration (claims a check that does not exist).
+- **Metric before → after:** law=US: other law 43 → 29, same law 0 → 14; Q5 (DE) unchanged
+  (5 / 0 / 14); evaluation identical. Tests 59 → 60.
+- **Links:** failure case F16 (and F10); `pipeline/portfolio.py`, `pipeline/queries.py`,
+  `tests/test_portfolio.py`; explorer station 7
+
+---
+
 ## 2026-10-30 · F15: keyword search filters before it cuts
 
 - **Problem:** With a document-type filter, the keyword (BM25) list of `GET /search` could come

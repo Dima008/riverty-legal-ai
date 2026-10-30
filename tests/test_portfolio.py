@@ -74,3 +74,15 @@ def test_amendment_is_excluded_with_its_base_agreement(con):
 def test_plans_outside_the_fixed_list_are_rejected(con, plan):
     with pytest.raises(ValueError):
         portfolio.run_check(con, plan)
+
+
+def test_law_check_compares_the_country_not_the_state(con):
+    """F16: the register stores the state of a federal country (US-NY). "Not governed by US law"
+    reported every contract under a US state's law as another law - in the Workbench check and
+    in the register query alike."""
+    from pipeline import queries
+    con.execute("UPDATE metadata SET governing_law='US-NY' WHERE doc_id='A1'")
+    run = portfolio.run_check(con, {"check": "governing_law_not", "params": {"law": "US"}})
+    statuses = {r["doc_id"]: r["status"] for r in run["rows"]}
+    assert "A1" not in statuses and statuses["I1"] == "OTHER_LAW"
+    assert "A1" not in {r["doc_id"] for r in queries.by_law(con, "US")}

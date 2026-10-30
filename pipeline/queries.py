@@ -45,8 +45,10 @@ def legacy_names(con) -> dict[str, list[dict]]:
 
 
 def by_law(con, law: str, equal: bool = False, doc_type: str | None = None) -> list[dict]:
+    """Contracts governed (equal=True) or not governed by a country's law, unknown law included.
+    The first two letters of an ISO 3166 code are the country (US-NY -> US, F16)."""
     sql = f"SELECT m.doc_id, m.title, m.counterparty_name, m.governing_law {BASE} AND "
-    sql += "m.governing_law = ?" if equal else "COALESCE(m.governing_law, '') != ?"
+    sql += "substr(m.governing_law, 1, 2) = ?" if equal else "COALESCE(substr(m.governing_law, 1, 2), '') != ?"
     args = [law]
     if doc_type:
         sql += " AND m.doc_type = ?"

@@ -1,9 +1,11 @@
 """Portfolio checks: one question over every contract in scope, answered from the register.
 
-No model call. A check never drops a contract silently: every contract in scope is either
-checked (with status and evidence) or excluded with a stated reason (duplicate, amendment,
-type unknown, not extracted). checked + excluded == in scope is asserted on every run - the
-lesson from failure case F10, where a wrong "amendment" flag hid a contract from every answer.
+No model call. A check never drops a contract silently - the lesson from failure case F10, where
+a wrong "amendment" flag hid a contract from every answer. Three mechanisms make sure of it:
+the scope is read from all documents, also those never extracted (LEFT JOIN); a contract of
+unknown type is always in scope; and every contract in scope lands in exactly one list -
+checked (with status and evidence) or excluded with a stated reason (duplicate, amendment, type
+unknown, not extracted). The tests count scope = checked + excluded against the register.
 
 The same fixed list of check types is what the planner may choose from later (decision 55).
 """
@@ -169,10 +171,12 @@ def _legacy_names(con, docs: list[dict], params: dict) -> tuple[list[dict], dict
 
 
 def _governing_law_not(con, docs: list[dict], params: dict) -> tuple[list[dict], dict, dict]:
+    """Laws are stored as ISO 3166 codes, with the state for federal countries (US-NY, CA-BC);
+    the check compares the country (F16)."""
     rows = []
     for d in docs:
         law = d["governing_law"]
-        if law == params["law"]:
+        if law and law.split("-")[0] == params["law"]:
             continue
         status = "LAW_UNKNOWN" if law is None else "OTHER_LAW"
         level = triage(status, None, d["flags"])
@@ -201,13 +205,12 @@ def run_check(con, plan: dict, run_id: str = "") -> dict:
     doc_type = params.get("doc_type")
     in_scope = [d for d in _documents(con) if not doc_type or d["doc_type"] in (doc_type, *UNKNOWN_TYPES)]
     checked, excluded = [], []
-    for d in in_scope:
+    for d in in_scope:   # each contract in scope lands in exactly one of the two lists
         reason = _exclusion(d, check)
         if reason:
             excluded.append({"doc_id": d["doc_id"], "reason": reason})
         else:
             checked.append(d)
-    assert len(checked) + len(excluded) == len(in_scope), "a contract in scope was neither checked nor excluded"
     rows, counts, info = RUNNERS[check](con, checked, params)
     for r in rows:
         r["sample"] = r["triage"] == "CONFIRM" and sampled(run_id, r["doc_id"])
