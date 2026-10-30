@@ -49,6 +49,7 @@ python -m pipeline.run              # build/update the register (idempotent: fil
 python -m pipeline.run --watch      # auto-ingest files dropped into data/inbox
 python -m pipeline.run --reassess   # replay deterministic checks on stored model output, no cost
 python -m eval.check_register       # must stay at recall 1.0 on Q1–Q8
+python -m pipeline.show [M08]       # overview of the register or one contract with all evidence
 ```
 
 ## Rules

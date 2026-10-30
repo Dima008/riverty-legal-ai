@@ -40,6 +40,7 @@ pip install -r requirements.txt          # plus tesseract-ocr with deu + eng (Wi
 cp .env.example .env                     # Azure OpenAI endpoint, key, deployments
 python -m pipeline.run                   # build the register (idempotent)
 python -m eval.check_register            # compare with the gold set
+python -m pipeline.show                  # look into the register (add a doc id, e.g. M08)
 python -m pipeline.run --watch           # auto-ingest files dropped into data/inbox
 ```
 
