@@ -24,6 +24,16 @@ CREATE TABLE IF NOT EXISTS runs (
     prompt_version TEXT,       -- register version the answer came from
     model_calls INTEGER, cost_usd REAL
 );
+CREATE TABLE IF NOT EXISTS reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, doc_id TEXT, reviewer TEXT,
+    decision TEXT,             -- CONFIRMED | REJECTED | CORRECTED
+    corrected_status TEXT, reason TEXT, ts TEXT,
+    UNIQUE (run_id, doc_id, reviewer)     -- one person cannot be both pairs of eyes
+);
+CREATE TABLE IF NOT EXISTS archive_copies (
+    sha256 TEXT PRIMARY KEY,   -- idempotency key: one file is archived exactly once
+    doc_id TEXT, run_id TEXT, file_name TEXT, receipt_id TEXT, requested_by TEXT, approved_by TEXT, ts TEXT
+);
 CREATE TABLE IF NOT EXISTS audit (
     id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, actor TEXT, action TEXT, target TEXT, details_json TEXT
 );
@@ -50,6 +60,11 @@ def get_wb() -> Iterator[sqlite3.Connection]:
         yield con
     finally:
         con.close()
+
+
+def load_run(con: sqlite3.Connection, run_id: str) -> dict | None:
+    r = con.execute("SELECT result_json FROM runs WHERE run_id=?", (run_id,)).fetchone()
+    return json.loads(r["result_json"]) if r else None
 
 
 def audit(con: sqlite3.Connection, actor: str, action: str, target: str, **details) -> None:

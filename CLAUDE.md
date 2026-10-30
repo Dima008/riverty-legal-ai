@@ -59,7 +59,7 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 | `docs/` | `pipeline.md`, `failure-cases.md`, **`explorer.md` (frontend explanations per step)**, `setup-windows.md`, `context/` (task, briefing, decisions); ADRs later in `docs/adr/` |
 | `pipeline/evidence.py` | Maps a verified quote back onto the page's word boxes (highlight, also across page breaks) |
 | `pipeline/portfolio.py` | Portfolio checks: fixed check types, coverage (never drop a contract silently), triage |
-| `api/` | FastAPI: `register.py` read-only register + explorer; `workflow.py` runs, audit; `workbench.py` workflow DB |
+| `api/` | FastAPI: `register.py` read-only register + explorer; `workflow.py` runs, audit; `review.py` reviews + archive; `storage_mock.py` write-only storage stand-in; `workbench.py` workflow DB |
 | `tests/` | pytest against the built register; check invariants, not one model answer (F7) |
 | `var/register.sqlite` | Generated register (git-ignored) |
 | `.claude/skills/` | Project skills: `record-failure`, `log-decision`, `run-eval` |
@@ -121,16 +121,23 @@ reviewers, planner without model first.
 API step 2 done: `pipeline/portfolio.py` (fixed check types, plan validation, coverage
 "in scope = checked + excluded with reason", triage) and `api/workflow.py` (`/checks`,
 `/examples`, `/users`, `POST /runs`, `/runs`, `/audit`). Runs are stored as snapshots in
-`var/workbench.sqlite`, separate from the register (decision 56, still "Vorschlag"). All 8
-gold questions pass through `POST /runs`; 32 tests green.
+`var/workbench.sqlite`, separate from the register (decision 56). All 8 gold questions pass
+through `POST /runs`.
+
+API step 3 done: `api/review.py` (reviews with reason, four-eyes with two different reviewers,
+DISPUTED on disagreement, batch only for CONFIRM rows, `GET /runs/{id}` shows review states;
+`POST /archive` with tool gate and per-file SHA-256 idempotency), `api/storage_mock.py`
+(write-only `PUT /contracts/{sha256}`, mounted at `/storage-mock`), `api/storage_client.py`
+(adapter, `STORAGE_API_URL`). Decision 57 ("Vorschlag"). End-to-end over real HTTP verified;
+38 tests green.
 
 Next (Step 5 – Legal Workbench). Flow: question → plan (which register query / which
 contracts) → per-contract result with status, quote and page highlight → triage (CONFIRM /
 REVIEW / FOUR_EYES) → approval → archive copy via a mock storage API (write-only, idempotent
 by document hash) → audit log. Show coverage and cost per run.
-1. ~~API step 2~~ done (see above).
-2. **API step 3**: review (two simulated reviewers via header), audit, archive copy to
-   the storage mock. **Step 4**: model planner (function calling over the same check types).
+1. ~~API steps 2 and 3~~ done (see above).
+2. **API step 4**: model planner (function calling over the same check types, asks back when
+   unclear; examples stay as fallback).
 3. **Frontend** `web/` (Vite + React + TS): Workbench plus **pipeline explorer** (decision 49).
 4. **Step 6 – Evaluation**: held-out test set (we tuned on the gold set), several runs
    (variance at temperature 0), retrieval quality.

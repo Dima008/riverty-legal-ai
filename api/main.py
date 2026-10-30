@@ -5,8 +5,9 @@
 Port 8010, not the default 8000: on the demo laptop another local app already uses 8000.
 
 register.py: read-only register and pipeline-explorer endpoints (step 1).
-workflow.py: runs over the whole portfolio with coverage and triage (step 2); review,
-approval and archive copy follow in step 3.
+workflow.py: runs over the whole portfolio with coverage and triage (step 2).
+review.py: review with the four-eyes principle and the gated archive copy (step 3).
+storage_mock.py: write-only stand-in for the contract storage API, mounted at /storage-mock.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pipeline import config
 
-from . import register, workflow
+from . import register, review, storage_mock, workflow
 
 app = FastAPI(
     title="Legal Workbench API",
@@ -29,6 +30,9 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http
                    allow_methods=["*"], allow_headers=["*"])
 app.include_router(register.router)
 app.include_router(workflow.router)
+app.include_router(review.router)
+# Stand-in for the contract storage service: a separate app, reached over HTTP like the real one
+app.mount("/storage-mock", storage_mock.app)
 
 
 @app.get("/health")

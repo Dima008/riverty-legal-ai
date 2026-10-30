@@ -224,9 +224,54 @@ Q1: M14 FOUR_EYES (injected note), M08 and M10 REVIEW (unclear), M03 and M18 CON
 
 ---
 
-## 9. Review and four-eyes principle *(API step 3 – in progress)*
+## 9. Review and four-eyes principle
 
-## 10. Archive copy to the contract storage *(API step 3 – in progress)*
+**What.** The system proposes, people decide. Every reported contract gets a human decision;
+critical ones need two different people.
+
+**In our system.** A reviewer confirms, rejects or corrects a row (e.g. "the clause is there
+after all"), with a reason – required for rejections, corrections and every REVIEW or
+FOUR_EYES row. States: FOUND → IN_REVIEW (1 of 2, four-eyes only) → CONFIRMED / REJECTED /
+CORRECTED; if the two reviewers disagree the row becomes DISPUTED and is escalated. The same
+person cannot review a row twice. CONFIRM rows can be confirmed in one batch, but never
+REVIEW or FOUR_EYES rows or spot-check samples: no bulk confirmation of critical cases.
+Reviewers are simulated (reviewer A / B via a header); in production the user comes from the
+Entra ID token.
+
+**Why this way.** Risk-based human-in-the-loop (13); triage rule (53); simulated reviewers
+(54). Automation bias is real: evidence before verdict, reasons on record.
+
+**Live.** `POST /runs/{run_id}/reviews` as reviewer A on M14 → `IN_REVIEW`; again as A →
+409 "the second review must come from a different person"; as B → `CONFIRMED`.
+
+**Diagram.** State machine FOUND → IN_REVIEW → CONFIRMED / REJECTED / CORRECTED, with the
+DISPUTED branch; two avatars (A, B) on the four-eyes path.
+
+---
+
+## 10. Archive copy to the contract storage
+
+**What.** "You may solely use it to store an additional copy of a contract in a legally
+compliant manner." So the storage API is only ever written to – and only after approval.
+
+**In our system.** A separate write-only service (mock under `/storage-mock`): one
+operation, `PUT /contracts/{sha256}`, nothing to read, list or delete. The workbench calls it
+over HTTP through an adapter, exactly as it would call Riverty's service. Tool gate: the
+archive copy is refused (409) until the row is CONFIRMED or CORRECTED – a FOUR_EYES row needs
+both reviewers. Idempotency: every source file is identified by its SHA-256; the workbench
+skips files it already archived, and the storage itself stores a hash only once (exclusive
+create), so a double click or a retry never creates a second copy. The receipt records who
+approved it. Every attempt, also the refused one, is in the audit log.
+
+**Why this way.** Storage API write-only, only for contract copies, only after approval (2);
+nothing with external effect without approval (core design).
+
+**Live.** Demo run on M14: archive before approval → 409; A + B confirm; archive → `PUT
+/storage-mock/contracts/cdb8c67f…` 201, receipt `rcpt-cdb8c67f83fe`, approved by A and B
+(342 ms); archive again → 200 `already_archived`; one file in the storage.
+
+**Diagram.** Gate in front of the storage: closed (red) until approved, then one arrow with
+the file hash; a second click bounces off ("already archived").
 
 ## 11. Audit and cost
 

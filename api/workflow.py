@@ -19,7 +19,8 @@ from pipeline import config, portfolio, queries
 from pipeline.store import now
 
 from .deps import USERS, current_user, get_con
-from .workbench import audit, get_wb
+from .review import attach_reviews
+from .workbench import audit, get_wb, load_run
 
 router = APIRouter()
 
@@ -92,7 +93,7 @@ def create_run(req: RunRequest, user: str = Depends(current_user), con: sqlite3.
     audit(wb, user, "run_created", run_id, plan=result["plan"], reported=len(result["rows"]),
           coverage={k: v for k, v in result["coverage"].items() if k != "excluded"})
     wb.commit()
-    return run
+    return attach_reviews(wb, run)
 
 
 @router.get("/runs")
@@ -108,10 +109,11 @@ def list_runs(wb: sqlite3.Connection = Depends(get_wb)) -> list[dict]:
 
 @router.get("/runs/{run_id}")
 def get_run(run_id: str, wb: sqlite3.Connection = Depends(get_wb)) -> dict:
-    r = wb.execute("SELECT result_json FROM runs WHERE run_id=?", (run_id,)).fetchone()
-    if r is None:
+    """The run as it was shown (snapshot) plus the current review state of every row."""
+    run = load_run(wb, run_id)
+    if run is None:
         raise HTTPException(404, f"run {run_id} not found")
-    return json.loads(r["result_json"])
+    return attach_reviews(wb, run)
 
 
 @router.get("/audit")
