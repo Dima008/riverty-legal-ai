@@ -363,3 +363,13 @@ Verworfen: Sperre nur in der Oberfläche (beweist nichts über den Server).
 Analyse · Entschieden · Hauptpunkt
 Begründung: Prompt und Prüfungen wurden am Goldstandard verbessert (Overfitting-Risiko). Von Hand geschriebene Verträge brechen die Muster des Generators (neue Fallen: Haftungsgrenze im Anhang, per Verweis, Namensvariante „arvato infoscore“). Manifest mit SHA-256 und erwarteten Antworten wird committet, bevor gemessen wird; gemessen wird einmal mit eingefrorener Konfiguration, das Ergebnis wird gezeigt, wie es kommt.
 Verworfen: Nur weitere synthetische Verträge vom selben Generator; Messen vor dem Versiegeln.
+
+### 73 (in Notion ausstehend). Review direkt im Vertragsregister: das Review gehört zum Befund in einer Fassung (Vertrag, Klausel, Text-Hash, Prompt-Version); Läufe übernehmen es; neu „Eskalieren“
+Vorgehen · Entschieden · Hauptpunkt
+Begründung: Idee von Dima. Bisher hing ein Review an einem Lauf (Entscheidung 56): Wer Q1 erneut stellt, sieht M08 wieder als „zu prüfen“, obwohl zwei Juristen es schon geklärt haben. Ein Review ist eine Aussage über den Vertrag, nicht über eine Frage. Gleiche Regeln wie im Lauf (Begründung, Vier-Augen bei kritischen Befunden, DISPUTED bei Widerspruch); „Eskalieren“ schickt einen Befund mit Begründung in die Vier-Augen-Prüfung. Ändern sich Vertragstext oder Extraktion, gilt das alte Review nicht mehr und wird als „geprüft an einer früheren Fassung“ gezeigt. Die Archivkopie bleibt an den freigegebenen Lauf gebunden (57). Wirkung für die Einführung: Prüflast sinkt mit jeder Frage („reviewed once, reused in every question“). Umsetzung direkt nach den Fehlerkorrekturen.
+Verworfen: Reviews nur im Lauf (doppelte Arbeit, Prüflast wächst mit jeder Frage); Review ohne Fassung (ein geändertes Ergebnis würde stillschweigend als geprüft gelten).
+
+### 74 (in Notion ausstehend). Werkzeug zweisprachig (Deutsch/Englisch umschaltbar), Präsentation bleibt Englisch
+Präsentation · Entschieden · Kurz erwähnen
+Begründung: Wunsch von Dima; Riverty's Rechtsabteilung arbeitet auf Deutsch („die Sprache der Juristen“). Kleine Übersetzungsschicht ohne Bibliothek (zwei Wörterbücher, Umschalter in der Kopfzeile, Wahl gemerkt). Vertragszitate, Playbook-Definitionen und Modell-Begründungen bleiben in der Originalsprache und sind so gekennzeichnet. Dabei wird „Missing“ zu „Not found“ / „Nicht gefunden“ (Entscheidung 21: Beobachtung, kein Urteil – Vorschlag, mit Dima abzustimmen). Die Präsentation bleibt eine englische Fassung, weil der Vortrag Englisch ist und zwei Fassungen auseinanderlaufen.
+Verworfen: Alle Kapitel zweisprachig (ein Tag mehr, zwei Quellen); Werkzeug nur Deutsch (im englischen Interview liest das Panel deutsche Oberflächen).
