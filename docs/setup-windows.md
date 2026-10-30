@@ -67,3 +67,18 @@ python -m eval.check_register                            # expect: recall 1.0 on
 
 Then try the inbox: run `python -m pipeline.run --watch`, copy any PDF from `data\raw\merchant`
 into `data\inbox` under a new name and watch it appear as a duplicate in the register.
+
+## 5. Run the Legal Workbench (two terminals)
+
+```bash
+# terminal 1 - API (port 8010; 8000 is taken on the demo laptop)
+.venv/Scripts/python.exe -m uvicorn api.main:app --reload --port 8010
+
+# terminal 2 - frontend
+cd web
+npm install          # once
+npm run dev          # open http://localhost:5173
+```
+
+In a Bash terminal (Git Bash, MSYS2) use forward slashes as above; in PowerShell write
+`.venv\Scripts\python.exe`. API docs: http://127.0.0.1:8010/docs. Tests: `python -m pytest`.

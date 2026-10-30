@@ -285,6 +285,11 @@ Begründung: Das Register ist erzeugt und wird bei neuer Prompt-Version oder --r
 Verworfen: Workflow-Tabellen im Register (gehen beim Neuaufbau verloren); nur Verweise statt Momentaufnahme (Audit zeigt den heutigen statt den damaligen Stand).
 
 ### 57. Prüf- und Archivregeln: Begründungspflicht, keine Sammelbestätigung kritischer Fälle, Uneinigkeit wird eskaliert, Archivkopie nur nach Freigabe und je Datei genau einmal
-Prozess · **Vorschlag** · Kurz erwähnen
+Prozess · Entschieden · Kurz erwähnen
 Begründung: Setzt die Entscheidungen 2, 13 und 53 im Ablauf um. Begründung ist Pflicht bei Ablehnung, Korrektur und jeder REVIEW- oder FOUR_EYES-Zeile (Audit, Schutz vor Automation Bias). Sammelbestätigung nur für CONFIRM-Zeilen, nie für kritische Fälle oder Stichproben. Bei FOUR_EYES müssen zwei verschiedene Personen zustimmen; sind sie uneinig, wird der Fall DISPUTED und eskaliert. Die Archivkopie ist gesperrt bis zur Freigabe (Tool Gate); jede Quelldatei wird über ihren SHA-256 genau einmal abgelegt, auf beiden Seiten geprüft (Workbench und Speicher). Speicher-Mock als eigener Dienst nur mit PUT, über HTTP und Adapter angesprochen wie der echte. Getestet: Ende-zu-Ende über echtes HTTP, 342 ms, Doppelklick erzeugt keine zweite Kopie.
 Verworfen: Archiv direkt nach Systemvorschlag (ohne Mensch); Hash über alle Seiten zusammen als Schlüssel (bei mehrteiligen Scans nicht pro Datei prüfbar); Mock als Funktionsaufruf statt REST-Grenze.
+
+### 58. Frontend: eine App (Vite, React, TypeScript) mit Fluent UI v9 und Bereichen Workbench, Explorer, später Präsentation
+Architektur · **Vorschlag** · Nur auf Nachfrage
+Begründung: Riverty-Stack (React, TypeScript). Fluent UI v9 ist das Designsystem von Microsoft: passt zum Microsoft-Umfeld, barrierearm, fertige Tabellen, Dialoge, Badges; wirkt sofort professionell. Eine App statt zwei: gleicher API-Client, gleiche Komponenten, nahtloser Übergang von der Erklärung in die Demo. Gestaltungsprinzipien umgesetzt: Status immer mit Symbol und Text, Juristensprache statt Technikbegriffe (labels.ts), Beleg vor Urteil (Quelle vor Entscheidung), Kosten und Abdeckung sichtbar, keine Sammelbestätigung kritischer Fälle. Geprüft mit einem automatischen Rundgang in Edge (Screenshots).
+Verworfen: Schlankere Bibliothek oder eigenes CSS (mehr Bauzeit, weniger Microsoft-Bezug); getrennte Apps für Präsentation und Demo (doppelter Code).

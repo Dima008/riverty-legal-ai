@@ -82,6 +82,13 @@ def test_highlight_endpoint_finds_present_quotes_on_the_page():
             assert h["coverage"] >= 80 and h["pages"], f["clause_type"]
 
 
+def test_every_occurrence_of_a_former_name_is_located():
+    """Legacy-name evidence: one-word ("AfterPay") and multi-word names are found on the page."""
+    assert len(client.get("/documents/M06/pages/1/locate", params={"q": "AfterPay"}).json()["boxes"]) >= 1
+    assert len(client.get("/documents/M04/pages/1/locate", params={"q": "Arvato Financial Solutions"}).json()["boxes"]) >= 3
+    assert client.get("/documents/M04/pages/1/locate", params={"q": "Nonexistent Corp"}).json()["boxes"] == []
+
+
 def test_page_words_and_rendered_image():
     p = client.get("/documents/M09/pages/1").json()
     assert p["source"] == "text_layer" and p["words"] and p["has_image"]

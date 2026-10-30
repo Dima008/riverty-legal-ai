@@ -61,6 +61,7 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 | `pipeline/portfolio.py` | Portfolio checks: fixed check types, coverage (never drop a contract silently), triage |
 | `api/` | FastAPI: `register.py` read-only register + explorer; `workflow.py` runs, audit; `review.py` reviews + archive; `storage_mock.py` write-only storage stand-in; `workbench.py` workflow DB |
 | `tests/` | pytest against the built register; check invariants, not one model answer (F7) |
+| `web/` | Vite + React + TypeScript + Fluent UI v9: `workbench/` (ask, plan, run, coverage, evidence with page highlight, four-eyes review, archive), `AuditLog.tsx`; texts in `labels.ts` (lawyers' language) |
 | `var/register.sqlite` | Generated register (git-ignored) |
 | `.claude/skills/` | Project skills: `record-failure`, `log-decision`, `run-eval` |
 | `.githooks/pre-commit` | Secret guard (keys, real Azure endpoints, `.env` files) |
@@ -73,6 +74,8 @@ python -m eval.check_register       # must stay at recall 1.0 on Q1–Q8
 python -m pipeline.show [M08]       # overview of the register or one contract with all evidence
 uvicorn api.main:app --reload --port 8010   # Workbench API, docs at http://127.0.0.1:8010/docs (8000 is taken on the laptop)
 python -m pytest                    # API tests against the built register, no model calls
+cd web && npm run dev               # Workbench UI on http://localhost:5173 (proxies /api to 8010; API_URL overrides)
+cd web && npm run build             # type-check (tsc) + production bundle
 ```
 
 ## Rules
@@ -138,7 +141,10 @@ by document hash) → audit log. Show coverage and cost per run.
 1. ~~API steps 2 and 3~~ done (see above).
 2. **API step 4**: model planner (function calling over the same check types, asks back when
    unclear; examples stay as fallback).
-3. **Frontend** `web/` (Vite + React + TS): Workbench plus **pipeline explorer** (decision 49).
+3. **Frontend** `web/`: Workbench done (verified in Edge with a scripted walkthrough: Q1 run,
+   M08 evidence with highlight, M14 four-eyes with user switch, archive, audit). Next: the
+   **pipeline explorer** (decision 49) built from `docs/explorer.md`; for "missing" findings
+   highlight the passage that triggered a signal (e.g. the injected note in M14).
 4. **Step 6 – Evaluation**: held-out test set (we tuned on the gold set), several runs
    (variance at temperature 0), retrieval quality.
 5. Presentation website (chapters and minutes in `docs/context/briefing.md`, section 7),

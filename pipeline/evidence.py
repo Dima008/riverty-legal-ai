@@ -44,6 +44,20 @@ def _align(page_words: list[str], quote_words: list[str]) -> tuple[float, list[i
     return 100 * matched / len(quote_words), sorted(indices)
 
 
+def text_boxes(con, doc_id: str, text: str, page: int) -> list[list[float]]:
+    """Boxes of every exact occurrence of a short text on one page (e.g. a former company name),
+    compared word by word after normalising case and punctuation."""
+    row = con.execute("SELECT words_json FROM pages WHERE doc_id=? AND page_no=?", (doc_id, page)).fetchone()
+    words = json.loads(row["words_json"] or "[]") if row else []
+    norm = [_norm(w[4]) for w in words]
+    target = [t for t in map(_norm, text.split()) if t]
+    boxes = []
+    for i in range(len(norm) - len(target) + 1):
+        if target and norm[i:i + len(target)] == target:
+            boxes += [[round(c, 1) for c in w[:4]] for w in words[i:i + len(target)]]
+    return boxes
+
+
 def quote_boxes(con, doc_id: str, quote: str | None, page: int | None) -> dict:
     """Boxes per page for a quote: {"coverage": .., "pages": [{"page": 2, "boxes": [[x0, y0, x1, y1], ...]}]}.
 

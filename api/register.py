@@ -19,7 +19,7 @@ from fastapi.responses import FileResponse, Response
 
 from pipeline import catalogue, chunking, config, extract, queries, search
 from pipeline.chunking import page_of
-from pipeline.evidence import quote_boxes
+from pipeline.evidence import quote_boxes, text_boxes
 
 from .deps import get_adapter, get_con
 
@@ -208,6 +208,14 @@ def get_page(doc_id: str, page_no: int, con: sqlite3.Connection = Depends(get_co
     return {"doc_id": doc_id, "page_no": page_no, "source": r["source"], "ocr_conf": r["ocr_conf"],
             "width": r["width"], "height": r["height"], "text": r["text"],
             "words": _json(r["words_json"], []), "has_image": d["format"] != "txt"}
+
+
+@router.get("/documents/{doc_id}/pages/{page_no}/locate")
+def locate_text(doc_id: str, page_no: int, q: str = Query(..., min_length=2, max_length=200),
+                con: sqlite3.Connection = Depends(get_con)) -> dict:
+    """Boxes of every occurrence of a short text on a page, e.g. a former company name."""
+    _document(con, doc_id)
+    return {"page": page_no, "boxes": text_boxes(con, doc_id, q, page_no)}
 
 
 @lru_cache(maxsize=128)
