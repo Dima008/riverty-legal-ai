@@ -21,10 +21,10 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F11 | The checker varies too: a general audit right accepted in one run, rejected in the next (C05, C08, C20, gpt-4.1) | checks / definition | `eval.repeat` stability report (model comparison) | question for Legal, direction safe |
 | F12 | Bigger model reports an exclusion of punitive damages as limitation of liability, CUAD label says no cap (C13, gpt-4.1) | definition | evaluation (CUAD agreement 19 → 18 of 20) | question for Legal |
 | F13 | Two requests at the same time break the workflow database; the audit log then shows "No actions yet." | api, frontend | nobody at first - found by the repo audit, reproduced: 215 of 360 concurrent requests → 500 | fixed, regression test |
-| F14 | A forced re-ingest removes a contract from search, drops its injection flag and turns the original into the copy (M01, M14) | ingest / run | nobody at first - found by the repo audit, reproduced on a register copy | open |
+| F14 | A forced re-ingest removes a contract from search, drops its injection flag and turns the original into the copy (M01, M14) | ingest / run | nobody at first - found by the repo audit, reproduced on a register copy | fixed, regression test |
 | F15 | With a document-type filter, keyword search cuts before it filters: the BM25 list comes back empty, hybrid search silently turns vector-only | index/search | nobody at first - found by the repo audit, reproduced on a register copy | open |
 | F16 | "Not governed by US law" reports every contract under a US state's law; the coverage assertion can never fail | queries | nobody at first - found by the repo audit, reproduced on a register copy | open |
-| F17 | A new file named like an existing contract (M03_copy.pdf) is merged into it, and the second contract is never read | ingest | nobody at first - found by the repo audit, reproduced in a temporary folder | open |
+| F17 | A new file named like an existing contract (M03_copy.pdf) is merged into it, and the second contract is never read | ingest | nobody at first - found by the repo audit, reproduced in a temporary folder | fixed, regression test |
 
 ---
 
@@ -512,9 +512,33 @@ after `--reassess` (next families pass): M01 duplicate_of='M15'
 **Layer.** Ingest / run orchestration. The evaluation did not see the damage until families ran
 again; three tests then failed (Q8, coverage, summary).
 
-**Fix.** Open.
+**Fix.** `pipeline/run.py` rebuilds everything derived from a document in the same pass that
+reads it again: a document read again but not extracted again (same text) has its stored
+findings re-checked without a model call (`extract.reassess(only=...)`, which rewrites its
+flags); families, search rows and embeddings then follow every document that was read or
+extracted. `pipeline/ingest.py` keeps the first ingest time, so the original stays the original.
+`--force` still extracts only when the text changed - a repair run must not re-roll the model's
+answers (F7). The monitoring view takes "last ingest" from the audit log.
 
-**Reproduce.** On a copy only (`REGISTER_DB`), never on `var/register.sqlite`.
+**Proof.** The regression test was written first and failed (`AssertionError: M01 assert 0 ==
+12` - no search rows). After the fix, the same command on a register copy:
+
+```
+$ REGISTER_DB=<copy> python -m pipeline.run --only M01,M14 --force
+ingested 2: M01, M14
+chunks: 25
+reassessed 2 documents without model calls
+families: duplicates={'M15': 'M01'} amendments={'M05-A': 'M05'} base agreement not in register=['C16'] legacy name hits=14
+embedded 25 chunks with text-embedding-3-small
+run cost: $0.0000 in 2 model calls
+before = after:
+M01: chunks=12 chunks_fts=12 embeddings=12 flags=[] duplicate_of=None ingested_at=2026-10-30T12:09:08+00:00
+M14: chunks=13 chunks_fts=13 embeddings=13 flags=["prompt_injection_suspected"] duplicate_of=None ingested_at=2026-10-30T12:09:08+00:00
+M15: ... duplicate_of=M01
+after the next families pass (--reassess):  Q8   1.00 1.00 ['M15'] / ['M15'] / []
+```
+
+**Reproduce.** `python -m pytest tests/test_ingest.py` (automated test, works on a copy).
 
 ---
 
@@ -607,9 +631,18 @@ reads only `files[0]` (`ingest.py:106`, `114`), and the group's kind is the last
 
 **Layer.** Ingest. Latent: today's register is not affected; the inbox demo and every new file are.
 
-**Fix.** Open.
+**Fix.** `ingest.discover` gives every file its own document, except the page images of one
+scan (`_p1`, `_p2` with the same name). The first file in sorted order keeps the short id
+(M03); a further file with the same prefix keeps its name as id (`M03_copy`), so it is
+registered - and marked as a duplicate by the families step if its text is the same. Removed
+the unreachable skip for `readme.md` and `labels.csv` (those extensions are never read).
 
-**Reproduce.** `ingest.discover([folder])` on a temporary folder with two files sharing an id.
+**Proof.** The regression test failed on the old code
+(`{'M03': (['M03_Bergmann.pdf', 'M03_copy.pdf', 'M03_notes.txt', 'M03_Bergmann_v2.pdf'], 'pdf')}`)
+and passes now: M03, M03_copy, M03_notes, M03_Bergmann_v2 and the two-page scan M20 are separate
+as intended. The 47 ids of today's register are unchanged (evaluation identical).
+
+**Reproduce.** `python -m pytest tests/test_ingest.py` (automated test).
 
 ---
 

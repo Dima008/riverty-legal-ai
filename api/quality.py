@@ -138,7 +138,8 @@ def _pipeline(con) -> dict:
     docs = con.execute("SELECT status, flags FROM documents").fetchall()
     flags = Counter(f.split(":")[0] for d in docs for f in json.loads(d["flags"] or "[]"))
     failed = con.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'extraction_failed'").fetchone()[0]
-    last = con.execute("SELECT MAX(ingested_at) FROM documents").fetchone()[0]
+    # documents.ingested_at keeps the first ingest (F14); the audit log has every one
+    last = con.execute("SELECT MAX(ts) FROM audit_log WHERE action = 'ingested'").fetchone()[0]
     return {
         "documents": len(docs),
         "extracted": con.execute("SELECT COUNT(*) FROM metadata").fetchone()[0],

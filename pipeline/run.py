@@ -6,7 +6,8 @@
     python -m pipeline.run --no-index      # without search index (evaluation runs, see eval/repeat.py)
 
 Every step is idempotent: unchanged files (same hash) are skipped, extraction only
-reruns when the text or the prompt version changed.
+reruns when the text or the prompt version changed. --force reads the selected files again;
+they are extracted again only if their text changed.
 """
 
 from __future__ import annotations
@@ -21,6 +22,11 @@ from .store import audit, connect, now, transaction
 
 def run_once(con, adapter, only: list[str] | None = None, force: bool = False, log=print,
              build_index: bool = True) -> dict:
+    """One pass. Everything derived from a document is rebuilt in the same pass that reads it
+    again (F14): a new or changed file is re-read and re-chunked; it is extracted again if its
+    text or the prompt version changed, otherwise its stored findings are re-checked without a
+    model call (this rebuilds its flags). Families, search rows and embeddings then follow every
+    document that was read or extracted."""
     started = now()
     sources = ingest.discover(config.SOURCE_DIRS + [config.WATCH_DIR])
     if only:
@@ -38,11 +44,18 @@ def run_once(con, adapter, only: list[str] | None = None, force: bool = False, l
     if todo:
         log(f"extracting {len(todo)} with {config.CHAT_DEPLOYMENT} ({config.PROMPT_VERSION})")
         result.update(extract.run(con, adapter, todo, log=log))
+    # Read again but not extracted again (same text, or the extraction failed): re-check the
+    # stored findings against the text, without a model call.
+    recheck = [d for d in new if d not in result["extracted"]]
+    if recheck:
+        extract.reassess(con, log=log, only=recheck)
+    touched = sorted(set(new) | set(result["extracted"]))
+    if touched:
         fam = families.run(con)
         log(f"families: duplicates={fam['duplicates']} amendments={fam['amendments']} "
             f"base agreement not in register={fam['orphan_amendments']} legacy name hits={fam['legacy_name_hits']}")
         if build_index:
-            index.contextualise(con, result["extracted"])
+            index.contextualise(con, touched)
     # the search index is only needed for open questions; evaluation runs skip it (--no-index)
     embedded = index.embed_missing(con, adapter) if build_index else 0
     if embedded:
@@ -59,7 +72,8 @@ def run_once(con, adapter, only: list[str] | None = None, force: bool = False, l
 def main() -> None:
     ap = argparse.ArgumentParser(description="Contract pipeline")
     ap.add_argument("--only", help="comma-separated doc ids")
-    ap.add_argument("--force", action="store_true", help="reprocess even if unchanged")
+    ap.add_argument("--force", action="store_true",
+                    help="read the selected files again; extracted again only if their text changed")
     ap.add_argument("--watch", action="store_true", help="poll the inbox folder")
     ap.add_argument("--interval", type=int, default=5)
     ap.add_argument("--reassess", action="store_true", help="replay deterministic checks without model calls")

@@ -34,7 +34,10 @@ watch folder as stand-in for SharePoint (35).
 **What went wrong.** F2: without the German language data Tesseract silently read "Händler"
 as "Handler" – at 90.8 % confidence. The pipeline now refuses to start without it. F9: the same
 scan gives slightly different OCR text on another machine – no effect on results, but the
-reason the evaluation must run on the demo machine.
+reason the evaluation must run on the demo machine. F17: a new file named like an existing
+contract (`M03_copy.pdf`) was merged into M03 and never read; now only the pages of one scan
+share a document. F14: reading a contract again (`--force`) deleted its search rows and its
+injection flag without rebuilding them; now everything derived is rebuilt in the same run.
 
 **Live.** `GET /documents/M18/pages/1` (words with boxes, `source: ocr`) and
 `/documents/M18/pages/1/image`.
@@ -163,7 +166,7 @@ finding. An amendment whose base agreement is missing is flagged (C16) – an in
 family is a finding for Legal. An amendment only counts as one if type and amendment flag
 agree; otherwise the document stays a contract and is flagged (F10).
 
-**What went wrong.** F6: a new copy turned the original into the duplicate (sorted by name).
+**What went wrong.** F6: a new copy turned the original into the duplicate (sorted by name). F14: reading the original again reset its ingest time and did the same; the first ingest time is now kept.
 F10: the model marked services agreement C11 as an amendment; register queries skip
 amendments, so C11 silently vanished from every answer although it lacks a liability cap.
 

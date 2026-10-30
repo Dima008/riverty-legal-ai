@@ -7,6 +7,35 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · F14, F17: reading a contract again rebuilds everything; every file is its own document
+
+- **Problem:** `pipeline.run --only M01,M14 --force` left both contracts unsearchable (search rows
+  and embeddings 0), dropped M14's injection flag, and at the next families pass made the
+  original M01 the copy of M15 (Q8 1.00 → 0.00). And a new file named like an existing contract
+  (`M03_copy.pdf`) was merged into M03 and never read. Both found by the repo audit.
+- **Cause:** Re-chunking deletes a document's search rows and embeddings, but only the extraction
+  branch rebuilt them – and extraction is skipped when the text did not change. Ingest rewrote
+  the document row (flags gone, ingest time reset), and families keep the earlier document as
+  the original. `discover` grouped every file with the same id prefix – meant for scan pages.
+- **Technique and why:** Everything derived is rebuilt in the same pass that reads a document
+  again: same text → the stored findings are re-checked without a model call (`reassess` for
+  those documents), then families, search rows and embeddings for every document touched. The
+  first ingest time is kept. `--force` still extracts only when the text changed, so a repair
+  run does not re-roll the model's answers (F7). Only the pages of one scan share a document;
+  any other file gets its own id. Both regression tests were written first and failed.
+- **Rejected alternative:** Re-extract every re-read document (costs model calls and can flip
+  findings, F7, for an unchanged text); skip re-chunking when the text is unchanged (hides the
+  real gap: derived data rebuilt only in one branch); keep grouping by prefix and warn.
+- **Metric before → after:** The F14 command on a register copy: search rows / embeddings of
+  M01 and M14 0 / 0 → 12 / 12 and 13 / 13, M14 injection flag lost → kept, Q8 after the next
+  families pass 0.00 → 1.00, cost $0.0000 (2 embedding calls, no extraction). Files merged into
+  one document in the F17 folder: 4 → 1 each. Evaluation identical; tests 55 → 57 green.
+- **Links:** failure cases F14, F17 (and F6); `pipeline/run.py`, `pipeline/ingest.py`,
+  `pipeline/extract.py` (`reassess(only=...)`), `api/quality.py`, `tests/test_ingest.py`;
+  explorer stations 1 and 5
+
+---
+
 ## 2026-10-30 · F13: two requests at once no longer break the workflow database
 
 - **Problem:** When two requests overlapped – two reviewers, a refresh during a review – many

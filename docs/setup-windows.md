@@ -66,7 +66,10 @@ python -m eval.check_register                            # expect: recall 1.0 on
 ```
 
 Then try the inbox: run `python -m pipeline.run --watch`, copy any PDF from `data\raw\merchant`
-into `data\inbox` under a new name and watch it appear as a duplicate in the register.
+into `data\inbox` under a new name (e.g. `M03_copy.pdf` - it becomes its own document, F17) and
+watch it appear as a duplicate in the register. Rehearse this on a copy of the register
+(`REGISTER_DB`): there is no deletion sync, and the tests expect 47 documents. Delete the inbox
+file afterwards.
 
 ## 5. Run the Legal Workbench (two terminals)
 

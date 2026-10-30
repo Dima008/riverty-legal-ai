@@ -373,12 +373,14 @@ def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], text_
               metadata_flags=doc_flags)
 
 
-def reassess(con, log=print, off: frozenset[str] = frozenset()) -> int:
+def reassess(con, log=print, off: frozenset[str] = frozenset(), only: list[str] | None = None) -> int:
     """Replay the deterministic checks on the stored model output - no model call, no cost.
-    Used after tuning a check; the model answers stay exactly as they were. `off` is for the
-    what-if demo on a copy of the register (eval/what_if.py): those layers are left out."""
+    Used after tuning a check, and for documents read again with unchanged text (pipeline/run.py,
+    `only`); the model answers stay exactly as they were. `off` is for the what-if demo on a
+    copy of the register (eval/what_if.py): those layers are left out."""
     rows = con.execute("SELECT m.doc_id, m.raw_json, m.text_sha256, t.text FROM metadata m "
                        "JOIN doc_text t ON t.doc_id = m.doc_id").fetchall()
+    rows = [r for r in rows if only is None or r["doc_id"] in only]
     for r in rows:
         raw = json.loads(r["raw_json"])
         checks = {} if "checker" in off else raw["checks"]   # without the checker: no verdicts

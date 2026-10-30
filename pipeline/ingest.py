@@ -57,9 +57,15 @@ class Page:
 
 
 def discover(dirs: list[Path] | None = None) -> list[SourceDoc]:
-    """Group files into documents. Multi-page JPEG scans (_p1, _p2) become one document."""
+    """Find the documents in the source folders. Only the page images of one scan
+    (M20_Buerowelt_p1.jpg, M20_Buerowelt_p2.jpg) form one document; every other file is a
+    document of its own (F17). Files are taken in sorted order: the first one gets the short id
+    from the test-set file name (M03_Bergmann.pdf -> M03); a further file with the same prefix
+    keeps its name as id (M03_copy.pdf -> M03_copy), so it is registered - and marked as a
+    duplicate if its text is the same. In production the id is the SharePoint item id."""
     groups: dict[str, list[Path]] = {}
     kinds: dict[str, str] = {}
+    scans: dict[str, str] = {}      # doc id -> file name without the page suffix, for scan pages
     for root in dirs or config.SOURCE_DIRS:
         if not root.exists():
             continue
@@ -67,14 +73,25 @@ def discover(dirs: list[Path] | None = None) -> list[SourceDoc]:
             ext = path.suffix.lower()
             if not path.is_file() or ext not in IMAGE_EXT | {".pdf", ".txt"}:
                 continue
-            if path.name.lower() in {"readme.md", "labels.csv"}:
-                continue
-            stem = PAGE_SUFFIX.sub("", path.stem) if ext in IMAGE_EXT else path.stem
-            match = DOC_ID.match(stem)
-            doc_id = match.group(1) if match else re.sub(r"[^A-Za-z0-9_-]+", "_", stem)[:40]
+            is_page = ext in IMAGE_EXT and PAGE_SUFFIX.search(path.stem) is not None
+            stem = PAGE_SUFFIX.sub("", path.stem) if is_page else path.stem
+            doc_id = _free_id(stem, is_page, groups, scans)
             groups.setdefault(doc_id, []).append(path)
             kinds[doc_id] = "image" if ext in IMAGE_EXT else ext.lstrip(".")
+            if is_page:
+                scans[doc_id] = stem
     return [SourceDoc(d, sorted(f, key=_page_index), kinds[d]) for d, f in sorted(groups.items())]
+
+
+def _free_id(stem: str, is_page: bool, groups: dict, scans: dict) -> str:
+    """The first id that is still free - or taken by an earlier page of the same scan."""
+    match = DOC_ID.match(stem)
+    name = re.sub(r"[^A-Za-z0-9_-]+", "_", stem)[:40]
+    candidates = ([match.group(1)] if match else []) + [name] + [f"{name}_{n}" for n in range(2, 100)]
+    for doc_id in candidates:
+        if doc_id not in groups or (is_page and scans.get(doc_id) == stem):
+            return doc_id
+    raise ValueError(f"no free document id for {stem!r}")
 
 
 def _page_index(path: Path) -> int:
@@ -154,15 +171,18 @@ def ingest(con, sources: list[SourceDoc] | None = None, actor: str = "pipeline")
     processed = []
     for src in sources or discover():
         file_hash = hashlib.sha256(b"".join(p.read_bytes() for p in src.files)).hexdigest()
-        row = con.execute("SELECT file_sha256 FROM documents WHERE doc_id=?", (src.doc_id,)).fetchone()
+        row = con.execute("SELECT file_sha256, ingested_at FROM documents WHERE doc_id=?", (src.doc_id,)).fetchone()
         if row and row["file_sha256"] == file_hash:
             continue  # unchanged (delta logic, like a Graph delta query)
+        # The first ingest time is kept: families keep the earlier document as the original, so
+        # reading the original again must not turn it into the copy (F6, F14).
+        first_ingested = row["ingested_at"] if row and row["ingested_at"] else now()
         try:
             pages = read_pages(src)
         except Exception as exc:  # keep going, mark as failed
             with transaction(con):
                 con.execute("INSERT OR REPLACE INTO documents (doc_id, source_path, file_sha256, status, ingested_at)"
-                            " VALUES (?,?,?,?,?)", (src.doc_id, str(src.files[0]), file_hash, "FAILED", now()))
+                            " VALUES (?,?,?,?,?)", (src.doc_id, str(src.files[0]), file_hash, "FAILED", first_ingested))
                 audit(con, actor, "ingest_failed", src.doc_id, error=str(exc))
             continue
         full = "\n".join(p.text for p in pages)
@@ -186,7 +206,7 @@ def ingest(con, sources: list[SourceDoc] | None = None, actor: str = "pipeline")
                 " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                 (src.doc_id, ";".join(str(p.relative_to(config.ROOT)) for p in src.files), file_hash,
                  hashlib.sha256(normalise_for_hash(full).encode()).hexdigest(), fmt, detect_language(full),
-                 len(pages), mean_conf, status, src.doc_id, None, now()))
+                 len(pages), mean_conf, status, src.doc_id, None, first_ingested))
             for p in pages:
                 con.execute("INSERT INTO pages VALUES (?,?,?,?,?,?,?,?)",
                             (src.doc_id, p.page_no, p.text, p.source, p.ocr_conf, p.width, p.height,
