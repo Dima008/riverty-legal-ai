@@ -100,6 +100,38 @@ def summary(con: sqlite3.Connection = Depends(get_con)) -> dict:
     }
 
 
+@router.get("/matrix")
+def contract_matrix(con: sqlite3.Connection = Depends(get_con)) -> dict:
+    """Every document against Legal's playbook: one row per document, one cell per clause type,
+    plus open and resolved former company names. The comparison standard is the catalogue
+    (definition and the document types where a clause is required). No model call."""
+    clauses = {k: {"label": c["label"], "definition": c["definition"], "required_for": c["required_for"]}
+               for k, c in catalogue.CLAUSES.items()}
+    cells: dict[str, dict] = {}
+    for r in con.execute("SELECT doc_id, clause_type, status, model_status, confidence FROM clauses"):
+        cells.setdefault(r["doc_id"], {})[r["clause_type"]] = {
+            "status": r["status"], "model_status": r["model_status"], "confidence": r["confidence"]}
+    names: dict[str, dict] = {}
+    for r in con.execute("SELECT doc_id, SUM(resolved_by IS NULL) open, SUM(resolved_by IS NOT NULL) resolved "
+                         "FROM name_hits GROUP BY doc_id"):
+        names[r["doc_id"]] = {"open": r["open"], "resolved": r["resolved"]}
+    rows = []
+    for r in con.execute(
+            "SELECT d.doc_id, d.format, d.status AS ingest_status, d.ocr_mean_conf, d.family_id, d.duplicate_of,"
+            " d.flags, m.doc_type, m.title, m.counterparty_name, m.effective_date, m.governing_law, m.language,"
+            " m.is_amendment FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id ORDER BY d.doc_id"):
+        row = dict(r)
+        row["flags"] = _json(row["flags"], [])
+        row["is_amendment"] = bool(row["is_amendment"])
+        row["cells"] = cells.get(row["doc_id"], {})
+        for key, cell in row["cells"].items():
+            cell["required"] = row["doc_type"] in clauses[key]["required_for"]
+        row["gaps"] = sorted(k for k, c in row["cells"].items() if c["required"] and c["status"] != "PRESENT")
+        row["former_names"] = names.get(row["doc_id"], {"open": 0, "resolved": 0})
+        rows.append(row)
+    return {"clauses": clauses, "rows": rows}
+
+
 @router.get("/catalogue")
 def clause_catalogue() -> dict:
     """Legal's playbook as data: clause definitions and where they are required."""

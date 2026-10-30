@@ -7,6 +7,7 @@ guarantee, not one particular model answer. No test calls a model: /search gets 
 
 from __future__ import annotations
 
+import json
 import sqlite3
 
 import numpy as np
@@ -34,6 +35,21 @@ def test_summary_covers_every_document():
     assert s["documents"] == 47 and s["extracted"] == 47
     assert s["duplicates"] == {"M15": "M01"}
     assert s["cost"]["cost_usd"] > 0
+
+
+def test_matrix_compares_every_document_with_the_playbook():
+    m = client.get("/matrix").json()
+    rows = {r["doc_id"]: r for r in m["rows"]}
+    assert len(rows) == 47 and set(m["clauses"]) == {"liability_limitation", "consumer_terms_checkout",
+                                                     "dpa_reference", "subprocessor_clause", "audit_clause"}
+    for r in rows.values():
+        assert set(r["cells"]) == set(m["clauses"]), r["doc_id"]          # every clause judged for every document
+    # the matrix tells the same story as the gold question Q1 (duplicates are not counted twice)
+    q1 = {d for d, r in rows.items() if r["doc_type"] == "merchant_agreement" and not r["duplicate_of"]
+          and "liability_limitation" in r["gaps"]}
+    gold = {q["id"]: set(q["expected"]) for q in json.loads((config.DATA / "gold_queries.json").read_text(encoding="utf-8"))}
+    assert q1 == gold["Q1"]
+    assert rows["M05"]["former_names"]["resolved"] > 0 and rows["M04"]["former_names"]["open"] > 0
 
 
 def test_unknown_document_is_404():

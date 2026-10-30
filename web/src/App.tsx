@@ -5,14 +5,17 @@ import { Scales24Regular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { api, setCurrentUser } from "./api";
 import { AuditLog } from "./AuditLog";
+import { Register } from "./register/Register";
 import { darkTheme } from "./theme";
 import { UserContext, USERS } from "./user";
 import { Workbench } from "./workbench/Workbench";
 
-type Area = "workbench" | "audit";
+type Area = "workbench" | "register" | "audit";
+const AREAS: Area[] = ["workbench", "register", "audit"];
 
 export function App() {
-  const [area, setArea] = useState<Area>((location.hash.slice(1) as Area) || "workbench");
+  const fromHash = location.hash.slice(1) as Area;
+  const [area, setArea] = useState<Area>(AREAS.includes(fromHash) ? fromHash : "workbench");
   const [user, setUser] = useState("reviewer_a");
   const [version, setVersion] = useState<string | null>(null);
 
@@ -44,6 +47,7 @@ export function App() {
             </div>
             <TabList selectedValue={area} onTabSelect={(_, d) => setArea(d.value as Area)} className="nav">
               <Tab value="workbench">Workbench</Tab>
+              <Tab value="register">Contract register</Tab>
               <Tab value="audit">Audit log</Tab>
             </TabList>
             <div className="spacer" />
@@ -67,7 +71,11 @@ export function App() {
             </div>
           </header>
         </FluentProvider>
-        <main className="content">{area === "workbench" ? <Workbench /> : <AuditLog />}</main>
+        <main className="content">
+          {area === "workbench" && <Workbench />}
+          {area === "register" && <Register />}
+          {area === "audit" && <AuditLog />}
+        </main>
         <footer className="footer">
           Observations, not legal advice – lawyers decide · Synthetic and public test data (CUAD, CC BY 4.0) · Every model call is logged with its cost
         </footer>

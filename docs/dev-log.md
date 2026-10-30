@@ -7,6 +7,29 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · Contract register as a matrix against the playbook, with a contract file
+
+- **Problem:** Dima could not see the contracts at all without asking a question first, nor
+  what they are compared with ("Where are the contracts? What am I comparing?").
+- **Cause:** The workbench only showed the rows a question reported; the comparison standard
+  (Legal's playbook) lived in `catalogue.py` and was invisible in the UI.
+- **Technique and why:** `GET /matrix` returns every document with one cell per playbook clause
+  (found / missing / unclear, required or not for its type, whether the checks overruled the
+  model) plus open and resolved former names. The UI shows it as a matrix with the playbook
+  definitions on top; a click opens the contract file (drawer) with the original page, all
+  findings in playbook order (required first), the checks and the definition. No model call.
+- **Rejected alternative:** A plain contract list without the standard; the contract file as a
+  separate page (loses the matrix context).
+- **Metric before → after:** Contracts visible without a question: 0 → 47. The matrix agrees
+  with the gold set: Q1 from the matrix = gold answer (test); 9 merchant agreements with a
+  required gap = union of Q1, Q3, Q4; 3 DPAs = Q6 ∪ Q7; 5 open former names = Q2. Edge
+  walkthrough: 7 screenshots, 0 errors; 2 defects found and fixed (findings in alphabetical
+  instead of playbook order, plural document type in the file header). 41 tests green.
+- **Links:** decision 60 (Notion pending); `api/register.py` (`/matrix`), `web/src/register/*`,
+  `web/src/components/Finding.tsx`
+
+---
+
 ## 2026-10-30 · Development log and session summary as a fixed routine
 
 - **Problem:** Reasons, rejected alternatives and numbers of each step were spread over commit

@@ -159,6 +159,9 @@ by document hash) → audit log. Show coverage and cost per run.
    (variance at temperature 0), retrieval quality.
 5. Presentation website (chapters and minutes in `docs/context/briefing.md`, section 7),
    PDF fallback, dress rehearsal.
-6. Open items: MCP server over `pipeline.queries`, planner (function calling), handwritten
+6. Known gap: amendments only change the company name so far. An amendment that **adds** a
+   clause leaves the base agreement "missing" (false alarm); one that **deletes** a clause
+   leaves it "present" (a miss – the dangerous direction). Needs clause-level merging per family.
+7. Open items: MCP server over `pipeline.queries`, planner (function calling), handwritten
    example (Dima provides `data/raw/handwritten/H01.jpg`), deletion sync (known gap),
    decision 21 "observations, not legal judgments" still to be confirmed by Dima.

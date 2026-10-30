@@ -1,20 +1,13 @@
 // Evidence before verdict: the original page with the passage highlighted, what the model proposed,
 // what every check said, what the register made of it - and only then the human decision.
-import { Spinner, MessageBar, MessageBarBody } from "@fluentui/react-components";
-import {
-  ArrowRight20Regular,
-  CalendarLtr16Regular,
-  CheckmarkCircle20Filled,
-  DismissCircle20Filled,
-  DocumentText16Regular,
-  Info20Regular,
-  Scales24Regular,
-} from "@fluentui/react-icons";
+import { MessageBar, MessageBarBody, Spinner } from "@fluentui/react-components";
+import { CalendarLtr16Regular, DocumentText16Regular, Scales24Regular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { api, type DocText, type DocumentInfo, type Finding, type Run, type RunRow } from "../api";
 import { StatusBadge, TriageBadge } from "../components/Badges";
+import { Checks, Quote, Verdict } from "../components/Finding";
 import { PageView, TextExcerpt } from "../components/PageView";
-import { flagLabel, LAYER_LABEL, STATUS_LABEL, warningLabels } from "../labels";
+import { STATUS_LABEL, warningLabels } from "../labels";
 import { ReviewBox } from "./ReviewBox";
 
 interface Loaded {
@@ -26,22 +19,27 @@ interface Loaded {
   firstPage: number;
 }
 
+/** Highlight boxes for one finding: its quote, or the passage that hints at a missing clause. */
+export async function findingBoxes(docId: string, finding: Finding | null) {
+  const boxes: Record<number, number[][]> = {};
+  if (!finding || !(finding.quote || finding.flags.some((f) => f.startsWith("signal_despite_absent")))) {
+    return { boxes, page: finding?.page ?? 1, hint: null as string | null };
+  }
+  const h = await api.highlight(docId, finding.clause_type);
+  h.pages.forEach((p) => (boxes[p.page] = p.boxes));
+  const hint = h.kind === "quote" ? "the model's quote" : h.kind === "signal" ? "the passage that hints at the clause" : null;
+  return { boxes, page: h.pages[0]?.page ?? finding.page ?? 1, hint };
+}
+
 async function load(run: Run, row: RunRow): Promise<Loaded> {
   const doc = await api.document(row.doc_id);
-  const boxes: Record<number, number[][]> = {};
+  let boxes: Record<number, number[][]> = {};
   let finding: Finding | null = null;
   let firstPage = 1;
   let hint: string | null = null;
   if (run.plan.check === "missing_clause") {
-    const clause = run.plan.params.clause_type;
-    finding = (await api.findings(row.doc_id)).find((f) => f.clause_type === clause) ?? null;
-    if (finding?.quote || finding?.flags.some((f) => f.startsWith("signal_despite_absent"))) {
-      const h = await api.highlight(row.doc_id, clause);
-      h.pages.forEach((p) => (boxes[p.page] = p.boxes));
-      firstPage = h.pages[0]?.page ?? finding.page ?? 1;
-      if (h.kind === "quote") hint = "the model's quote";
-      if (h.kind === "signal") hint = "the passage that hints at the clause";
-    }
+    finding = (await api.findings(row.doc_id)).find((f) => f.clause_type === run.plan.params.clause_type) ?? null;
+    ({ boxes, page: firstPage, hint } = await findingBoxes(row.doc_id, finding));
   } else if (row.hits?.length) {
     for (const hit of row.hits) {
       const r = await api.locate(row.doc_id, hit.page, hit.name);
@@ -52,59 +50,6 @@ async function load(run: Run, row: RunRow): Promise<Loaded> {
   }
   const text = doc.format === "txt" ? await api.text(row.doc_id) : null;
   return { doc, finding, boxes, hint, text, firstPage };
-}
-
-function layerDetail(layer: string, detail: string | null | undefined): string | null {
-  if (!detail) return null;
-  if (layer === "document_signals") return detail.split(", ").map(flagLabel).join(", ");
-  if (layer === "no_absence_signal") return `found in the text: …${detail.replace(/^'|'$/g, "")}…`;
-  return detail;
-}
-
-// The guardrail sandwich as a timeline: model on top, every check, the register at the bottom.
-function Checks({ finding }: { finding: Finding }) {
-  const steps = finding.layers.filter((l) => l.layer !== "model" && l.layer !== "register");
-  return (
-    <ol className="timeline" aria-label="Checks applied to this finding">
-      {steps.map((l) => {
-        const state = l.passed === true ? "pass" : l.passed === false ? "fail" : "info";
-        const icon =
-          state === "pass" ? <CheckmarkCircle20Filled aria-label="passed" /> :
-          state === "fail" ? <DismissCircle20Filled aria-label="failed" /> : <Info20Regular aria-hidden />;
-        return (
-          <li key={l.layer} className={`step ${state}`}>
-            <span className="step-icon">{icon}</span>
-            <div className="step-body">
-              <div className="step-title">{LAYER_LABEL[l.layer] ?? l.layer}</div>
-              {l.detail && <div className="step-detail">{layerDetail(l.layer, l.detail)}</div>}
-            </div>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function Verdict({ finding }: { finding: Finding }) {
-  const checks = finding.layers.filter((l) => l.layer !== "model" && l.layer !== "register");
-  const failed = checks.filter((l) => l.passed === false).length;
-  return (
-    <div className={`verdict${finding.changed_by_checks ? " overruled" : ""}`}>
-      <div className="v-box">
-        <span className="v-label">Model proposed</span>
-        <StatusBadge status={finding.model_status} />
-      </div>
-      <div className="v-arrow">
-        <ArrowRight20Regular />
-        <span>{checks.length} checks{failed ? `, ${failed} failed` : ""}</span>
-      </div>
-      <div className="v-box result">
-        <span className="v-label">Register says</span>
-        <StatusBadge status={finding.status} />
-        <span className="v-conf">confidence {finding.confidence.toFixed(2)}</span>
-      </div>
-    </div>
-  );
 }
 
 export function Evidence({ run, row, onChanged }: { run: Run; row: RunRow; onChanged: () => void }) {
@@ -175,20 +120,11 @@ export function Evidence({ run, row, onChanged }: { run: Run; row: RunRow; onCha
             <div className="panel">
               <div className="section-title">{finding.label}</div>
               <Verdict finding={finding} />
-              {finding.quote ? (
-                <blockquote className="quote">
-                  “{finding.quote}”
-                  <cite>{[finding.section, finding.page && `page ${finding.page}`].filter(Boolean).join(" · ")}</cite>
-                </blockquote>
-              ) : (
-                <p className="note">No passage: the model read the whole contract and reported no such clause.</p>
-              )}
+              <Quote finding={finding} />
               {finding.rationale && <p className="note">Model's reason: {finding.rationale}</p>}
               <div className="section-title small">How the register decided</div>
               <Checks finding={finding} />
-              <p className="note">
-                {STATUS_LABEL[finding.status]} is an observation about the text, not a legal assessment.
-              </p>
+              <p className="note">{STATUS_LABEL[finding.status]} is an observation about the text, not a legal assessment.</p>
             </div>
           )}
 

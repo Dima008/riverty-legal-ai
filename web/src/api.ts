@@ -149,6 +149,7 @@ export interface DocumentInfo {
     governing_law: string | null;
   } | null;
   pages: PageInfo[];
+  legacy_names: { name: string; page: number; snippet: string; resolved_by: string | null }[];
 }
 
 export interface Highlight {
@@ -162,6 +163,43 @@ export interface Highlight {
 export interface DocText {
   text: string;
   page_offsets: number[];
+}
+
+export interface MatrixCell {
+  status: Status;
+  model_status: Status;
+  confidence: number;
+  required: boolean;
+}
+
+export interface MatrixRow {
+  doc_id: string;
+  format: string;
+  ingest_status: string;
+  ocr_mean_conf: number | null;
+  family_id: string;
+  duplicate_of: string | null;
+  flags: string[];
+  doc_type: string | null;
+  title: string | null;
+  counterparty_name: string | null;
+  effective_date: string | null;
+  governing_law: string | null;
+  is_amendment: boolean;
+  cells: Record<string, MatrixCell>;
+  gaps: string[];
+  former_names: { open: number; resolved: number };
+}
+
+export interface ClauseSpec {
+  label: string;
+  definition: string;
+  required_for: string[];
+}
+
+export interface Matrix {
+  clauses: Record<string, ClauseSpec>;
+  rows: MatrixRow[];
 }
 
 export interface ArchiveResult {
@@ -225,6 +263,7 @@ export const api = {
   confirmBatch: (runId: string, docIds: string[]) => post<{ confirmed: string[] }>(`/runs/${runId}/reviews/batch`, { doc_ids: docIds }),
   archive: (runId: string, docId: string) => post<ArchiveResult>("/archive", { run_id: runId, doc_id: docId }),
   audit: () => request<AuditEvent[]>("/audit"),
+  matrix: () => request<Matrix>("/matrix"),
   document: (id: string) => request<DocumentInfo>(`/documents/${id}`),
   findings: (id: string) => request<Finding[]>(`/documents/${id}/findings`),
   highlight: (id: string, clause: string) => request<Highlight>(`/documents/${id}/findings/${clause}/highlight`),

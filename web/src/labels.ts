@@ -45,6 +45,14 @@ export const DOC_TYPE_LABEL: Record<string, string> = {
   "all documents": "all documents",
 };
 
+export const DOC_TYPE_SINGULAR: Record<string, string> = {
+  merchant_agreement: "Merchant agreement",
+  data_processing_agreement: "Data processing agreement",
+  amendment: "Amendment",
+  other_commercial_agreement: "Other commercial agreement",
+  unknown: "Unknown type",
+};
+
 export const LAYER_LABEL: Record<string, string> = {
   model: "What the model said",
   quote_found_in_source: "Quote found in the contract",
