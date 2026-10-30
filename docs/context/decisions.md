@@ -290,6 +290,6 @@ Begründung: Setzt die Entscheidungen 2, 13 und 53 im Ablauf um. Begründung ist
 Verworfen: Archiv direkt nach Systemvorschlag (ohne Mensch); Hash über alle Seiten zusammen als Schlüssel (bei mehrteiligen Scans nicht pro Datei prüfbar); Mock als Funktionsaufruf statt REST-Grenze.
 
 ### 58. Frontend: eine App (Vite, React, TypeScript) mit Fluent UI v9 und Bereichen Workbench, Explorer, später Präsentation
-Architektur · **Vorschlag** · Nur auf Nachfrage
+Architektur · Entschieden · Nur auf Nachfrage
 Begründung: Riverty-Stack (React, TypeScript). Fluent UI v9 ist das Designsystem von Microsoft: passt zum Microsoft-Umfeld, barrierearm, fertige Tabellen, Dialoge, Badges; wirkt sofort professionell. Eine App statt zwei: gleicher API-Client, gleiche Komponenten, nahtloser Übergang von der Erklärung in die Demo. Gestaltungsprinzipien umgesetzt: Status immer mit Symbol und Text, Juristensprache statt Technikbegriffe (labels.ts), Beleg vor Urteil (Quelle vor Entscheidung), Kosten und Abdeckung sichtbar, keine Sammelbestätigung kritischer Fälle. Geprüft mit einem automatischen Rundgang in Edge (Screenshots).
 Verworfen: Schlankere Bibliothek oder eigenes CSS (mehr Bauzeit, weniger Microsoft-Bezug); getrennte Apps für Präsentation und Demo (doppelter Code).

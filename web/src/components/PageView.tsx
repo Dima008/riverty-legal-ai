@@ -1,8 +1,8 @@
 // The page as an image with the evidence highlighted (decision 52): the server renders the page,
 // the browser draws boxes from the stored word coordinates, scaled in percent of the page size.
-import { Button, Caption1, Text } from "@fluentui/react-components";
+import { Button } from "@fluentui/react-components";
 import { ChevronLeft16Regular, ChevronRight16Regular } from "@fluentui/react-icons";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { api, type DocumentInfo } from "../api";
 
 interface Props {
@@ -10,31 +10,43 @@ interface Props {
   page: number;
   onPage: (page: number) => void;
   boxes: Record<number, number[][]>;
+  hint?: string | null;   // what is highlighted, e.g. "the model's quote"
 }
 
-export function PageView({ doc, page, onPage, boxes }: Props) {
+export function PageView({ doc, page, onPage, boxes, hint }: Props) {
   const info = doc.pages.find((p) => p.page_no === page);
+  const scroller = useRef<HTMLDivElement>(null);
   const firstBox = useRef<HTMLDivElement>(null);
   const pagesWithHits = Object.keys(boxes).map(Number).filter((p) => boxes[p].length > 0);
 
-  useEffect(() => {
-    firstBox.current?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [page, boxes]);
+  // Scroll inside the page viewer only (the window stays where the reviewer is).
+  const scrollToHighlight = useCallback(() => {
+    const box = firstBox.current;
+    const area = scroller.current;
+    if (!box || !area) return;
+    const delta = box.getBoundingClientRect().top - area.getBoundingClientRect().top;
+    area.scrollBy({ top: delta - area.clientHeight / 3, behavior: "smooth" });
+  }, []);
+  useEffect(scrollToHighlight, [page, boxes, scrollToHighlight]);
 
   return (
     <div className="pageview">
       <div className="pageview-nav">
         <Button size="small" icon={<ChevronLeft16Regular />} disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label="Previous page" />
-        <Text size={200}>
+        <span>
           Page {page} of {doc.page_count}
-          {info?.source === "ocr" && info.ocr_conf != null ? ` · read by OCR, ${Math.round(info.ocr_conf)} % confidence` : ""}
-        </Text>
+          {info?.source === "ocr" && info.ocr_conf != null ? ` · scanned, read by OCR (${Math.round(info.ocr_conf)} %)` : ""}
+        </span>
         <Button size="small" icon={<ChevronRight16Regular />} disabled={page >= doc.page_count} onClick={() => onPage(page + 1)} aria-label="Next page" />
-        {pagesWithHits.length > 0 && <Caption1>highlighted on page {pagesWithHits.join(" and ")}</Caption1>}
+        {pagesWithHits.length > 0 && (
+          <span className="hl-hint">
+            <span className="hl-swatch" /> {hint ?? "highlighted"} · page {pagesWithHits.join(" and ")}
+          </span>
+        )}
       </div>
-      <div className="page-scroll">
+      <div className="page-scroll" ref={scroller}>
         <div className="page-frame">
-          <img src={api.pageImageUrl(doc.doc_id, page)} alt={`${doc.doc_id}, page ${page}`} />
+          <img src={api.pageImageUrl(doc.doc_id, page)} alt={`${doc.doc_id}, page ${page}`} onLoad={scrollToHighlight} />
           {info &&
             (boxes[page] ?? []).map((b, i) => (
               <div

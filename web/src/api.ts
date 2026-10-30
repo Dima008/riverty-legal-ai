@@ -152,6 +152,7 @@ export interface DocumentInfo {
 }
 
 export interface Highlight {
+  kind: "quote" | "signal" | "none";   // signal: the passage that hints at a clause reported missing
   char_start: number | null;
   char_end: number | null;
   coverage: number;

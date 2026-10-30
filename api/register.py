@@ -178,13 +178,25 @@ def get_findings(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> lis
 
 @router.get("/documents/{doc_id}/findings/{clause_type}/highlight")
 def get_highlight(doc_id: str, clause_type: str, con: sqlite3.Connection = Depends(get_con)) -> dict:
-    """Word boxes of the finding's quote on the page image(s), for the evidence view."""
-    _document(con, doc_id)
-    r = con.execute("SELECT quote, page, char_start, char_end FROM clauses WHERE doc_id=? AND clause_type=?",
+    """Word boxes for the evidence view. kind=quote: the finding's quote. kind=signal: no quote
+    (clause missing), but a passage that hints at the clause - e.g. the injected note in M14."""
+    d = _document(con, doc_id)
+    r = con.execute("SELECT quote, page, char_start, char_end, flags FROM clauses WHERE doc_id=? AND clause_type=?",
                     (doc_id, clause_type)).fetchone()
     if r is None:
         raise HTTPException(404, f"no finding {clause_type} for {doc_id}")
-    return {"char_start": r["char_start"], "char_end": r["char_end"], **quote_boxes(con, doc_id, r["quote"], r["page"])}
+    if r["quote"]:
+        return {"kind": "quote", "char_start": r["char_start"], "char_end": r["char_end"],
+                **quote_boxes(con, doc_id, r["quote"], r["page"])}
+    signal = next((f for f in _json(r["flags"], []) if f.startswith("signal_despite_absent")), None)
+    if signal:
+        # the stored snippet is cut at fixed offsets: drop the possibly partial first and last word
+        words = signal.partition(": ")[2].strip("'").split()[1:-1]
+        for page_no in range(1, (d["page_count"] or 0) + 1):
+            found = quote_boxes(con, doc_id, " ".join(words), page_no)
+            if found["pages"]:
+                return {"kind": "signal", "char_start": None, "char_end": None, **found}
+    return {"kind": "none", "char_start": None, "char_end": None, "coverage": 0.0, "pages": []}
 
 
 @router.get("/documents/{doc_id}/text")

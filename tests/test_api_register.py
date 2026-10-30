@@ -82,6 +82,18 @@ def test_highlight_endpoint_finds_present_quotes_on_the_page():
             assert h["coverage"] >= 80 and h["pages"], f["clause_type"]
 
 
+def test_missing_clause_with_a_hint_highlights_the_hint():
+    """A clause reported missing has no quote; if a passage hints at it (M14: the injected note),
+    the evidence view highlights that passage instead."""
+    with sqlite3.connect(config.DB_PATH) as con:
+        rows = con.execute("SELECT c.doc_id, c.clause_type FROM clauses c JOIN documents d USING (doc_id) "
+                           "WHERE c.quote IS NULL AND c.flags LIKE '%signal_despite_absent%' "
+                           "AND d.format != 'txt'").fetchall()
+    for doc_id, clause in rows:
+        h = client.get(f"/documents/{doc_id}/findings/{clause}/highlight").json()
+        assert h["kind"] == "signal" and h["pages"], (doc_id, clause)
+
+
 def test_every_occurrence_of_a_former_name_is_located():
     """Legacy-name evidence: one-word ("AfterPay") and multi-word names are found on the page."""
     assert len(client.get("/documents/M06/pages/1/locate", params={"q": "AfterPay"}).json()["boxes"]) >= 1

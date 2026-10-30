@@ -141,10 +141,11 @@ by document hash) → audit log. Show coverage and cost per run.
 1. ~~API steps 2 and 3~~ done (see above).
 2. **API step 4**: model planner (function calling over the same check types, asks back when
    unclear; examples stay as fallback).
-3. **Frontend** `web/`: Workbench done (verified in Edge with a scripted walkthrough: Q1 run,
-   M08 evidence with highlight, M14 four-eyes with user switch, archive, audit). Next: the
-   **pipeline explorer** (decision 49) built from `docs/explorer.md`; for "missing" findings
-   highlight the passage that triggered a signal (e.g. the injected note in M14).
+3. **Frontend** `web/`: Workbench done and redesigned (brand theme in `src/theme.ts`, question
+   cards, KPI tiles, result cards, page as paper with highlight, checks as timeline; missing
+   findings highlight the passage that triggered a hint, e.g. the injected note in M14 on
+   page 3). Verified in Edge with a scripted walkthrough. Next: the **pipeline explorer**
+   (decision 49) built from `docs/explorer.md`.
 4. **Step 6 – Evaluation**: held-out test set (we tuned on the gold set), several runs
    (variance at temperature 0), retrieval quality.
 5. Presentation website (chapters and minutes in `docs/context/briefing.md`, section 7),

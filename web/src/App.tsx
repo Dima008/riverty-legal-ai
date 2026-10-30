@@ -1,9 +1,11 @@
-// One app, several areas (decision: one app with modes). The reviewer switch at the top stands in
-// for the Entra ID sign-in (decision 54).
-import { Badge, Caption1, Dropdown, Option, Tab, TabList, Text } from "@fluentui/react-components";
+// App shell: dark brand header with navigation and the reviewer switch (stand-in for the Entra ID
+// sign-in, decision 54), one content area, a footer with the ground rules.
+import { Avatar, Dropdown, FluentProvider, Option, Tab, TabList } from "@fluentui/react-components";
+import { Scales24Regular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { api, setCurrentUser } from "./api";
 import { AuditLog } from "./AuditLog";
+import { darkTheme } from "./theme";
 import { UserContext, USERS } from "./user";
 import { Workbench } from "./workbench/Workbench";
 
@@ -29,28 +31,46 @@ export function App() {
   return (
     <UserContext.Provider value={user}>
       <div className="app">
-        <header className="topbar">
-          <div className="brand">
-            <Text weight="semibold" size={500}>Legal Workbench</Text>
-            <Caption1>Contract register · observations, not legal advice</Caption1>
-          </div>
-          <TabList selectedValue={area} onTabSelect={(_, d) => setArea(d.value as Area)}>
-            <Tab value="workbench">Workbench</Tab>
-            <Tab value="audit">Audit log</Tab>
-          </TabList>
-          <div className="spacer" />
-          <Badge appearance="outline" color="warning">Synthetic test data</Badge>
-          <Badge appearance="outline" color={version ? "success" : "danger"}>{version ? `register ${version}` : "API offline"}</Badge>
-          <div className="user">
-            <Caption1>Signed in as</Caption1>
-            <Dropdown aria-label="Reviewer" value={USERS[user]} selectedOptions={[user]} onOptionSelect={(_, d) => switchUser(d.optionValue ?? user)}>
-              {Object.entries(USERS).map(([id, name]) => (
-                <Option key={id} value={id}>{name}</Option>
-              ))}
-            </Dropdown>
-          </div>
-        </header>
+        <FluentProvider theme={darkTheme} className="topbar-provider">
+          <header className="topbar">
+            <div className="brand">
+              <div className="logo" aria-hidden>
+                <Scales24Regular />
+              </div>
+              <div>
+                <div className="brand-name">Legal Workbench</div>
+                <div className="brand-sub">Contract register · Legal</div>
+              </div>
+            </div>
+            <TabList selectedValue={area} onTabSelect={(_, d) => setArea(d.value as Area)} className="nav">
+              <Tab value="workbench">Workbench</Tab>
+              <Tab value="audit">Audit log</Tab>
+            </TabList>
+            <div className="spacer" />
+            <span className="env-pill warn">Synthetic test data</span>
+            <span className={`env-pill ${version ? "ok" : "off"}`}>
+              <span className="dot" /> {version ? `Register ${version}` : "API offline"}
+            </span>
+            <div className="user">
+              <Avatar name={USERS[user]} size={32} color="colorful" />
+              <Dropdown
+                aria-label="Signed in as"
+                appearance="filled-darker"
+                value={USERS[user]}
+                selectedOptions={[user]}
+                onOptionSelect={(_, d) => switchUser(d.optionValue ?? user)}
+              >
+                {Object.entries(USERS).map(([id, name]) => (
+                  <Option key={id} value={id}>{name}</Option>
+                ))}
+              </Dropdown>
+            </div>
+          </header>
+        </FluentProvider>
         <main className="content">{area === "workbench" ? <Workbench /> : <AuditLog />}</main>
+        <footer className="footer">
+          Observations, not legal advice – lawyers decide · Synthetic and public test data (CUAD, CC BY 4.0) · Every model call is logged with its cost
+        </footer>
       </div>
     </UserContext.Provider>
   );

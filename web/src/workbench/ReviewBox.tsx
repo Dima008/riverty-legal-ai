@@ -51,8 +51,8 @@ export function ReviewBox({ run, row, onChanged }: { run: Run; row: RunRow; onCh
   const storeCopy = () => act(async () => setArchive(await api.archive(run.run_id, row.doc_id)));
 
   return (
-    <div className="review card">
-      <h3>Decision</h3>
+    <div className="panel review">
+      <div className="section-title">Your decision</div>
       <div className="actions">
         <ReviewBadge state={state} />
         <Caption1>
@@ -109,7 +109,7 @@ export function ReviewBox({ run, row, onChanged }: { run: Run; row: RunRow; onCh
         </>
       )}
 
-      <div className="actions">
+      <div className="actions archive-row">
         <Button
           icon={APPROVED.includes(state) ? <Archive16Regular /> : <LockClosed16Regular />}
           disabled={busy || !APPROVED.includes(state)}
