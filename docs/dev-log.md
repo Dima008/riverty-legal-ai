@@ -7,6 +7,33 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · One website: the case study first, the tool as the last stop
+
+- **Problem:** Presentation and tool should be one website: click through from the case study to
+  the tool, with the tool demo at the end. The app had only the tool (three tabs), no way to
+  present, and no address for a chapter or a view.
+- **Cause:** The frontend was built tool-first; the area lived in component state and was only
+  mirrored into the address.
+- **Technique and why:** Hash routes without a router library – `#/story/<chapter>` and
+  `#/tool/<area>` – so the address says where you are, every chapter can be bookmarked for the talk
+  and the page works on any static host. Two layers in the header ("Case study" | "Legal
+  Workbench"); the tool's tabs become the second level. Chapters are data (`story/chapters.ts`:
+  act, title, lead, speaking time), so the storyline changes in one place and the rail shows the
+  planned time. Keys ← → and PageUp / PageDown (what presenter clickers send) turn the page only
+  in the story and never while a control needs them. Switching layers returns to the last chapter
+  or view. Old links (`#register`) still work. Chapter bodies stay placeholders until the
+  storyline is approved; the "live" chapter already launches the three tool views.
+- **Rejected alternative:** Separate slides (PowerPoint, reveal.js) – two things to keep in sync,
+  and the tool would not be the end of the same page; react-router – a dependency for two route
+  levels.
+- **Metric before → after:** Layers: tool only → story (10 chapters, 18:45 min planned) + tool.
+  Edge walkthrough (`story.mjs`): 12 of 12 checks pass (keys, rail, launch, back to the last
+  chapter, old links, last chapter stays), 0 console errors. Phone width 390 px: horizontal
+  overflow 414 px → 0. `npm run build` green.
+- **Links:** decision 66 (Notion pending); `web/src/routing.ts`, `web/src/story/`, `web/src/App.tsx`
+
+---
+
 ## 2026-10-30 · Model comparison: gpt-4.1 against gpt-4.1-mini
 
 - **Problem:** The small model alone misses traps (Q1 0.60–1.00 depending on the run). Would a

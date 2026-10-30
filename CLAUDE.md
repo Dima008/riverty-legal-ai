@@ -61,7 +61,7 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 | `pipeline/portfolio.py` | Portfolio checks: fixed check types, coverage (never drop a contract silently), triage |
 | `api/` | FastAPI: `register.py` read-only register + explorer; `workflow.py` runs, audit; `review.py` reviews + archive; `storage_mock.py` write-only storage stand-in; `workbench.py` workflow DB |
 | `tests/` | pytest against the built register; check invariants, not one model answer (F7) |
-| `web/` | Vite + React + TypeScript + Fluent UI v9: `workbench/` (ask, plan, run, coverage, evidence with page highlight, four-eyes review, archive), `AuditLog.tsx`; texts in `labels.ts` (lawyers' language) |
+| `web/` | Vite + React + TypeScript + Fluent UI v9. One website, two layers: `story/` (the presentation: `chapters.ts` = storyline as data, `Story.tsx` = rail, keys, next/back) and the tool: `workbench/` (ask, plan, run, coverage, evidence with page highlight, four-eyes review, archive), `register/`, `AuditLog.tsx`. `routing.ts`: hash routes `#/story/<chapter>`, `#/tool/<area>`. Texts in `labels.ts` (lawyers' language) |
 | `var/register.sqlite` | Generated register (git-ignored) |
 | `.claude/skills/` | Project skills: `record-failure`, `log-decision`, `run-eval`, `dev-log`, `session-summary` |
 | `.githooks/pre-commit` | Secret guard (keys, real Azure endpoints, `.env` files) and dev-log guard |
@@ -162,8 +162,11 @@ by document hash) → audit log. Show coverage and cost per run.
    mini, decision 65, F11, F12). Open: held-out test set (we tuned on the gold set), retrieval
    quality, handwritten JPEG (H01 from Dima; expected: Tesseract fails on cursive → the
    vision-model fallback of decision 10).
-5. Presentation website (chapters and minutes in `docs/context/briefing.md`, section 7),
-   PDF fallback, dress rehearsal.
+5. Presentation website (chapters and minutes in `docs/context/briefing.md`, section 7):
+   frame done (decision 66: story and tool in one site, chapter rail, keys, tool as last stop);
+   chapter content after Dima approves the storyline. Planned: live failure demos ("switch a
+   check off" = replay stored model answers without that layer, no model cost; search instead
+   of register; prompt v1 vs v2; M14 prompt injection), PDF fallback, dress rehearsal.
 6. Known gap: amendments only change the company name so far. An amendment that **adds** a
    clause leaves the base agreement "missing" (false alarm); one that **deletes** a clause
    leaves it "present" (a miss – the dangerous direction). Needs clause-level merging per family.
