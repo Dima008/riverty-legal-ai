@@ -26,10 +26,12 @@ QUOTE_MATCH_MIN_SCORE = 90          # fuzzy match score (0-100) for citation ver
 
 PROMPT_VERSION = "extract-v2"   # v2: doc type definitions, one quote per clause type, checker
 
-# Prices in USD per 1M tokens (Azure Global Standard). Source: azurespeed.com, checked
-# 2026-10-29 - verify against the Azure price list before using numbers externally.
+# Prices in USD per 1M tokens (Azure Global Standard), keyed by deployment name. Source:
+# azurespeed.com, checked 2026-10-29 (gpt-4.1: 2026-10-30) - verify against the Azure price
+# list before using numbers externally. A deployment without a price stops the pipeline.
 PRICES_PER_MILLION = {
     "gpt-4.1-mini": {"input": 0.40, "cached_input": 0.10, "output": 1.60},
+    "gpt-4.1": {"input": 2.00, "cached_input": 0.50, "output": 8.00},     # comparison model
     "text-embedding-3-small": {"input": 0.02, "cached_input": 0.02, "output": 0.0},
 }
 

@@ -1,0 +1,32 @@
+Gold questions (answered from the register, no model call)
+id   precision  recall  found / expected / to review
+Q1        1.00    1.00  ['M03', 'M08', 'M10', 'M14', 'M18'] / ['M03', 'M08', 'M10', 'M14', 'M18'] / ['M14']
+Q2        1.00    1.00  ['M04', 'M06', 'M10', 'M13', 'M18'] / ['M04', 'M06', 'M10', 'M13', 'M18'] / []  resolved by amendment: ['M05']
+Q3        1.00    1.00  ['M04', 'M08', 'M12', 'M19'] / ['M04', 'M08', 'M12', 'M19'] / []
+Q4        1.00    1.00  ['M03', 'M07', 'M12', 'M18'] / ['M03', 'M07', 'M12', 'M18'] / []
+Q5        1.00    1.00  ['M06', 'M07', 'M08', 'M11', 'M13'] / ['M06', 'M07', 'M08', 'M11', 'M13'] / []
+Q6        1.00    1.00  ['V02', 'V05'] / ['V02', 'V05'] / []
+Q7        1.00    1.00  ['V03', 'V05'] / ['V03', 'V05'] / []
+Q8        1.00    1.00  ['M15'] / ['M15'] / []
+
+Ablation: model alone (model_status) vs. model + checks (status)
+id   recall model  recall checked  missed by the model alone
+Q1           1.00            1.00  -
+Q3           1.00            1.00  -
+Q4           1.00            1.00  -
+Q6           1.00            1.00  -
+Q7           1.00            1.00  -
+
+Metadata vs ground truth (own contracts)
+  governing_law 27/27, effective_date 27/27, doc_type 27/27
+
+CUAD (public contracts, labels by lawyers): limitation of liability
+  C03: model ABSENT, CUAD label: cap
+  C13: model PRESENT, CUAD label: no cap
+  agreement 18/20 (TP 9, TN 9, FP 1, FN 1, unclear 1)
+
+Cost so far: $0.445 in 84 calls (219506 prompt / 29429 completion tokens)
+  check    gpt-4.1                    37 calls  $0.0583
+  extract  gpt-4.1                    47 calls  $0.3867
+
+RESULT: all gold contracts found (recall 1.0)

@@ -1,0 +1,20 @@
+Repeated runs: gpt-4.1 (2 runs, {'extraction': [{'model': 'gpt-4.1', 'prompt_version': 'extract-v2'}], 'documents': 47})
+Findings with the same status in every run: model said 235/235, after the checks 232/235
+
+id           recall per run        precision per run
+Q1                1.00 1.00                1.00 1.00
+Q2                1.00 1.00                1.00 1.00
+Q3                1.00 1.00                1.00 1.00
+Q4                1.00 1.00                1.00 1.00
+Q5                1.00 1.00                1.00 1.00
+Q6                1.00 1.00                1.00 1.00
+Q7                1.00 1.00                1.00 1.00
+Q8                1.00 1.00                1.00 1.00
+
+Q1 recall of the model alone per run: [1.0, 1.0]
+Cost per run: [0.6025, 0.445] USD · duration per run: [245, 252] s
+
+Findings that changed between runs (3):
+  C05    audit_clause             model said ['PRESENT', 'PRESENT'] -> register ['PRESENT', 'UNCLEAR']
+  C08    audit_clause             model said ['PRESENT', 'PRESENT'] -> register ['PRESENT', 'UNCLEAR']
+  C20    audit_clause             model said ['PRESENT', 'PRESENT'] -> register ['UNCLEAR', 'PRESENT']

@@ -1,0 +1,252 @@
+{
+  "label": "gpt-4.1",
+  "runs": 2,
+  "config": {
+    "extraction": [
+      {
+        "model": "gpt-4.1",
+        "prompt_version": "extract-v2"
+      }
+    ],
+    "documents": 47
+  },
+  "findings": 235,
+  "stable_model_status": 235,
+  "stable_status": 232,
+  "flips": [
+    {
+      "doc_id": "C05",
+      "clause_type": "audit_clause",
+      "model_status": [
+        "PRESENT",
+        "PRESENT"
+      ],
+      "status": [
+        "PRESENT",
+        "UNCLEAR"
+      ]
+    },
+    {
+      "doc_id": "C08",
+      "clause_type": "audit_clause",
+      "model_status": [
+        "PRESENT",
+        "PRESENT"
+      ],
+      "status": [
+        "PRESENT",
+        "UNCLEAR"
+      ]
+    },
+    {
+      "doc_id": "C20",
+      "clause_type": "audit_clause",
+      "model_status": [
+        "PRESENT",
+        "PRESENT"
+      ],
+      "status": [
+        "UNCLEAR",
+        "PRESENT"
+      ]
+    }
+  ],
+  "questions": {
+    "Q1": {
+      "recall": [
+        1.0,
+        1.0
+      ],
+      "precision": [
+        1.0,
+        1.0
+      ],
+      "found": [
+        [
+          "M03",
+          "M08",
+          "M10",
+          "M14",
+          "M18"
+        ],
+        [
+          "M03",
+          "M08",
+          "M10",
+          "M14",
+          "M18"
+        ]
+      ]
+    },
+    "Q2": {
+      "recall": [
+        1.0,
+        1.0
+      ],
+      "precision": [
+        1.0,
+        1.0
+      ],
+      "found": [
+        [
+          "M04",
+          "M06",
+          "M10",
+          "M13",
+          "M18"
+        ],
+        [
+          "M04",
+          "M06",
+          "M10",
+          "M13",
+          "M18"
+        ]
+      ]
+    },
+    "Q3": {
+      "recall": [
+        1.0,
+        1.0
+      ],
+      "precision": [
+        1.0,
+        1.0
+      ],
+      "found": [
+        [
+          "M04",
+          "M08",
+          "M12",
+          "M19"
+        ],
+        [
+          "M04",
+          "M08",
+          "M12",
+          "M19"
+        ]
+      ]
+    },
+    "Q4": {
+      "recall": [
+        1.0,
+        1.0
+      ],
+      "precision": [
+        1.0,
+        1.0
+      ],
+      "found": [
+        [
+          "M03",
+          "M07",
+          "M12",
+          "M18"
+        ],
+        [
+          "M03",
+          "M07",
+          "M12",
+          "M18"
+        ]
+      ]
+    },
+    "Q5": {
+      "recall": [
+        1.0,
+        1.0
+      ],
+      "precision": [
+        1.0,
+        1.0
+      ],
+      "found": [
+        [
+          "M06",
+          "M07",
+          "M08",
+          "M11",
+          "M13"
+        ],
+        [
+          "M06",
+          "M07",
+          "M08",
+          "M11",
+          "M13"
+        ]
+      ]
+    },
+    "Q6": {
+      "recall": [
+        1.0,
+        1.0
+      ],
+      "precision": [
+        1.0,
+        1.0
+      ],
+      "found": [
+        [
+          "V02",
+          "V05"
+        ],
+        [
+          "V02",
+          "V05"
+        ]
+      ]
+    },
+    "Q7": {
+      "recall": [
+        1.0,
+        1.0
+      ],
+      "precision": [
+        1.0,
+        1.0
+      ],
+      "found": [
+        [
+          "V03",
+          "V05"
+        ],
+        [
+          "V03",
+          "V05"
+        ]
+      ]
+    },
+    "Q8": {
+      "recall": [
+        1.0,
+        1.0
+      ],
+      "precision": [
+        1.0,
+        1.0
+      ],
+      "found": [
+        [
+          "M15"
+        ],
+        [
+          "M15"
+        ]
+      ]
+    }
+  },
+  "ablation_q1_recall_model": [
+    1.0,
+    1.0
+  ],
+  "cost_usd": [
+    0.6025,
+    0.445
+  ],
+  "seconds": [
+    245,
+    252
+  ]
+}

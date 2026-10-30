@@ -114,7 +114,11 @@ computed from these signals, never asked from the model. Every finding keeps `mo
 liability – with a real quote. Quote verification passed; vocabulary check and checker caught
 it. F7: the same prompt at temperature 0 gives different answers. Measured over five runs: 233
 of 235 findings are stable; only M08 and M10 flip. The model alone found 0.80, 0.60, 1.00,
-0.80, 0.80 of Q1; with the checks 1.00 every time (`eval/repeat.py`).
+0.80, 0.80 of Q1; with the checks 1.00 every time (`eval/repeat.py`). F11: the checker is a
+model too – with gpt-4.1 it accepted a general audit right in one run and rejected it in the
+next. It can only ever make a finding less certain, so its variance costs review time, never a
+hidden gap. Model comparison: gpt-4.1 alone finds every Q1 trap, the same as mini with checks,
+at five times the cost (decision 65).
 
 **Live.** `GET /documents/M08/findings` → `liability_limitation.layers`:
 

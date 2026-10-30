@@ -157,8 +157,11 @@ by document hash) → audit log. Show coverage and cost per run.
    findings highlight the passage that triggered a hint, e.g. the injected note in M14 on
    page 3). Verified in Edge with a scripted walkthrough. Next: the **pipeline explorer**
    (decision 49) built from `docs/explorer.md`.
-4. **Step 6 – Evaluation**: held-out test set (we tuned on the gold set), several runs
-   (variance at temperature 0), retrieval quality.
+4. **Step 6 – Evaluation**: done: repeated runs (233/235 findings stable, F7) and model
+   comparison gpt-4.1 vs gpt-4.1-mini (same recall with checks, 5x cost; production stays on
+   mini, decision 65, F11, F12). Open: held-out test set (we tuned on the gold set), retrieval
+   quality, handwritten JPEG (H01 from Dima; expected: Tesseract fails on cursive → the
+   vision-model fallback of decision 10).
 5. Presentation website (chapters and minutes in `docs/context/briefing.md`, section 7),
    PDF fallback, dress rehearsal.
 6. Known gap: amendments only change the company name so far. An amendment that **adds** a

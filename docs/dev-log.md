@@ -7,6 +7,31 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-30 · Model comparison: gpt-4.1 against gpt-4.1-mini
+
+- **Problem:** The small model alone misses traps (Q1 0.60–1.00 depending on the run). Would a
+  bigger model make the checks unnecessary, and what would it cost? "Bigger is better" was an
+  assumption (decision 42), not a measurement.
+- **Cause:** Only one model had been measured, and one run is not a measurement (F7).
+- **Technique and why:** The same harness as the variance measurement: `python -m eval.repeat
+  --runs 2 --label gpt-4.1 --chat-deployment gpt-4.1` builds two fresh registers with gpt-4.1 as
+  extractor and checker – same prompt v2, same checks – and evaluates them like production. The
+  price went into `config.py` first (the price guard refuses a model without one). Then every
+  disagreement was read in the register, not only the scores.
+- **Rejected alternative:** Switch the production model after one run; compare only Q1; trust
+  the CUAD score without reading the disagreements – it would have ranked the model that missed
+  a clause higher (F12).
+- **Metric before → after:** gpt-4.1-mini (3 runs) → gpt-4.1 (2 runs). Recall and precision on
+  Q1–Q8 with checks: 1.00 → 1.00 in every run. Model alone on Q1: 1.00 / 0.80 / 0.80 → 1.00 /
+  1.00. Findings stable, model / after the checks: 233 / 233 → 235 / 232 of 235 (the checker
+  flips, F11). CUAD agreement: 19 → 18 of 20 (F12). Cost per run: $0.091–0.112 → $0.445–0.603
+  (×5; cached prompt tokens 47k → 153k between the two gpt-4.1 runs, −26 %). Duration: 101–134 s
+  → 245–252 s (×2). Production stays on gpt-4.1-mini.
+- **Links:** failure cases F11, F12; decision 65 (Notion pending); `pipeline/config.py` (price),
+  `eval/results/2026-10-30_extract-v2_gpt-4.1_*`, explorer station 4
+
+---
+
 ## 2026-10-30 · Repeated runs measure the model's variance; price guard against "free" models
 
 - **Problem:** "One run is not a measurement" (F7) – how much do the answers change between runs

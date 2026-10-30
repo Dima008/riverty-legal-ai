@@ -18,6 +18,8 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F8 | Gold label disagrees with our definition (CUAD C03) | definition | evaluation | question for Legal |
 | F9 | Same scan, other machine, different OCR text (M18) | ingest | nobody at first - found by the offline smoke test on the laptop | no impact on gold set, cause open |
 | F10 | Services agreement flagged as amendment, silently dropped from all queries (C11) | extraction | nobody at first - found by reading the families log | fixed (consistency check), automated test missing |
+| F11 | The checker varies too: a general audit right accepted in one run, rejected in the next (C05, C08, C20, gpt-4.1) | checks / definition | `eval.repeat` stability report (model comparison) | question for Legal, direction safe |
+| F12 | Bigger model reports an exclusion of punitive damages as limitation of liability, CUAD label says no cap (C13, gpt-4.1) | definition | evaluation (CUAD agreement 19 → 18 of 20) | question for Legal |
 
 ---
 
@@ -312,6 +314,106 @@ Evaluation afterwards identical to the run before (recall and precision 1.00 on 
 the workbench shows coverage as "checked / in scope / excluded, and why".
 
 **Reproduce.** `python -m pipeline.show C11`. Automated test missing.
+
+---
+
+## F11 - The checker varies too (C05, C08, C20, gpt-4.1)
+
+**Symptom.** Model comparison with gpt-4.1 (two fresh registers, same prompt v2, same checks,
+2026-10-30). The extraction is stable, but three findings change *after* the checks:
+
+```
+Findings with the same status in every run: model said 235/235, after the checks 232/235
+Findings that changed between runs (3):
+  C05    audit_clause             model said ['PRESENT', 'PRESENT'] -> register ['PRESENT', 'UNCLEAR']
+  C08    audit_clause             model said ['PRESENT', 'PRESENT'] -> register ['PRESENT', 'UNCLEAR']
+  C20    audit_clause             model said ['PRESENT', 'PRESENT'] -> register ['UNCLEAR', 'PRESENT']
+```
+
+**Evidence** (register rows, `var/eval_runs/2026-10-30_gpt-4.1/run<n>/register.sqlite`). C05, same
+quote in both runs (match 99.1, shortened here): *"For a period of not less than two (2) years
+after the date of termination, each party shall maintain, and make available to the other party
+upon its request, for inspection and copying all books and records that pertain to performance
+and compliance with oblig…"*
+
+```
+run1  status PRESENT  confidence 0.95  flags ["checker_agreed"]
+run2  status UNCLEAR  confidence 0.35  flags ["checker_rejected: The quote refers to making books and
+      records available for inspection and copying, but it is not specific to the controller's right
+      to audit a processor or GDPR compliance, so it does not meet the definition."]
+```
+
+The same three contracts with gpt-4.1-mini, identical in all three runs
+(doc, clause, model said, register, confidence, flag):
+
+```
+('C05', 'audit_clause', 'ABSENT', 'ABSENT', 0.6, 'signal_despite_absent: ...')
+('C08', 'audit_clause', 'PRESENT', 'UNCLEAR', 0.35, 'checker_rejected: ...')
+('C20', 'audit_clause', 'PRESENT', 'PRESENT', 0.95, 'checker_agreed')
+```
+
+**Root cause.** Partly known. The catalogue entry is labelled "Audit and inspection rights", but
+its definition is narrower: *"The controller's right to audit or inspect the processor, or the
+processor's duty to provide all information necessary to demonstrate compliance (Art. 28(3)(h)
+GDPR)."* C05, C08 and C20 are commercial agreements with general books-and-records audits. The
+extraction model reads the label and reports them as present; the checker reads the definition
+and rejects them - sometimes. Why the checker decides differently between runs is open (as in
+F7); its call covers all present findings of a contract at once, so its prompt can still differ
+in the other findings.
+
+**Layer.** Checks (maker-checker) and definition.
+
+**Impact.** None on Q1-Q8: audit rights are required only in data processing agreements. The
+direction of the checker is safe by design - it can only turn PRESENT into UNCLEAR, which adds
+review work but never hides a gap. Under the strict definition, though, the *accepted* cases are
+wrong "present" findings (C20 with gpt-4.1-mini in every run), and a question like "which
+commercial agreements lack an audit right?" would not list them.
+
+**Fix.** Open - question for Legal: does a general audit right count, or only the GDPR audit right
+of the controller? Then align label and definition in `catalogue.py` (e.g. "General commercial
+audit rights are NOT this clause"), bump `PROMPT_VERSION`, re-run the evaluation.
+
+**Lesson.** The checker is a model too. It may only ever make a finding *less* certain, and its
+disagreement goes to a human. And a label that says more than the definition invites a model to
+answer the label.
+
+**Reproduce.** `python -m eval.repeat --runs 2 --label gpt-4.1 --chat-deployment gpt-4.1`
+(about $0.52 per run). Automated test missing.
+
+---
+
+## F12 - Bigger model, other reading than the CUAD label (C13, gpt-4.1)
+
+**Symptom.** Agreement with the CUAD lawyers' labels drops from 19 of 20 (gpt-4.1-mini, every
+run) to 18 of 20 (gpt-4.1, both runs). The new disagreement is C13.
+
+**Evidence** (2026-10-30, both gpt-4.1 runs identical):
+
+```
+gpt-4.1       C13 liability_limitation: PRESENT (model PRESENT), confidence 0.95, ["checker_agreed"]
+              quote: "Neither MICOA nor the Agency shall be entitled to punitive and/or exemplary damages."
+gpt-4.1-mini  C13 liability_limitation: ABSENT (model ABSENT), confidence 0.6,
+              ["signal_despite_absent: 'two-year period of development; but in no event will repayment b..."]
+labels.csv    C13: cap_on_liability=False, uncapped_liability=False
+evaluation    CUAD disagreements: C03 (register ABSENT, label cap), C13 (register PRESENT, label no cap)
+```
+
+**Root cause.** Our definition counts *"an exclusion of categories of damages (e.g. indirect or
+consequential damages, lost profits)"* as a limitation of liability; the quote excludes punitive
+and exemplary damages. The CUAD column is a cap on liability. By our own definition gpt-4.1 is
+right and the smaller model's ABSENT is the miss - its better CUAD score partly comes from
+missing the clause. Its absence signal flagged another passage, so its ABSENT goes to review
+(confidence 0.6) anyway.
+
+**Layer.** Definition.
+
+**Fix.** Open - question for Legal: does excluding punitive damages alone count as a limitation of
+liability in Riverty's playbook? The answer goes into `catalogue.py` (like F8).
+
+**Lesson.** Agreement with someone else's labels is not accuracy. Before switching models, read
+the disagreements, not only the score.
+
+**Reproduce.** As F11; then `eval/results/2026-10-30_extract-v2_gpt-4.1_run1.txt` (CUAD block).
 
 ---
 
