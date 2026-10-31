@@ -12,9 +12,10 @@ interface Props {
   onPage: (page: number) => void;
   boxes: Record<number, number[][]>;
   hint?: string | null;   // what is highlighted, e.g. "the model's quote" (English, translated here)
+  suspect?: boolean;      // text addressed to AI systems: a red marker, never the yellow evidence one
 }
 
-export function PageView({ doc, page, onPage, boxes, hint }: Props) {
+export function PageView({ doc, page, onPage, boxes, hint, suspect = false }: Props) {
   const t = useT();
   const info = doc.pages.find((p) => p.page_no === page);
   const scroller = useRef<HTMLDivElement>(null);
@@ -41,8 +42,8 @@ export function PageView({ doc, page, onPage, boxes, hint }: Props) {
         </span>
         <Button size="small" icon={<ChevronRight16Regular />} disabled={page >= doc.page_count} onClick={() => onPage(page + 1)} aria-label={t("Next page")} />
         {pagesWithHits.length > 0 && (
-          <span className="hl-hint">
-            <span className="hl-swatch" /> {t(hint ?? "highlighted")} · {t("page {n}", { n: pagesWithHits.join(` ${t("and")} `) })}
+          <span className={`hl-hint${suspect ? " suspect" : ""}`}>
+            <span className={`hl-swatch${suspect ? " suspect" : ""}`} /> {t(hint ?? "highlighted")} · {t("page {n}", { n: pagesWithHits.join(` ${t("and")} `) })}
           </span>
         )}
       </div>
@@ -54,7 +55,7 @@ export function PageView({ doc, page, onPage, boxes, hint }: Props) {
               <div
                 key={i}
                 ref={i === 0 ? firstBox : undefined}
-                className="hl"
+                className={`hl${suspect ? " suspect" : ""}`}
                 style={{
                   left: `${(b[0] / info.width) * 100}%`,
                   top: `${(b[1] / info.height) * 100}%`,

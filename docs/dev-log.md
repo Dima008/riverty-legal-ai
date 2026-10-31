@@ -7,6 +7,34 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-01 · The Legal Workbench redesigned: paper on a dark desk, the decision on the first screen
+
+- **Problem:** The tool looked like a different product than the talk (another green, no display
+  type), nothing led the eye, and at laptop size the decision – the point of the four-eyes demo –
+  sat about three screens down. Small grey and amber text failed contrast on a projector.
+- **Cause:** Every section used the same nested white card and 11–22 px type; the evidence grid
+  stacked into one column below 1400 px; the palette was a placeholder (design audit, decision 77).
+- **Technique and why:** Direction A from the audit: the frame from the talk (near-black header
+  with the mint-to-cyan hairline, the tile logo, the display face, a dark desk behind the page
+  viewer), light paper where lawyers read and decide. `tokens.css` holds the talk's values for the
+  tool only (deck.css untouched); brand ramp around the mint hue. Step 1 folds into one line after
+  a run; page and verdict side by side via container queries; the decision column scrolls with the
+  window; injection and poor-scan warnings as a full-width bar; run overview as one answer sentence
+  plus contract tiles; approval tracker with a locked archive step; checks behind a disclosure
+  (open for UNCLEAR or overruled findings); German for every new text. Two reviewers (design,
+  end-to-end) found F23 (the M14 injection highlighted as evidence under a "never evidence"
+  warning), F24 (the year filter hid C02) and two layout bugs – all fixed.
+- **Rejected alternative:** A fully dark tool (tables and white pages glare on a projector); only
+  sharing accent colours (still feels like switching products); a decision column with its own
+  scroll area (its lower part stayed below the fold).
+- **Metric before → after:** decision at 1366x768: y = 2238 on a 2694 px page → fully visible after
+  one wheel step; text elements below 4.5:1 contrast: --ink-3 4.0–4.4 and amber 3.7–4.0 → 0 (EN and
+  DE, disabled buttons excepted); end-to-end demo path 116 of 119 → 120 of 120 checks; review
+  findings 20 (5 major) → all major and most minor fixed; talk pages: 0 changed pixels / 0 changed
+  computed styles; `npm run build` green, pytest 95 passed.
+- **Links:** decisions 77, 87; F23, F24; `web/src/tokens.css`, `app.css`, `theme.ts`, `App.tsx`,
+  `components/SafetyBar.tsx`, `Approvals.tsx`, `Loading.tsx`, `workbench/*`, `register/*`
+
 ## 2026-11-01 · A live contract that can be taken back: forget, the demo kit and H01
 
 - **Problem:** Dima wants to add a contract live in the talk and show that its problems are

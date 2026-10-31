@@ -17,7 +17,6 @@ export type T = (text: string, params?: Params) => string;
 
 export const DE: Record<string, string> = {
   // ---- header, tabs, footer (App.tsx)
-  "Contract register · Legal": "Vertragsregister · Rechtsabteilung",
   "Synthetic test data": "Synthetische Testdaten",
   "Register {version}": "Register {version}", // same in German
   "API offline": "API offline", // same in German
@@ -26,18 +25,20 @@ export const DE: Record<string, string> = {
   "Workbench": "Workbench", // same word in German
   "Contract register": "Vertragsregister",
   "Audit log": "Audit-Log",
+  "Talk": "Vortrag",
+  "Back to the talk": "Zurück zum Vortrag",
   "Observations, not legal advice – lawyers decide · Synthetic and public test data (CUAD, CC BY 4.0) · Every model call is logged with its cost":
     "Beobachtungen, keine Rechtsberatung – die Rechtsabteilung entscheidet · Synthetische und öffentliche Testdaten (CUAD, CC BY 4.0) · Jeder Modellaufruf wird mit seinen Kosten protokolliert",
 
   // ---- labels.ts: status of a finding (long and short form)
-  "Clause found": "Klausel vorhanden",
+  "Clause found": "Klausel gefunden",
   "Clause not found": "Klausel nicht gefunden",
   "Unclear – needs a look": "Unklar – bitte prüfen",
   "Former company name": "Früherer Firmenname",
   "Other governing law": "Anderes anwendbares Recht",
   "Governing law not found": "Keine Rechtswahl gefunden",
   "Duplicate": "Dublette",
-  "Found": "Vorhanden",
+  "Found": "Gefunden",
   "Not found": "Nicht gefunden",
   "Unclear": "Unklar",
   "Former name": "Alter Name",
@@ -86,7 +87,7 @@ export const DE: Record<string, string> = {
   "Document quality and safety": "Dokumentqualität und -sicherheit",
   "What the register says": "Was das Register sagt",
   // warnings
-  "Contains text addressed to software": "Enthält an Software gerichteten Text",
+  "Contains text addressed to AI systems": "Enthält an KI-Systeme gerichteten Text",
   "Quote from a suspicious passage": "Zitat aus verdächtiger Textstelle",
   "Contradicting metadata": "Widersprüchliche Metadaten",
   "Base agreement not in register": "Basisvertrag nicht im Register",
@@ -97,6 +98,17 @@ export const DE: Record<string, string> = {
   "Hint that the clause may exist": "Hinweis, dass die Klausel vorhanden sein könnte",
   "Read by OCR": "Per OCR gelesen",
   "Poor scan quality": "Schlechte Scanqualität",
+  // warning bars for injection and scan quality (components/SafetyBar.tsx)
+  "Text addressed to AI systems": "Text an KI-Systeme gerichtet",
+  "Page {page} contains text addressed to AI systems, not to the contract parties – a suspected prompt injection. It is never used as evidence, and two reviewers must approve the finding.":
+    "Seite {page} enthält Text, der sich an KI-Systeme richtet statt an die Vertragsparteien – Verdacht auf Prompt-Injection. Er wird nie als Beleg verwendet, und der Befund braucht die Freigabe von zwei Personen.",
+  "This contract contains text addressed to AI systems, not to the contract parties – a suspected prompt injection. It is never used as evidence, and two reviewers must approve the finding.":
+    "Dieser Vertrag enthält Text, der sich an KI-Systeme richtet statt an die Vertragsparteien – Verdacht auf Prompt-Injection. Er wird nie als Beleg verwendet, und der Befund braucht die Freigabe von zwei Personen.",
+  "Page {page} was read by text recognition (OCR) with only {conf} % confidence. Compare the finding with the original page before relying on it.":
+    "Seite {page} wurde per Texterkennung (OCR) mit nur {conf} % Sicherheit gelesen. Den Befund vor der Verwendung mit der Originalseite abgleichen.",
+  "This contract was read by text recognition (OCR) with low confidence. Compare the finding with the original before relying on it.":
+    "Dieser Vertrag wurde per Texterkennung (OCR) mit geringer Sicherheit gelesen. Den Befund vor der Verwendung mit dem Original abgleichen.",
+  "Show page {page}": "Seite {page} zeigen",
 
   // ---- names that come from the API (check types, playbook clauses); their definitions stay English
   "Contracts that lack a clause (absent or unclear)": "Verträge, denen eine Klausel fehlt (fehlend oder unklar)",
@@ -109,29 +121,19 @@ export const DE: Record<string, string> = {
   "Sub-processors": "Unterauftragsverarbeiter",
   "Audit and inspection rights": "Kontroll- und Auditrechte",
 
-  // ---- workbench start (Workbench.tsx)
-  "How it works": "So funktioniert es",
-  "Complete": "Vollständig",
-  "Every contract in scope is read in full – or listed as excluded, with the reason. Nothing drops out silently.":
-    "Jeder Vertrag im Prüfumfang wird vollständig gelesen – oder mit Begründung als ausgeschlossen aufgeführt. Nichts fällt stillschweigend heraus.",
-  "Evidence first": "Beleg zuerst",
-  "Every finding points to the passage on the original page, and shows which checks it passed.":
-    "Jeder Befund verweist auf die Textstelle auf der Originalseite und zeigt, welche Prüfungen er bestanden hat.",
-  "You decide": "Die Rechtsabteilung entscheidet",
-  "The system reports observations. Critical cases need two people, and nothing leaves the system without approval.":
-    "Das System meldet Beobachtungen. Kritische Fälle prüfen zwei Personen, und nichts verlässt das System ohne Freigabe.",
+  // ---- workbench start (Workbench.tsx): the portfolio today
+  "Portfolio today": "Vertragsbestand heute",
+  "documents in the register": "Dokumente im Register",
+  "to build the register, once – every question after that is free": "für den Aufbau des Registers, einmalig – jede weitere Frage kostet nichts",
   "API not reachable – is the backend running on port 8010? ({error})": "API nicht erreichbar – läuft das Backend auf Port 8010? ({error})",
   "Loading…": "Wird geladen …",
   "Evidence": "Beleg",
   "Select a contract to see the evidence.": "Vertrag auswählen, um den Beleg zu sehen.",
 
   // ---- step 1: ask (AskPanel.tsx)
-  "Negative clause search": "Negativsuche: fehlende Klausel",
-  "Negative clause search (B2B2C)": "Negativsuche: fehlende Klausel (B2B2C)",
-  "Company name": "Firmenname",
-  "Register / metadata filter": "Register / Metadatenfilter",
-  "Inbound (DPA)": "Eingehend (AVV)",
-  "Organising": "Bestand ordnen",
+  "Missing clause": "Fehlende Klausel",
+  "Governing law": "Anwendbares Recht",
+  "Duplicates": "Dubletten",
   "Check": "Prüfung",
   "Clause": "Klausel",
   "Choose a clause": "Klausel auswählen",
@@ -147,6 +149,7 @@ export const DE: Record<string, string> = {
   "Plan": "Plan",
   "Ask a question": "Frage stellen",
   "Step 1 · Ask": "Schritt 1 · Frage",
+  "Change question": "Frage ändern",
   "What do you want to know about the contract portfolio?": "Was soll im Vertragsbestand geprüft werden?",
   "Every question runs on every contract in scope – and you see the plan before anything runs.":
     "Jede Frage läuft über jeden Vertrag im Prüfumfang – und der Plan ist sichtbar, bevor etwas läuft.",
@@ -161,22 +164,33 @@ export const DE: Record<string, string> = {
   "Answer overview": "Antwort im Überblick",
   "Step 2 · Answer": "Schritt 2 · Antwort",
   "Your check": "Eigene Prüfung",
-  "in scope": "im Prüfumfang",
-  "checked": "geprüft",
-  "read completely, with evidence": "vollständig gelesen, mit Beleg",
-  "to look at": "zu prüfen",
-  "nothing to report": "nichts zu melden",
+  // whole sentences per type: German needs the dative after "von"
+  "{n} of {of} merchant agreements to look at": "{n} von {of} Händlerverträgen zu prüfen",
+  "{n} of {of} data processing agreements to look at": "{n} von {of} Auftragsverarbeitungsverträgen zu prüfen",
+  "{n} of {of} other commercial agreements to look at": "{n} von {of} sonstigen Handelsverträgen zu prüfen",
+  "{n} of {of} amendments to look at": "{n} von {of} Nachträgen zu prüfen",
+  "{n} of {of} documents to look at": "{n} von {of} Dokumenten zu prüfen",
+  "{n} of {of} selected contracts to look at": "{n} von {of} ausgewählten Verträgen zu prüfen",
+  "Every contract in scope": "Jeder Vertrag im Prüfumfang",
+  "+{n} checked, nothing to report": "+{n} geprüft, nichts zu melden",
+  "{n} in scope": "{n} im Prüfumfang",
+  "{n} read completely, with evidence": "{n} vollständig gelesen, mit Beleg",
+  "this question: {usd} · the register was built once for {total}": "diese Frage: {usd} · das Register wurde einmalig für {total} aufgebaut",
   "excluded": "ausgeschlossen",
-  "with reason, see below": "mit Begründung, siehe unten",
-  "none": "keine",
-  "cost of this question": "Kosten dieser Frage",
-  "register built once for {usd}": "Register einmalig für {usd} aufgebaut",
-  "{reported} to look at, {ok} without finding, {excluded} excluded": "{reported} zu prüfen, {ok} ohne Befund, {excluded} ausgeschlossen",
   "checked, nothing to report": "geprüft, nichts zu melden",
   "former name already resolved by amendment {id}": "früherer Name bereits durch Nachtrag {id} bereinigt",
-  "four eyes": "Vier-Augen-Prüfung",
-  "review": "Prüfen",
-  "routine": "Routine",
+  "Checked, nothing to report": "Geprüft, nichts zu melden",
+  "Excluded": "Ausgeschlossen",
+  "{n} four eyes": "{n} mit Vier-Augen-Prüfung",
+  "{n} to review": "{n} zur Prüfung",
+  "{n} routine": "{n} Routine",
+  // exclusion reasons: fixed templates of pipeline/portfolio.py, matched in labels.ts
+  "duplicate of {id} – the original is checked": "Dublette von {id} – geprüft wird das Original",
+  "amendment of {id} – read together with its base agreement": "Nachtrag zu {id} – wird zusammen mit dem Basisvertrag gelesen",
+  "amendment, base agreement not in register": "Nachtrag, Basisvertrag nicht im Register",
+  "document type unknown – check manually": "Dokumenttyp unbekannt – bitte von Hand prüfen",
+  "not extracted (status {status})": "nicht extrahiert (Status {status})",
+  "selected, but another type ({type}) – the question is about {types}": "ausgewählt, aber anderer Typ ({type}) – die Frage betrifft {types}",
 
   // ---- step 3: review list (ResultList.tsx)
   "Contracts to look at": "Zu prüfende Verträge",
@@ -185,8 +199,11 @@ export const DE: Record<string, string> = {
   "Confirm {n} routine": "{n} Routinefälle bestätigen",
   "No contract in scope has this issue.": "Kein Vertrag im Prüfumfang ist betroffen.",
   "unknown party": "unbekannter Vertragspartner",
-  "confidence from the checks": "Konfidenz aus den Prüfungen",
-  "Random spot check: open the evidence before confirming": "Zufällige Stichprobe: vor dem Bestätigen den Beleg öffnen",
+  "confidence {word} ({c})": "Konfidenz {word} ({c})",
+  "high": "hoch",
+  "medium": "mittel",
+  "low": "niedrig",
+  "decided": "entschieden",
   "spot check": "Stichprobe",
 
   // ---- evidence and contract file (Evidence.tsx, ContractFile.tsx, PageView.tsx, Finding.tsx)
@@ -205,6 +222,7 @@ export const DE: Record<string, string> = {
     "Kopie von {id}. Geprüft wird das Original; diese Kopie wird nicht doppelt gezählt.",
   "the model's quote": "Zitat des Modells",
   "the passage that hints at the clause": "Textstelle, die auf die Klausel hindeutet",
+  "text addressed to AI systems – not evidence": "an KI-Systeme gerichteter Text – kein Beleg",
   "the former company name": "früherer Firmenname",
   "highlighted": "markiert",
   "and": "und",
@@ -217,9 +235,13 @@ export const DE: Record<string, string> = {
   "passed": "bestanden",
   "failed": "nicht bestanden",
   "found in the text: …{text}…": "im Text gefunden: …{text}…",
+  "match {score}, page {page}": "Übereinstimmung {score}, Seite {page}",
+  "match {score}": "Übereinstimmung {score}",
   "Model proposed": "Modellvorschlag",
   "{n} checks": "{n} Prüfungen",
-  "{n} checks, {failed} failed": "{n} Prüfungen, {failed} nicht bestanden",
+  "{n} checks · {failed} failed": "{n} Prüfungen · {failed} nicht bestanden",
+  "Show how the register decided": "Zeigen, wie das Register entschieden hat",
+  "The checks overruled the model": "Die Prüfungen haben das Modell überstimmt",
   "Register says": "Register sagt",
   "confidence {c}": "Konfidenz {c}",
   "No passage: the model read the whole contract and reported no such clause.":
@@ -231,8 +253,8 @@ export const DE: Record<string, string> = {
   "Open {id}": "{id} öffnen",
   "our entity today: {name}": "unsere Gesellschaft heute: {name}",
   "Compared with the playbook": "Abgleich mit dem Playbook",
-  "required": "erforderlich",
-  "not required here": "hier nicht erforderlich",
+  "Required for this type": "Für diesen Typ erforderlich",
+  "Not required for this type": "Für diesen Typ nicht erforderlich",
   "The playbook says": "Das Playbook sagt",
   "Former company names": "Frühere Firmennamen",
   "resolved by {id}": "bereinigt durch {id}",
@@ -241,7 +263,6 @@ export const DE: Record<string, string> = {
   // ---- the human decision (ReviewBox.tsx, FindingReview.tsx)
   "Your decision": "Entscheidung",
   "Four-eyes principle: {done} of 2 approvals": "Vier-Augen-Prinzip: {done} von 2 Freigaben",
-  "{done} of 2 approvals": "{done} von 2 Freigaben",
   "{done} of 1 decision": "{done} von 1 Entscheidung",
   "spot-check sample: open the evidence before confirming": "Stichprobe: vor dem Bestätigen den Beleg öffnen",
   "confirmed": "bestätigt",
@@ -263,15 +284,34 @@ export const DE: Record<string, string> = {
   "Reason (optional for a routine finding)": "Begründung (bei Routinebefund optional)",
   "Reason (required)": "Begründung (erforderlich)",
   "What did you check in the evidence?": "Was wurde im Beleg geprüft?",
-  "If you correct it, the clause is actually …": "Bei Korrektur ist die Klausel tatsächlich …",
+  "The clause is actually …": "Die Klausel ist tatsächlich …",
+  "Cancel": "Abbrechen",
   "Confirm finding": "Befund bestätigen",
   "Reject": "Verwerfen",
   "Correct": "Korrigieren",
   "Escalate": "Eskalieren",
   "Store archive copy": "Archivkopie speichern",
-  "Write-only contract storage, one copy per file": "Vertragsablage nur mit Schreibzugriff, eine Kopie pro Datei",
-  "Locked until the finding is approved – the server refuses and logs every attempt":
-    "Gesperrt, bis der Befund freigegeben ist – der Server verweigert und protokolliert jeden Versuch",
+  // the approval slots and the archive step (components/Approvals.tsx)
+  "Decision – open": "Entscheidung – offen",
+  "First approval – open": "Erste Freigabe – offen",
+  "Second approval – from another person": "Zweite Freigabe – von einer anderen Person",
+  "{user} escalated it to four eyes": "{user} hat zur Vier-Augen-Prüfung eskaliert",
+  "Archive copy": "Archivkopie",
+  "Unlocked · write-only contract storage, one copy per file": "Freigeschaltet · Vertragsablage nur mit Schreibzugriff, eine Kopie pro Datei",
+  "Stays locked: the finding was not approved. The server refuses and logs every attempt.":
+    "Bleibt gesperrt: Der Befund wurde nicht freigegeben. Der Server verweigert und protokolliert jeden Versuch.",
+  "Unlocks after 2 approvals. Until then the server refuses and logs every attempt.":
+    "Wird nach 2 Freigaben freigeschaltet. Bis dahin verweigert und protokolliert der Server jeden Versuch.",
+  "Unlocks after the approval. Until then the server refuses and logs every attempt.":
+    "Wird nach der Freigabe freigeschaltet. Bis dahin verweigert und protokolliert der Server jeden Versuch.",
+  "Write what you checked in the evidence – then you can confirm, reject or correct.":
+    "Eintragen, was im Beleg geprüft wurde – dann lässt sich bestätigen, verwerfen oder korrigieren.",
+  "A routine row can be confirmed without a reason; rejecting or correcting needs one.":
+    "Eine Routinezeile lässt sich ohne Begründung bestätigen; Verwerfen oder Korrigieren braucht eine.",
+  "Write what you checked in the evidence – then you can confirm, reject, correct or escalate.":
+    "Eintragen, was im Beleg geprüft wurde – dann lässt sich bestätigen, verwerfen, korrigieren oder eskalieren.",
+  "A routine finding can be confirmed without a reason; rejecting, correcting or escalating needs one.":
+    "Ein Routinebefund lässt sich ohne Begründung bestätigen; Verwerfen, Korrigieren oder Eskalieren braucht eine.",
   "{file}: {status} (receipt {id})": "{file}: {status} (Quittung {id})",
   "stored": "gespeichert",
   "already stored": "bereits gespeichert",
@@ -294,7 +334,13 @@ export const DE: Record<string, string> = {
   "{n} documents, each compared with Legal's playbook": "{n} Dokumente, jeweils abgeglichen mit dem Playbook der Rechtsabteilung",
   "Every contract was read once, completely. Each column is a clause from the playbook – the standard we compare against. Click a cell or a contract to open its file with the evidence.":
     "Jeder Vertrag wurde einmal vollständig gelesen. Jede Spalte ist eine Klausel aus dem Playbook – der Maßstab für den Abgleich. Zelle oder Vertrag anklicken, um die Vertragsakte mit Belegen zu öffnen.",
-  "Playbook": "Playbook",
+  "Playbook: {n} clauses": "Playbook: {n} Klauseln",
+  "Playbook clauses": "Klauseln des Playbooks",
+  "Liability cap": "Haftungsgrenze",
+  "Consumer terms": "Verbraucher-AGB",
+  "DPA Art. 28": "AVV Art. 28",
+  "Audit rights": "Auditrechte",
+  "Company name": "Firmenname",
   "Legal's definitions as data (pipeline/catalogue.py) – changing one is a new prompt version.":
     "Definitionen der Rechtsabteilung als Daten (pipeline/catalogue.py) – jede Änderung ist eine neue Prompt-Version.",
   "Hide definitions": "Definitionen ausblenden",
@@ -302,11 +348,13 @@ export const DE: Record<string, string> = {
   "required for {types}": "erforderlich für {types}",
   "Document type": "Dokumenttyp",
   "Only with gaps or former names": "Nur mit Lücken oder früheren Namen",
+  "Only with a required clause missing or unclear": "Nur mit fehlender oder unklarer Pflichtklausel",
+  "Only still naming a former company": "Nur mit früherem Firmennamen",
   "Search ID or party": "ID oder Vertragspartner", // the search box shows a magnifier; longer text is cut off
   "shown": "angezeigt",
   "with a required clause missing or unclear": "mit fehlender oder unklarer Pflichtklausel",
   "still naming a former company": "nennen noch einen früheren Firmennamen",
-  "faded = not required for this type": "blass = für diesen Typ nicht erforderlich",
+  "grey = not required for this type": "grau = für diesen Typ nicht erforderlich",
   "dot = checks overruled the model": "Punkt = Prüfungen haben das Modell überstimmt",
   "Contract": "Vertrag",
   "Type": "Typ",
@@ -327,23 +375,27 @@ export const DE: Record<string, string> = {
   "Refresh": "Aktualisieren",
   "The audit log could not be loaded: {error}": "Das Audit-Log konnte nicht geladen werden: {error}",
   "No actions yet.": "Noch keine Aktionen.",
-  "run created": "Prüflauf erstellt",
-  "review recorded": "Prüfung erfasst",
-  "batch confirmed": "Sammelbestätigung",
-  "archive copy": "Archivkopie",
-  "archive refused": "Archivierung verweigert",
-  "finding review recorded": "Befundprüfung erfasst",
-  "finding escalated": "Befund eskaliert",
-  "found": "offen", // review state FOUND = not reviewed yet
-  "in review": "in Prüfung",
-  "disputed": "strittig",
-  "refused by the tool gate: finding is {state}": "vom Tool-Gate verweigert: Befund ist {state}",
-  "missing clause": "fehlende Klausel",
-  "legacy names": "frühere Firmennamen",
-  "governing law not": "abweichendes Recht",
-  "duplicates": "Dubletten",
-  "{n} to look at": "{n} zu prüfen",
-  "routine rows {ids}": "Routinezeilen {ids}",
+  "Show": "Anzeigen",
+  "All": "Alle",
+  "Runs": "Prüfläufe",
+  "Reviews": "Prüfungen",
+  "Archive copies": "Archivkopien",
+  "Refused": "Verweigert",
+  "Reviews in the register": "Prüfungen im Register",
+  "Run {id}": "Prüflauf {id}",
+  "{id} · started by {who}": "{id} · gestartet von {who}",
+  "{who} ran the check: {n} of {of} to look at": "{who} hat die Prüfung gestartet: {n} von {of} zu prüfen",
+  "{who} ran the check: {n} to look at": "{who} hat die Prüfung gestartet: {n} zu prüfen",
+  "{who} confirmed {doc}": "{who} hat {doc} bestätigt",
+  "{who} rejected {doc}": "{who} hat {doc} verworfen",
+  "{who} corrected {doc} to “{status}”": "{who} hat {doc} auf „{status}“ korrigiert",
+  "{who} reviewed {doc}": "{who} hat {doc} geprüft",
+  "{who} escalated {doc} to four eyes": "{who} hat {doc} zur Vier-Augen-Prüfung eskaliert",
+  "{who} confirmed {n} routine rows at once": "{who} hat {n} Routinezeilen gesammelt bestätigt",
+  "{who} confirmed 1 routine row in a batch": "{who} hat 1 Routinezeile per Sammelbestätigung bestätigt",
+  "{who} stored an archive copy of {doc}": "{who} hat eine Archivkopie von {doc} gespeichert",
+  "{who} tried to store an archive copy of {doc} – refused": "{who} wollte eine Archivkopie von {doc} speichern – verweigert",
+  "The tool gate refused it: the finding is “{state}”, not approved.": "Das Tool-Gate hat verweigert: Der Befund ist „{state}“, nicht freigegeben.",
   // selection in the register, run over a selection (decision 75)
   "not found or unclear": "nicht gefunden oder unklar",
   "not found": "nicht gefunden",
@@ -355,6 +407,7 @@ export const DE: Record<string, string> = {
   "Escalated or disputed": "eskaliert oder strittig",
   "More filters": "Weitere Filter",
   "Dated from": "Datiert ab",
+  "any year": "jedes Jahr",
   "to": "bis",
   "Clause status": "Klauselstatus",
   "Review state": "Review-Status",
@@ -401,6 +454,20 @@ export function translate(lang: Lang, text: string, params?: Params): string {
 
 export const LangContext = createContext<Lang>("en");
 export const useLang = () => useContext(LangContext);
+
+// Numbers in the format of the language: 0.35 / 0,35 and $0.12 / 0,12 $. en-US for the dollar
+// sign without a country prefix (en-GB would write "US$0.12").
+const LOCALE: Record<Lang, string> = { en: "en-US", de: "de-DE" };
+export const formatNumber = (lang: Lang, n: number, digits = 2) =>
+  n.toLocaleString(LOCALE[lang], { minimumFractionDigits: digits, maximumFractionDigits: digits });
+export const formatUsd = (lang: Lang, n: number) =>
+  n.toLocaleString(LOCALE[lang], { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** num(0.35) and usd(0.12) in the language of the current screen. */
+export function useFormat() {
+  const lang = useContext(LangContext);
+  return { num: (n: number, digits = 2) => formatNumber(lang, n, digits), usd: (n: number) => formatUsd(lang, n) };
+}
 
 /** t(text, params) in the language of the current screen. */
 export function useT(): T {

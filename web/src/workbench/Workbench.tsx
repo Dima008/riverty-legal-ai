@@ -1,11 +1,10 @@
 // Question -> plan (lawyer confirms) -> run over every contract -> overview with coverage ->
 // contracts to look at -> evidence and decision.
 import { MessageBar, MessageBarBody, Spinner } from "@fluentui/react-components";
-import { DocumentSearch24Regular, PeopleTeam24Regular, ShieldCheckmark24Regular } from "@fluentui/react-icons";
-import { useEffect, useState } from "react";
-import { api, ApiError, type Plan, type Run, type RunRow, type Scope } from "../api";
+import { useEffect, useRef, useState } from "react";
+import { api, ApiError, type Matrix, type Plan, type RegisterSummary, type Run, type RunRow, type Scope } from "../api";
 import { ContractFile } from "../register/ContractFile";
-import { useLang, useT } from "../i18n";
+import { useFormat, useLang, useT } from "../i18n";
 import { navigate, useHashRoute } from "../routing";
 import { AskPanel, type Meta } from "./AskPanel";
 import { Evidence } from "./Evidence";
@@ -24,24 +23,35 @@ function parseScope(raw: string | null): Scope | null {
   }
 }
 
-function Promises() {
+/** Before a question: the portfolio as it stands, from the register (no model call). Each number
+ *  opens the register with the matching filter; the counts follow the register's own summary line. */
+function PortfolioToday({ matrix, summary }: { matrix: Matrix; summary: RegisterSummary | null }) {
   const t = useT();
-  const items = [
-    { icon: <ShieldCheckmark24Regular />, title: t("Complete"), text: t("Every contract in scope is read in full – or listed as excluded, with the reason. Nothing drops out silently.") },
-    { icon: <DocumentSearch24Regular />, title: t("Evidence first"), text: t("Every finding points to the passage on the original page, and shows which checks it passed.") },
-    { icon: <PeopleTeam24Regular />, title: t("You decide"), text: t("The system reports observations. Critical cases need two people, and nothing leaves the system without approval.") },
+  const { usd } = useFormat();
+  const gaps = matrix.rows.filter((r) => r.gaps.length > 0 && !r.duplicate_of).length;
+  const names = matrix.rows.filter((r) => r.former_names.open > 0 && !r.duplicate_of && !r.is_amendment).length;
+  const items: { n: string; label: string; to?: string; tone?: string }[] = [
+    { n: String(matrix.rows.length), label: t("documents in the register"), to: "/tool/register?type=all" },
+    { n: String(gaps), label: t("with a required clause missing or unclear"), to: "/tool/register?type=all&only=gaps", tone: "hit" },
+    { n: String(names), label: t("still naming a former company"), to: "/tool/register?type=all&only=names", tone: "unsure" },
   ];
+  if (summary) items.push({ n: usd(summary.cost.cost_usd), label: t("to build the register, once – every question after that is free") });
   return (
-    <section className="promises" aria-label={t("How it works")}>
-      {items.map((i) => (
-        <div key={i.title} className="promise">
-          <div className="promise-icon">{i.icon}</div>
-          <div>
-            <h3>{i.title}</h3>
-            <p>{i.text}</p>
-          </div>
-        </div>
-      ))}
+    <section className="panel portfolio" aria-label={t("Portfolio today")}>
+      <div className="eyebrow">{t("Portfolio today")}</div>
+      <ul className="pf-items">
+        {items.map((i) => (
+          <li key={i.label}>
+            {i.to ? (
+              <a className={`pf-item${i.tone ? ` ${i.tone}` : ""}`} href={`#${i.to}`}>
+                <span className="pf-n">{i.n}</span> <span className="pf-label">{i.label}</span>
+              </a>
+            ) : (
+              <span className="pf-item static"><span className="pf-n">{i.n}</span> <span className="pf-label">{i.label}</span></span>
+            )}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -64,11 +74,27 @@ export function Workbench() {
   const openDoc = (docId: string) => setFile({ docId, clause: null });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // the register as it stands: the start strip, and the contract tiles of the answer
+  const [matrix, setMatrix] = useState<Matrix | null>(null);
+  const [summary, setSummary] = useState<RegisterSummary | null>(null);
+  const detail = useRef<HTMLDivElement>(null);
+  // Step 1 folds into one line once a run exists, and the answer moves to the top of the window
+  const [askOpen, setAskOpen] = useState(true);
+  const answer = useRef<HTMLDivElement>(null);
+  const scrollToAnswer = useRef(false);
+  useEffect(() => {
+    if (!run || !scrollToAnswer.current) return;
+    scrollToAnswer.current = false;
+    answer.current?.scrollIntoView({ block: "start" });
+  }, [run]);
 
   useEffect(() => {
     Promise.all([api.examples(), api.checks(), api.catalogue()])
       .then(([examples, checks, cat]) => setMeta({ examples, checks, clauses: cat.clauses }))
       .catch((e) => setError(t("API not reachable – is the backend running on port 8010? ({error})", { error: String(e) })));
+    // optional extras: without them the strip and the tiles are left out, the workbench still works
+    api.matrix().then(setMatrix).catch(() => setMatrix(null));
+    api.summary().then(setSummary).catch(() => setSummary(null));
   }, []);
 
   async function guard(fn: () => Promise<void>) {
@@ -86,10 +112,18 @@ export function Workbench() {
   const start = () =>
     guard(async () => {
       const r = await api.createRun(scope ? { ...plan, scope } : plan, question);
+      scrollToAnswer.current = true;   // only after a new run, not after a review refreshes it
       setRun(r);
       setSelected(r.rows[0]?.doc_id ?? null);
+      setAskOpen(false);
     });
   const refresh = () => run && guard(async () => setRun(await api.run(run.run_id)));
+  // a tile in the answer opens that contract's evidence below it
+  const pickTile = (docId: string) => {
+    setSelected(docId);
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    detail.current?.scrollIntoView({ block: "start", behavior: still ? "auto" : "smooth" });
+  };
   const confirmRoutine = (rows: RunRow[]) =>
     run && guard(async () => {
       await api.confirmBatch(run.run_id, rows.map((r) => r.doc_id));
@@ -119,16 +153,18 @@ export function Workbench() {
           setQuestion(null);
         }}
         onRun={start}
+        compact={!!run && !askOpen}
+        onExpand={() => setAskOpen(true)}
       />
 
       {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
 
-      {!run && <Promises />}
+      {!run && matrix && <PortfolioToday matrix={matrix} summary={summary} />}
 
       {run && (
-        <>
-          <RunOverview run={run} question={shownQuestion} />
-          <div className="master-detail">
+        <div className="answer" ref={answer}>
+          <RunOverview run={run} question={shownQuestion} matrix={matrix} selected={selected} onSelect={pickTile} />
+          <div className="master-detail" ref={detail}>
             <ResultList run={run} selected={selected} busy={busy} onSelect={setSelected} onConfirmRoutine={confirmRoutine} />
             <section aria-label={t("Evidence")}>
               {row ? (
@@ -139,7 +175,7 @@ export function Workbench() {
             </section>
           </div>
           <ContractFile open={file} clauses={meta.clauses} onClose={() => setFile(null)} onOpen={openDoc} />
-        </>
+        </div>
       )}
     </div>
   );

@@ -3,8 +3,11 @@ import { Badge, type BadgeProps } from "@fluentui/react-components";
 import {
   Checkmark16Regular,
   CheckmarkCircle16Filled,
+  Circle16Regular,
+  CircleHalfFill16Regular,
   Dismiss16Regular,
   DismissCircle16Filled,
+  DismissCircle16Regular,
   Edit16Regular,
   Eye16Regular,
   Flag16Regular,
@@ -48,17 +51,47 @@ const REVIEW: Record<string, Look> = {
 };
 
 // the label is English (labels.ts); it is translated here, where it is shown
-function Tag({ look, text }: { look?: Look; text: string }) {
+function Tag({ look, text, size = "medium" }: { look?: Look; text: string; size?: BadgeProps["size"] }) {
   const t = useT();
   return (
-    <Badge appearance="tint" color={look?.color ?? "subtle"} icon={look?.icon} size="medium">
+    <Badge appearance="tint" color={look?.color ?? "subtle"} icon={look?.icon} size={size}>
       {t(text)}
     </Badge>
   );
 }
 
-export const StatusBadge = ({ status, short = false }: { status: string; short?: boolean }) => (
-  <Tag look={STATUS[status]} text={(short ? STATUS_SHORT : STATUS_LABEL)[status] ?? status} />
+// quiet: same icon and words, in grey - for a clause that is not required for this type of contract.
+// large: the verdict, where the status is the point of the box.
+export const StatusBadge = ({ status, short = false, quiet = false, large = false }:
+  { status: string; short?: boolean; quiet?: boolean; large?: boolean }) => {
+  const look = STATUS[status];
+  return <Tag look={look && quiet ? { ...look, color: "subtle" } : look} size={large ? "large" : "medium"}
+              text={(short ? STATUS_SHORT : STATUS_LABEL)[status] ?? status} />;
+};
+
+/** The badge colour of a status ("danger", "warning", "informative"), for other marks of the same status. */
+export const statusColor = (status: string) => STATUS[status]?.color ?? "subtle";
+
+// Icons alone, for the compact result list. They are hidden from screen readers: the row's label
+// says the same in words (status, triage, review state), so colour and shape are never the only signal.
+export const StatusIcon = ({ status }: { status: string }) => (
+  <span className={`si si-${STATUS[status]?.color ?? "subtle"}`} aria-hidden>{STATUS[status]?.icon}</span>
+);
+// routine needs no icon: the quiet left border says it
+export const TriageIcon = ({ triage }: { triage: string }) =>
+  triage === "CONFIRM" ? null : <span className={`si si-${TRIAGE[triage]?.color ?? "subtle"}`} aria-hidden>{TRIAGE[triage]?.icon}</span>;
+
+const REVIEW_ICON: Record<string, ReactElement> = {
+  FOUND: <Circle16Regular />,                 // nobody has decided yet: an empty circle
+  IN_REVIEW: <CircleHalfFill16Regular />,     // one of two approvals
+  CONFIRMED: <CheckmarkCircle16Filled />,
+  CORRECTED: <CheckmarkCircle16Filled />,
+  REJECTED: <DismissCircle16Regular />,
+  DISPUTED: <ShieldError16Regular />,
+  ESCALATED: <Flag16Regular />,
+};
+export const ReviewIcon = ({ state }: { state: string }) => (
+  <span className={`si ri-${state.toLowerCase()}`} aria-hidden>{REVIEW_ICON[state] ?? <Circle16Regular />}</span>
 );
 export const TriageBadge = ({ triage }: { triage: string }) => <Tag look={TRIAGE[triage]} text={TRIAGE_LABEL[triage] ?? triage} />;
 export const ReviewBadge = ({ state }: { state: string }) => <Tag look={REVIEW[state]} text={REVIEW_LABEL[state] ?? state} />;

@@ -1,0 +1,26 @@
+/* Shared colour identity of the talk and the tool (decision 77, direction A: "paper on a dark desk").
+   The talk keeps its own copy of these values in deck/deck.css (scoped to .talk-bg and .presenter);
+   the tool reads them from here. Change a value in both files, or the two layers drift apart.
+   Only custom properties, no element styles: importing this file changes nothing on the talk's pages,
+   because the talk defines the same names on its own root elements. */
+
+:root {
+  /* the talk's accents, as in deck.css */
+  --mint: #44e2b0;
+  --cyan: #5cc8ff;
+  --violet: #b59dff;
+  --grad: linear-gradient(90deg, #44e2b0, #5cc8ff);
+  --font-display: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", Inter, system-ui, sans-serif;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* the talk's dark surfaces, used for the tool's frame: the header and the desk behind the page */
+  --night: #07110f;          /* header */
+  --desk: #0e1a18;           /* behind the original page */
+  --on-night: #eef6f3;       /* text on the dark surfaces (the talk's --ink) */
+  --on-night-2: #a9c1bb;     /* secondary text on the dark surfaces (the talk's --ink-2), 10.1:1 */
+
+  /* the mint for text and lines on white paper: the light-surface variant of --mint.
+     #0b7a5e = brand[80] in theme.ts, 5.3:1 on white */
+  --mint-ink: #0b7a5e;
+  --mint-ink-dark: #003a2b;  /* brand[40] */
+}

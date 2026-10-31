@@ -1,24 +1,29 @@
-// One brand colour ramp (deep green-teal), from which Fluent UI derives every brand colour.
-// Deliberately not Riverty's corporate design: swap this ramp for the official brand colours.
+// One brand colour ramp, from which Fluent UI derives every brand colour (primary buttons, selected
+// tabs, focus rings, brand badges). It is built around the talk's mint (hue ~168° in OKLCH, the
+// hue of --mint #44e2b0 in tokens.css), so the tool and the talk share one colour (decision 77).
+// brand[80] (#0B7A5E) is the colour of primary buttons and brand text on white: 5.3:1 with white,
+// above the 4.5:1 that WCAG asks for normal text. The steps were computed in OKLCH: same hue,
+// lightness from dark to light. Deliberately not Riverty's corporate design: swap this ramp for
+// the official brand colours.
 import { createDarkTheme, createLightTheme, type BrandVariants, type Theme } from "@fluentui/react-components";
 
 const brand: BrandVariants = {
-  10: "#020E0C",
-  20: "#071C19",
-  30: "#0B2A26",
-  40: "#0E3732",
-  50: "#11453F",
-  60: "#13534C",
-  70: "#156259",
-  80: "#167166",
-  90: "#2C7F74",
-  100: "#438D83",
-  110: "#5A9B92",
-  120: "#72A9A1",
-  130: "#8BB8B1",
-  140: "#A4C6C1",
-  150: "#BDD5D1",
-  160: "#D6E4E1",
+  10: "#01110B",
+  20: "#011E15",
+  30: "#002C20",
+  40: "#003A2B",
+  50: "#004937",
+  60: "#005843",
+  70: "#03684F",
+  80: "#0B7A5E",
+  90: "#188F6F",
+  100: "#19A782",
+  110: "#20C096",
+  120: "#37D8AB",
+  130: "#74E7C1",
+  140: "#9FF0D2",
+  150: "#C1F5E1",
+  160: "#DDFAEF",
 };
 
 export const lightTheme: Theme = {
@@ -26,10 +31,15 @@ export const lightTheme: Theme = {
   fontFamilyBase: "'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif",
 };
 
+// The tool's header sits on the talk's near-black surface: the selected tab is underlined in the
+// talk's mint itself.
 export const darkTheme: Theme = {
   ...createDarkTheme(brand),
   colorBrandForeground1: brand[120],
   colorBrandForeground2: brand[130],
+  colorCompoundBrandStroke: "#44E2B0",
+  colorCompoundBrandStrokeHover: brand[130],
+  colorCompoundBrandStrokePressed: brand[110],
   fontFamilyBase: lightTheme.fontFamilyBase,
 };
 

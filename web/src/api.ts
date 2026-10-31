@@ -281,6 +281,22 @@ export interface ArchiveResult {
   files: { file: string; sha256: string; status: string; receipt_id: string }[];
 }
 
+/** The register at a glance (GET /summary); only the fields the tool shows. */
+export interface RegisterSummary {
+  documents: number;
+  cost: { cost_usd: number; calls: number };
+}
+
+/** One run in the list of runs (GET /runs): enough to name it in the audit log. */
+export interface RunListItem {
+  run_id: string;
+  created_at: string;
+  created_by: string;
+  question: string | null;
+  plan: Plan;
+  coverage: Coverage;
+}
+
 export interface AuditEvent {
   ts: string;
   actor: string;
@@ -331,6 +347,8 @@ export const api = {
   catalogue: () => request<{ clauses: Record<string, { label: string; definition: string }> }>("/catalogue"),
   createRun: (plan: Plan, question: string | null) => post<Run>("/runs", { plan, question }),
   run: (id: string) => request<Run>(`/runs/${id}`),
+  runs: () => request<RunListItem[]>("/runs"),
+  summary: () => request<RegisterSummary>("/summary"),
   review: (runId: string, body: { doc_id: string; decision: Decision; reason?: string; corrected_status?: string }) =>
     post<RunRow>(`/runs/${runId}/reviews`, body),
   confirmBatch: (runId: string, docIds: string[]) => post<{ confirmed: string[] }>(`/runs/${runId}/reviews/batch`, { doc_ids: docIds }),

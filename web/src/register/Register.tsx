@@ -3,20 +3,24 @@
 // Legal filters and ticks contracts and checks exactly those in the Workbench (decision 75); a
 // filter never hides a contract silently - contracts it cannot judge (no date, no law) are counted.
 import {
-  Button, Checkbox, Dropdown, Input, MessageBar, MessageBarBody, Option, SearchBox, Spinner, Switch, ToggleButton,
+  Button, Checkbox, Dropdown, MessageBar, MessageBarBody, Option, SearchBox, Spinner, Switch, ToggleButton,
 } from "@fluentui/react-components";
 import {
   CheckmarkCircle16Filled,
+  CheckmarkCircle16Regular,
+  ChevronRight16Regular,
   DismissCircle16Filled,
   Play16Filled,
   QuestionCircle16Filled,
+  QuestionCircle16Regular,
+  Subtract16Regular,
   Warning16Filled,
 } from "@fluentui/react-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, type Matrix, type MatrixCell, type MatrixRow, type ReviewStateName } from "../api";
 import { navigate, useHashRoute } from "../routing";
 import { useT, type T } from "../i18n";
-import { DOC_TYPE_LABEL, REVIEW_LABEL, STATUS_LABEL, STATUS_SHORT, warningLabels } from "../labels";
+import { CLAUSE_SHORT, DOC_TYPE_LABEL, REVIEW_LABEL, STATUS_LABEL, STATUS_SHORT, warningLabels } from "../labels";
 import { ContractFile } from "./ContractFile";
 
 // the filter labels and short type names are English; they are translated where they are shown
@@ -51,6 +55,22 @@ const CLAUSE_STATUS = [
   { key: "PRESENT", label: "clause found" },
 ];
 type ReviewFilter = "" | "open" | "reviewed" | "flagged";
+// "Only ...": the switch turns on "any" (gaps or former names); the start strip of the Workbench
+// links to the narrower two (#/tool/register?type=all&only=gaps)
+type Only = "" | "any" | "gaps" | "names";
+const ONLY_LABEL: Record<Only, string> = {
+  "": "Only with gaps or former names",
+  any: "Only with gaps or former names",
+  gaps: "Only with a required clause missing or unclear",
+  names: "Only still naming a former company",
+};
+const ONLY_FILTER: Record<Only, string> = {
+  "": "", any: "with gaps or former names", gaps: "with a required clause missing or unclear", names: "still naming a former company",
+};
+const onlyMatches = (r: MatrixRow, only: Only) =>
+  only === "gaps" ? r.gaps.length > 0
+  : only === "names" ? r.former_names.open > 0
+  : only === "any" ? r.gaps.length > 0 || r.former_names.open > 0 : true;
 const REVIEW_FILTER: { key: ReviewFilter; label: string }[] = [
   { key: "", label: "any" },
   { key: "open", label: "Gaps not yet reviewed" },
@@ -76,8 +96,11 @@ const REVIEW_MARK: Partial<Record<ReviewStateName, string>> = {
 function Cell({ cell, label, review, onOpen }: { cell?: MatrixCell; label: string; review?: ReviewStateName; onOpen: () => void }) {
   const t = useT();
   if (!cell) return <td className="mx-cell none">·</td>;
-  const icon =
-    cell.status === "PRESENT" ? <CheckmarkCircle16Filled /> : cell.status === "ABSENT" ? <DismissCircle16Filled /> : <QuestionCircle16Filled />;
+  // a clause the playbook does not require for this type is drawn in neutral grey, never in red:
+  // "not found" there is not a gap (the words are in the tooltip, the shape stays recognisable)
+  const icon = !cell.required
+    ? (cell.status === "PRESENT" ? <CheckmarkCircle16Regular /> : cell.status === "ABSENT" ? <Subtract16Regular /> : <QuestionCircle16Regular />)
+    : cell.status === "PRESENT" ? <CheckmarkCircle16Filled /> : cell.status === "ABSENT" ? <DismissCircle16Filled /> : <QuestionCircle16Filled />;
   const changed = cell.model_status !== cell.status;
   const text =
     `${label}: ${t(STATUS_LABEL[cell.status])}` +
@@ -100,10 +123,10 @@ export function Register() {
   const [matrix, setMatrix] = useState<Matrix | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [type, setType] = useState("merchant_agreement");
-  const [onlyGaps, setOnlyGaps] = useState(false);
+  const [only, setOnly] = useState<Only>("");
   const [query, setQuery] = useState("");
   const [law, setLaw] = useState("");                 // "" any, "none" = no governing law found, else a country
-  const [from, setFrom] = useState("");               // effective date, ISO
+  const [from, setFrom] = useState("");               // year of the effective date, e.g. "2020"
   const [to, setTo] = useState("");
   const [clause, setClause] = useState("");
   const [clauseStatus, setClauseStatus] = useState("GAP");
@@ -118,6 +141,13 @@ export function Register() {
   useEffect(() => {
     if (linked) setOpen({ docId: linked, clause: linkedClause });
   }, [linked, linkedClause]);
+  // #/tool/register?type=all&only=gaps - a filter from a link (the Workbench's "Portfolio today")
+  const linkedType = route.params.get("type");
+  const linkedOnly = route.params.get("only");
+  useEffect(() => {
+    if (linkedType) setType(linkedType === "all" ? "" : linkedType);
+    if (linkedOnly === "gaps" || linkedOnly === "names" || linkedOnly === "any") setOnly(linkedOnly);
+  }, [linkedType, linkedOnly]);
   const close = () => {
     setOpen(null);
     if (linked) navigate("/tool/register");
@@ -153,12 +183,20 @@ export function Register() {
     return clauseStatus === "GAP" ? !c || c.status !== "PRESENT" : c?.status === clauseStatus;  // no finding = a gap
   };
   const lawOk = (r: MatrixRow) => !law || (law === "none" ? r.governing_law == null : country(r) === law);
-  const dateOk = (r: MatrixRow) =>
-    (!from && !to) || (r.effective_date != null && (!from || r.effective_date >= from) && (!to || r.effective_date <= to));
+  // whole years: a lawyer filters contracts by year, and the browser's date field showed "TT.mm.jjjj"
+  // in the English tool (Chromium follows the system locale)
+  // Compare years, not dates: the dropdown offers years, and a date with an unknown month
+  // ("2004-00-00", C02) would fall before "2004-01-01" and drop out silently.
+  const year = (r: MatrixRow) => r.effective_date?.slice(0, 4) ?? null;
+  const years = [...new Set(matrix.rows.map(year).filter((y): y is string => !!y))].sort();
+  const dateOk = (r: MatrixRow) => {
+    const y = year(r);
+    return (!from && !to) || (y != null && (!from || y >= from) && (!to || y <= to));
+  };
   const base = matrix.rows.filter(
     (r) =>
       (!type || r.doc_type === type) &&
-      (!onlyGaps || r.gaps.length > 0 || r.former_names.open > 0) &&
+      onlyMatches(r, only) &&
       (!q || r.doc_id.toLowerCase().includes(q) || (r.counterparty_name ?? "").toLowerCase().includes(q)) &&
       clauseOk(r) && reviewMatches(r, reviews[r.doc_id], review),
   );
@@ -189,7 +227,7 @@ export function Register() {
   const describeFilters = (): Record<string, string> => {
     const f: Record<string, string> = {};
     if (type) f.type = type;
-    if (onlyGaps) f.only = "with gaps or former names";
+    if (only) f.only = ONLY_FILTER[only];
     if (law) f.law = law === "none" ? "not found" : law;
     if (from) f.from = from;
     if (to) f.to = to;
@@ -219,27 +257,29 @@ export function Register() {
           </div>
         </div>
 
-        <div className="playbook">
-          <div className="playbook-head">
-            <span className="plan-label">{t("Playbook")}</span>
+        {/* one line until opened: the column headers carry the definitions as tooltips too */}
+        <details className="playbook" open={showDefinitions} onToggle={(e) => setShowDefinitions(e.currentTarget.open)}>
+          <summary>
+            <ChevronRight16Regular className="checks-chevron" aria-hidden />
+            <span className="plan-label">{t("Playbook: {n} clauses", { n: clauseKeys.length })}</span>
             <span className="note">{t("Legal's definitions as data (pipeline/catalogue.py) – changing one is a new prompt version.")}</span>
-            <button type="button" className="link-btn" onClick={() => setShowDefinitions((s) => !s)}>
-              {showDefinitions ? t("Hide definitions") : t("Show definitions")}
-            </button>
-          </div>
-          <div className={`playbook-grid${showDefinitions ? " open" : ""}`}>
+            <span className="link-btn" aria-hidden>{showDefinitions ? t("Hide definitions") : t("Show definitions")}</span>
+          </summary>
+          <dl className="pb-list">
             {clauseKeys.map((k) => {
               const c = matrix.clauses[k];
               return (
-                <div key={k} className="pb-card">
-                  <div className="pb-label">{t(c.label)}</div>
-                  <div className="pb-req">{t("required for {types}", { types: c.required_for.map((type) => t(DOC_TYPE_LABEL[type] ?? type)).join(", ") })}</div>
-                  <div className="pb-def">{c.definition}</div>
+                <div key={k} className="pb-item">
+                  <dt>
+                    <span className="pb-label">{t(c.label)}</span>
+                    <span className="pb-req">{t("required for {types}", { types: c.required_for.map((type) => t(DOC_TYPE_LABEL[type] ?? type)).join(", ") })}</span>
+                  </dt>
+                  <dd className="pb-def">{c.definition}</dd>
                 </div>
               );
             })}
-          </div>
-        </div>
+          </dl>
+        </details>
       </section>
 
       <section className="panel">
@@ -252,7 +292,7 @@ export function Register() {
             ))}
           </div>
           <div className="spacer" />
-          <Switch checked={onlyGaps} onChange={(_, d) => setOnlyGaps(d.checked)} label={t("Only with gaps or former names")} />
+          <Switch checked={only !== ""} onChange={(_, d) => setOnly(d.checked ? "any" : "")} label={t(ONLY_LABEL[only])} />
           <SearchBox placeholder={t("Search ID or party")} value={query} onChange={(_, d) => setQuery(d.value)} />
         </div>
 
@@ -268,11 +308,19 @@ export function Register() {
           </label>
           <label>
             <span>{t("Dated from")}</span>
-            <Input size="small" type="date" value={from} onChange={(_, d) => setFrom(d.value)} />
+            <Dropdown size="small" className="mx-f-year" value={from || t("any year")} selectedOptions={[from]}
+                      onOptionSelect={(_, d) => setFrom(d.optionValue ?? "")}>
+              <Option value="">{t("any year")}</Option>
+              {years.map((y) => <Option key={y} value={y}>{y}</Option>)}
+            </Dropdown>
           </label>
           <label>
             <span>{t("to")}</span>
-            <Input size="small" type="date" value={to} onChange={(_, d) => setTo(d.value)} />
+            <Dropdown size="small" className="mx-f-year" value={to || t("any year")} selectedOptions={[to]}
+                      onOptionSelect={(_, d) => setTo(d.optionValue ?? "")}>
+              <Option value="">{t("any year")}</Option>
+              {years.map((y) => <Option key={y} value={y}>{y}</Option>)}
+            </Dropdown>
           </label>
           <label>
             <span>{t("Clause")}</span>
@@ -311,7 +359,7 @@ export function Register() {
           )}
           <span className="legend-inline">
             <CheckmarkCircle16Filled className="c-ok" /> {short("PRESENT")} <DismissCircle16Filled className="c-bad" /> {short("ABSENT")}{" "}
-            <QuestionCircle16Filled className="c-warn" /> {short("UNCLEAR")} · {t("faded = not required for this type")} · {t("dot = checks overruled the model")}
+            <QuestionCircle16Filled className="c-warn" /> {short("UNCLEAR")} · {t("grey = not required for this type")} · {t("dot = checks overruled the model")}
           </span>
         </div>
 
@@ -342,20 +390,26 @@ export function Register() {
         <div className="mx-scroll">
           <table className="matrix">
             <thead>
-              <tr>
-                <th className="mx-pick">
+              <tr className="mx-group-row">
+                <th className="mx-pick" rowSpan={2}>
                   <Checkbox checked={allShown ? true : someShown ? "mixed" : false} onChange={toggleShown}
                             aria-label={t("Select all shown")} disabled={rows.length === 0} />
                 </th>
-                <th className="mx-doc">{t("Contract")}</th>
-                <th>{t("Type")}</th>
-                <th>{t("Date")}</th>
-                <th>{t("Law")}</th>
-                <th>{t("Source")}</th>
+                <th className="mx-doc" rowSpan={2}>{t("Contract")}</th>
+                <th className="mx-meta" rowSpan={2}>{t("Type")}</th>
+                <th className="mx-meta" rowSpan={2}>{t("Date")}</th>
+                <th className="mx-meta" rowSpan={2}>{t("Law")}</th>
+                <th className="mx-meta" rowSpan={2}>{t("Source")}</th>
+                <th className="mx-group" colSpan={clauseKeys.length} scope="colgroup">{t("Playbook clauses")}</th>
+                <th className="mx-clause mx-namecol" rowSpan={2}>{t("Company name")}</th>
+              </tr>
+              <tr className="mx-clause-row">
+                {/* short labels; the full label and Legal's definition are in the tooltip */}
                 {clauseKeys.map((k) => (
-                  <th key={k} className="mx-clause" title={matrix.clauses[k].definition}>{t(matrix.clauses[k].label)}</th>
+                  <th key={k} className="mx-clause" scope="col" title={`${t(matrix.clauses[k].label)}: ${matrix.clauses[k].definition}`}>
+                    {t(CLAUSE_SHORT[k] ?? matrix.clauses[k].label)}
+                  </th>
                 ))}
-                <th className="mx-clause">{t("Company name")}</th>
               </tr>
             </thead>
             <tbody>
@@ -389,10 +443,10 @@ export function Register() {
                         </div>
                       )}
                     </td>
-                    <td>{t(SHORT_TYPE[r.doc_type ?? "unknown"])}</td>
-                    <td className="num">{r.effective_date ?? "–"}</td>
-                    <td>{r.governing_law ?? "–"}</td>
-                    <td className="src">{source(r, t)}</td>
+                    <td className="mx-meta">{t(SHORT_TYPE[r.doc_type ?? "unknown"])}</td>
+                    <td className="mx-meta num">{r.effective_date ?? "–"}</td>
+                    <td className="mx-meta">{r.governing_law ?? "–"}</td>
+                    <td className="mx-meta src">{source(r, t)}</td>
                     {clauseKeys.map((k) => (
                       <Cell key={k} cell={r.cells[k]} label={t(matrix.clauses[k].label)} review={reviews[r.doc_id]?.[k]}
                             onOpen={() => setOpen({ docId: r.doc_id, clause: k })} />
@@ -403,7 +457,8 @@ export function Register() {
                       ) : r.former_names.resolved > 0 ? (
                         <span className="name-resolved">{t("resolved")}</span>
                       ) : (
-                        <span className="name-ok">{t("current")}</span>
+                        // the usual case stays quiet: a grey dash; "current" for screen readers and in the tooltip
+                        <span className="name-ok" title={t("current")}><span aria-hidden>–</span><span className="sr-only">{t("current")}</span></span>
                       )}
                     </td>
                   </tr>

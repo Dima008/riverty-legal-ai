@@ -259,6 +259,17 @@ copy. The same holds if the Workbench database is ever lost.
 To reduce automation bias: people tend to accept what a machine suggests. If the reviewer sees
 the passage on the original page first, they judge the text, not the label.
 
+**29. In the Workbench, the hidden instruction in M14 is marked red with "not evidence", not
+yellow like a quote. Why does that colour matter?**
+
+Yellow means "this passage is the evidence for a finding". The planted note in M14 is text
+written for an AI, not a clause. In the first version of the redesign it was yellow, right under
+a warning that said it is never used as evidence (F23). A lawyer would see two opposite messages.
+Now it is red and says "text addressed to AI systems – not evidence", the same way the talk shows
+it. One signal, one meaning.
+
+*Where:* `web/src/components/SafetyBar.tsx`, `workbench/Evidence.tsx`, F23, decision 87.
+
 ## Running it
 
 **14. What do you see in the frontend if only `npm run dev` runs and the API does not?**

@@ -2,14 +2,16 @@
 // with the selected evidence highlighted, its family and former company names. Original, copies
 // and family members are links: each opens its own file in the same drawer.
 import {
-  Button, DrawerBody, DrawerHeader, DrawerHeaderTitle, MessageBar, MessageBarBody, OverlayDrawer, Spinner,
+  Button, DrawerBody, DrawerHeader, DrawerHeaderTitle, MessageBar, MessageBarBody, OverlayDrawer,
 } from "@fluentui/react-components";
 import { Dismiss24Regular } from "@fluentui/react-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, type ClauseSpec, type DocText, type DocumentInfo, type Finding } from "../api";
 import { StatusBadge } from "../components/Badges";
-import { Checks, Quote, Verdict } from "../components/Finding";
+import { ChecksDisclosure, Quote, showChecks, Verdict } from "../components/Finding";
+import { EvidenceSkeleton } from "../components/Loading";
 import { PageView, TextExcerpt } from "../components/PageView";
+import { ALERT_FLAGS, documentAlerts, flagName, SafetyBars, type Alert } from "../components/SafetyBar";
 import { useT } from "../i18n";
 import { DOC_TYPE_SINGULAR, STATUS_LABEL, warningLabels } from "../labels";
 import { findingBoxes } from "../workbench/Evidence";
@@ -42,6 +44,7 @@ function Related({ label, ids, onOpen }: { label: string; ids: string[]; onOpen?
 interface Highlight {
   boxes: Record<number, number[][]>;
   hint: string | null;
+  suspect?: boolean;       // the passage lies in text addressed to AI systems: red, not evidence
 }
 
 export function ContractFile({ open, clauses, onClose, onReviewed, onOpen }: Props) {
@@ -52,12 +55,17 @@ export function ContractFile({ open, clauses, onClose, onReviewed, onOpen }: Pro
   const [selected, setSelected] = useState<string | null>(null);
   const [hl, setHl] = useState<Highlight>({ boxes: {}, hint: null });
   const [page, setPage] = useState(1);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const checks = useRef<HTMLDetailsElement>(null);
 
   // load the document when another contract is opened
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setDoc(null);
+    // start on page 1 without highlights: the last contract's page may not exist in this one
+    setPage(1);
+    setHl({ boxes: {}, hint: null });
     Promise.all([api.document(open.docId), api.findings(open.docId)]).then(async ([d, unsorted]) => {
       if (cancelled) return;
       // playbook order, clauses required for this document type first
@@ -65,9 +73,13 @@ export function ContractFile({ open, clauses, onClose, onReviewed, onOpen }: Pro
       const f = [...unsorted].sort(
         (a, b) => Number(b.required) - Number(a.required) || order.indexOf(a.clause_type) - order.indexOf(b.clause_type),
       );
+      const txt = d.format === "txt" ? await api.text(open.docId) : null;
+      const found = await documentAlerts(d, [], txt);
+      if (cancelled) return;
       setDoc(d);
       setFindings(f);
-      setText(d.format === "txt" ? await api.text(open.docId) : null);
+      setText(txt);
+      setAlerts(found);
       setSelected(open.clause ?? f.find((x) => x.required && x.status !== "PRESENT")?.clause_type ?? f[0]?.clause_type ?? null);
     });
     return () => {
@@ -78,17 +90,18 @@ export function ContractFile({ open, clauses, onClose, onReviewed, onOpen }: Pro
   // highlight the selected finding
   const finding = findings.find((f) => f.clause_type === selected) ?? null;
   useEffect(() => {
-    if (!open || !finding) return;
+    // wait until this contract is loaded: right after a switch, finding still belongs to the last one
+    if (!open || !finding || doc?.doc_id !== open.docId) return;
     let cancelled = false;
     findingBoxes(open.docId, finding).then((r) => {
       if (cancelled) return;
-      setHl({ boxes: r.boxes, hint: r.hint });
+      setHl({ boxes: r.boxes, hint: r.hint, suspect: r.suspect });
       setPage(r.page);
     });
     return () => {
       cancelled = true;
     };
-  }, [open, finding]);
+  }, [open, finding, doc]);
 
   const showName = async (name: string, onPage: number) => {
     if (!open) return;
@@ -107,7 +120,7 @@ export function ContractFile({ open, clauses, onClose, onReviewed, onOpen }: Pro
       </DrawerHeader>
       <DrawerBody>
         {!doc ? (
-          <Spinner label={t("Loading the contract file…")} />
+          <EvidenceSkeleton label={t("Loading the contract file…")} withHead={false} />
         ) : (
           <div className="contract-file">
             <div className="cf-meta">
@@ -120,10 +133,12 @@ export function ContractFile({ open, clauses, onClose, onReviewed, onOpen }: Pro
               <Related label={t("Family:")} onOpen={onOpen}
                        ids={doc.family.filter((id) => id !== doc.doc_id && id !== doc.duplicate_of && !doc.copies.includes(id))} />
               {m?.current_own_entity_name && <span>{t("our entity today: {name}", { name: m.current_own_entity_name })}</span>}
-              {warningLabels(doc.flags, t).map((w) => (
+              {warningLabels(doc.flags.filter((f) => !ALERT_FLAGS.has(flagName(f))), t).map((w) => (
                 <span key={w} className="warn-chip">{w}</span>
               ))}
             </div>
+
+            <SafetyBars alerts={alerts} onPage={text ? undefined : setPage} />
 
             {doc.duplicate_of && (
               <MessageBar intent="info" className="cf-dup">
@@ -144,40 +159,49 @@ export function ContractFile({ open, clauses, onClose, onReviewed, onOpen }: Pro
                 {text ? (
                   <TextExcerpt text={text.text} start={finding?.char_start ?? null} end={finding?.char_end ?? null} />
                 ) : (
-                  <PageView doc={doc} page={page} onPage={setPage} boxes={hl.boxes} hint={hl.hint} />
+                  <PageView doc={doc} page={page} onPage={setPage} boxes={hl.boxes} hint={hl.hint} suspect={hl.suspect} />
                 )}
               </div>
 
               <div className="cf-side">
                 <div className="panel">
                   <div className="section-title">{t("Compared with the playbook")}</div>
-                  <ul className="cf-findings">
-                    {findings.map((f) => (
-                      <li key={f.clause_type}>
-                        <button
-                          type="button"
-                          className={`cf-finding${f.clause_type === selected ? " selected" : ""}${f.required ? "" : " opt"}`}
-                          onClick={() => setSelected(f.clause_type)}
-                        >
-                          <span className="cf-label">
-                            {t(f.label)}
-                            <span className="cf-req">{f.required ? t("required") : t("not required here")}</span>
-                          </span>
-                          <StatusBadge status={f.status} short />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  {/* required clauses first; the others under a quiet heading, with grey badges */}
+                  {[true, false].map((required) => {
+                    const group = findings.filter((f) => f.required === required);
+                    if (group.length === 0) return null;
+                    return (
+                      <div key={String(required)} className={`cf-group${required ? "" : " opt"}`}>
+                        <div className="cf-group-title">
+                          {required ? t("Required for this type") : t("Not required for this type")}
+                        </div>
+                        <ul className="cf-findings">
+                          {group.map((f) => (
+                            <li key={f.clause_type}>
+                              <button
+                                type="button"
+                                className={`cf-finding${f.clause_type === selected ? " selected" : ""}${f.required ? "" : " opt"}`}
+                                onClick={() => setSelected(f.clause_type)}
+                                aria-current={f.clause_type === selected}
+                              >
+                                <span className="cf-label">{t(f.label)}</span>
+                                <StatusBadge status={f.status} short quiet={!f.required} />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {finding && (
                   <div className="panel">
                     <div className="section-title">{t(finding.label)}</div>
-                    <Verdict finding={finding} />
+                    <Verdict finding={finding} onShowChecks={() => showChecks(checks)} />
                     <Quote finding={finding} />
                     {finding.rationale && <p className="note">{t("Model's reason: {reason}", { reason: finding.rationale })}</p>}
-                    <div className="section-title small">{t("How the register decided")}</div>
-                    <Checks finding={finding} />
+                    <ChecksDisclosure key={`checks-${open?.docId}-${finding.clause_type}`} finding={finding} detailsRef={checks} />
                     <div className="section-title small">{t("The playbook says")}</div>
                     <p className="note">{clauses[finding.clause_type]?.definition}</p>
                     <p className="note">{t("{status} is an observation about the text, not a legal assessment.", { status: t(STATUS_LABEL[finding.status]) })}</p>

@@ -1,30 +1,43 @@
-// Human decision on one reported row, then the archive copy (only after approval).
-import { Button, Caption1, Field, MessageBar, MessageBarBody, Radio, RadioGroup, Text, Textarea } from "@fluentui/react-components";
-import { Archive16Regular, Checkmark16Regular, Dismiss16Regular, Edit16Regular, LockClosed16Regular } from "@fluentui/react-icons";
-import { useState } from "react";
+// Human decision on one reported row, then the archive copy (only after approval). From top to
+// bottom: the approvals the row needs (two slots for four eyes), the decision form, and the archive
+// copy as the locked step after them.
+import { Button, Field, MessageBar, MessageBarBody, Textarea } from "@fluentui/react-components";
+import { Checkmark16Regular, Dismiss16Regular, Edit16Regular } from "@fluentui/react-icons";
+import { useEffect, useState } from "react";
 import { api, ApiError, type ArchiveResult, type Decision, type Run, type RunRow } from "../api";
+import { ApprovalSlots, ArchiveStep, CorrectTo } from "../components/Approvals";
 import { ReviewBadge } from "../components/Badges";
 import { useT } from "../i18n";
 import { USERS, useUser } from "../user";
 
 const FINAL = ["CONFIRMED", "REJECTED", "CORRECTED", "DISPUTED"];
-const APPROVED = ["CONFIRMED", "CORRECTED"];
 
 export function ReviewBox({ run, row, onChanged }: { run: Run; row: RunRow; onChanged: () => void }) {
   const t = useT();
   const user = useUser();
   const [reason, setReason] = useState("");
-  // a correction usually says the opposite of the system: "missing" -> actually present, otherwise -> missing
-  const [corrected, setCorrected] = useState(row.status === "ABSENT" ? "PRESENT" : "ABSENT");
+  // "Correct" first asks what the clause actually is; nothing is chosen in advance
+  const [correcting, setCorrecting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [archive, setArchive] = useState<ArchiveResult | null>(null);
+  // another reviewer takes over: the last one's refusal or receipt is not theirs
+  useEffect(() => {
+    setError(null);
+    setArchive(null);
+    setCorrecting(false);
+  }, [user]);
 
-  const { state, required, done, reviews } = row.review;
+  const { state, required, reviews } = row.review;
   const decided = FINAL.includes(state);
   const alreadyReviewed = reviews.some((r) => r.reviewer === user && r.decision !== "ESCALATED");
   const reasonNeeded = row.triage !== "CONFIRM";
   const canCorrect = run.plan.check === "missing_clause";
+  const noReason = !reason.trim();
+  // say why the buttons are still disabled, instead of leaving them grey without a word
+  const hint = !noReason ? undefined
+    : reasonNeeded ? t("Write what you checked in the evidence – then you can confirm, reject or correct.")
+    : t("A routine row can be confirmed without a reason; rejecting or correcting needs one.");
 
   async function act(fn: () => Promise<unknown>) {
     setBusy(true);
@@ -40,42 +53,27 @@ export function ReviewBox({ run, row, onChanged }: { run: Run; row: RunRow; onCh
     }
   }
 
-  const decide = (decision: Decision) =>
-    act(() =>
-      api.review(run.run_id, {
+  const decide = (decision: Decision, corrected?: "PRESENT" | "ABSENT") =>
+    act(async () => {
+      await api.review(run.run_id, {
         doc_id: row.doc_id,
         decision,
         reason: reason.trim() || undefined,
         corrected_status: decision === "CORRECTED" ? corrected : undefined,
-      }),
-    );
+      });
+      setCorrecting(false);
+    });
 
   const storeCopy = () => act(async () => setArchive(await api.archive(run.run_id, row.doc_id)));
 
   return (
     <div className="panel review">
-      <div className="section-title">{t("Your decision")}</div>
-      <div className="actions">
+      <div className="review-head">
+        <div className="section-title">{t("Your decision")}</div>
         <ReviewBadge state={state} />
-        <Caption1>
-          {required === 2 ? t("Four-eyes principle: {done} of 2 approvals", { done }) : t("{done} of 1 decision", { done })}
-          {row.sample && ` · ${t("spot-check sample: open the evidence before confirming")}`}
-        </Caption1>
       </div>
-      {reviews.length > 0 && (
-        <ul>
-          {reviews.map((r) => (
-            <li key={r.reviewer + r.ts}>
-              <Text weight="semibold">{r.reviewer_name}</Text>: {t(r.decision.toLowerCase())}
-              {r.corrected_status && ` → ${t(r.corrected_status.toLowerCase())}`}
-              {r.reason && <span className="muted"> – “{r.reason}”</span>}
-              {r.source && r.source !== run.run_id && (
-                <span className="fr-source">{r.source === "register" ? t("in the register") : t("in run {id}", { id: r.source })}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      <ApprovalSlots review={row.review} here={run.run_id} />
+      {row.sample && <p className="note">{t("spot-check sample: open the evidence before confirming")}</p>}
 
       {!decided && alreadyReviewed && (
         <MessageBar intent="info">
@@ -87,45 +85,29 @@ export function ReviewBox({ run, row, onChanged }: { run: Run; row: RunRow; onCh
 
       {!decided && !alreadyReviewed && (
         <>
-          <Field label={reasonNeeded ? t("Reason (required for this row)") : t("Reason (optional for routine rows)")}>
+          <Field label={reasonNeeded ? t("Reason (required for this row)") : t("Reason (optional for routine rows)")} hint={hint}>
             <Textarea value={reason} onChange={(_, d) => setReason(d.value)} placeholder={t("What did you check in the evidence?")} resize="vertical" />
           </Field>
-          {canCorrect && (
-            <Field label={t("If you correct it, the clause is actually …")}>
-              <RadioGroup layout="horizontal" value={corrected} onChange={(_, d) => setCorrected(d.value)}>
-                <Radio value="PRESENT" label={t("present")} />
-                <Radio value="ABSENT" label={t("missing")} />
-              </RadioGroup>
-            </Field>
-          )}
           <div className="actions">
-            <Button appearance="primary" icon={<Checkmark16Regular />} disabled={busy || (reasonNeeded && !reason.trim())} onClick={() => decide("CONFIRMED")}>
+            <Button appearance="primary" icon={<Checkmark16Regular />} disabled={busy || (reasonNeeded && noReason)} onClick={() => decide("CONFIRMED")}>
               {t("Confirm finding")}
             </Button>
-            <Button icon={<Dismiss16Regular />} disabled={busy || !reason.trim()} onClick={() => decide("REJECTED")}>
+            <Button icon={<Dismiss16Regular />} disabled={busy || noReason} onClick={() => decide("REJECTED")}>
               {t("Reject")}
             </Button>
             {canCorrect && (
-              <Button icon={<Edit16Regular />} disabled={busy || !reason.trim()} onClick={() => decide("CORRECTED")}>
+              <Button icon={<Edit16Regular />} disabled={busy || noReason} aria-expanded={correcting} onClick={() => setCorrecting((c) => !c)}>
                 {t("Correct")}
               </Button>
             )}
           </div>
+          {canCorrect && correcting && (
+            <CorrectTo busy={busy || noReason} onPick={(s) => decide("CORRECTED", s)} onCancel={() => setCorrecting(false)} />
+          )}
         </>
       )}
 
-      <div className="actions archive-row">
-        {/* Clickable on purpose (decision 71): the server is the control, not the button. Before
-            approval it refuses with 409 and writes the refusal to the audit log. */}
-        <Button icon={APPROVED.includes(state) ? <Archive16Regular /> : <LockClosed16Regular />} disabled={busy} onClick={storeCopy}>
-          {t("Store archive copy")}
-        </Button>
-        <Caption1>
-          {APPROVED.includes(state)
-            ? t("Write-only contract storage, one copy per file")
-            : t("Locked until the finding is approved – the server refuses and logs every attempt")}
-        </Caption1>
-      </div>
+      <ArchiveStep state={state} required={required} busy={busy} onStore={storeCopy} />
       {archive && (
         <MessageBar intent="success">
           <MessageBarBody>

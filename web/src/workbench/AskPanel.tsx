@@ -1,6 +1,7 @@
 // Step 1: a question becomes a plan. Ready-made questions as cards, or build the check yourself.
 // The plan is shown before anything runs; the lawyer confirms it (decision 55: planner without
-// a model first).
+// a model first). Once a run exists, the step folds into one line (the plan and "Change
+// question"), so the answer and the evidence fill the screen of a laptop.
 import {
   Accordion,
   AccordionHeader,
@@ -13,10 +14,14 @@ import {
   Option,
   Spinner,
 } from "@fluentui/react-components";
-import { CheckmarkCircle20Filled, Play16Filled } from "@fluentui/react-icons";
+import {
+  CheckmarkCircle20Filled, DocumentCopy20Regular, DocumentDismiss20Regular, Edit16Regular, Gavel20Regular, History20Regular,
+  Play16Filled,
+} from "@fluentui/react-icons";
+import type { ReactElement } from "react";
 import type { CheckSpec, Example, Plan, Scope } from "../api";
 import { useLang, useT } from "../i18n";
-import { DOC_TYPE_LABEL, scopeText } from "../labels";
+import { CHECK_CATEGORY, DOC_TYPE_LABEL, scopeText } from "../labels";
 
 export interface Meta {
   examples: Example[];
@@ -24,12 +29,19 @@ export interface Meta {
   clauses: Record<string, { label: string; definition: string }>;
 }
 
-// "UC2 negative clause search (B2B2C)" -> "Negative clause search (B2B2C)"; "UC2/UC4 inbound" -> "Inbound (DPA)"
-const useCase = (uc: string) => {
-  const s = uc.replace(/^(?:UC\d+\/?)+\s*/i, "");
-  if (s === "inbound") return "Inbound (DPA)";
-  return s.charAt(0).toUpperCase() + s.slice(1);
+// The example questions grouped by what they check, in lawyers' words - not by the internal use
+// case ("UC2 negative clause search (B2B2C)"), which is developer language.
+const CATEGORY_ICON: Record<string, ReactElement> = {
+  missing_clause: <DocumentDismiss20Regular />,
+  legacy_names: <History20Regular />,
+  governing_law_not: <Gavel20Regular />,
+  duplicates: <DocumentCopy20Regular />,
 };
+function byCategory(examples: Example[]): [string, Example[]][] {
+  const groups = new Map<string, Example[]>(Object.keys(CHECK_CATEGORY).map((k) => [k, []]));
+  examples.forEach((ex) => groups.set(ex.plan.check, [...(groups.get(ex.plan.check) ?? []), ex]));
+  return [...groups].filter(([, list]) => list.length > 0);
+}
 
 function PlanBuilder({ meta, plan, onChange }: { meta: Meta; plan: Plan; onChange: (p: Plan) => void }) {
   const t = useT();
@@ -120,12 +132,24 @@ interface Props {
   onExample: (ex: Example) => void;
   onPlan: (p: Plan) => void;
   onRun: () => void;
+  compact?: boolean;            // folded to one line, after a run
+  onExpand?: () => void;        // unfold it again ("Change question")
 }
 
-export function AskPanel({ meta, question, plan, scope, onClearScope, busy, onExample, onPlan, onRun }: Props) {
+export function AskPanel({ meta, question, plan, scope, onClearScope, busy, onExample, onPlan, onRun, compact, onExpand }: Props) {
   const t = useT();
   const lang = useLang();
   const missing = missingParams(plan, meta);
+  if (compact) {
+    return (
+      <section className="panel ask compact" aria-label={t("Ask a question")}>
+        <div className="eyebrow">{t("Step 1 · Ask")}</div>
+        <PlanSummary plan={plan} meta={meta} scope={scope} />
+        <div className="spacer" />
+        <Button icon={<Edit16Regular />} onClick={onExpand}>{t("Change question")}</Button>
+      </section>
+    );
+  }
   return (
     <section className="panel ask" aria-label={t("Ask a question")}>
       <div className="panel-head">
@@ -136,23 +160,34 @@ export function AskPanel({ meta, question, plan, scope, onClearScope, busy, onEx
         </div>
       </div>
 
-      <div className="q-grid">
-        {meta.examples.map((ex) => {
-          const selected = question === ex.question;
-          return (
-            <button key={ex.id} type="button" className={`q-card${selected ? " selected" : ""}`} onClick={() => onExample(ex)} aria-pressed={selected}>
-              <span className="q-kind">{t(useCase(ex.use_case))}</span>
-              {/* the API sends every example question in both languages */}
-              <span className="q-text">{lang === "de" ? ex.question_de : ex.question}</span>
-              {selected && <CheckmarkCircle20Filled className="q-check" />}
-            </button>
-          );
-        })}
+      <div className="q-groups">
+        {byCategory(meta.examples).map(([check, list]) => (
+          <div key={check} className="q-group" role="group" aria-labelledby={`q-cat-${check}`}>
+            <div className="q-kind" id={`q-cat-${check}`}>
+              <span className="q-kind-icon" aria-hidden>{CATEGORY_ICON[check]}</span>
+              {t(CHECK_CATEGORY[check] ?? check)}
+            </div>
+            <ul className="q-list">
+              {list.map((ex) => {
+                const selected = question === ex.question;
+                return (
+                  <li key={ex.id}>
+                    <button type="button" className={`q-row${selected ? " selected" : ""}`} onClick={() => onExample(ex)} aria-pressed={selected}>
+                      {/* the API sends every example question in both languages */}
+                      <span className="q-text">{lang === "de" ? ex.question_de : ex.question}</span>
+                      {selected && <CheckmarkCircle20Filled className="q-check" aria-hidden />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </div>
 
       <Accordion collapsible className="own-check">
         <AccordionItem value="builder">
-          <AccordionHeader size="small">{t("Or build the check yourself")}</AccordionHeader>
+          <AccordionHeader>{t("Or build the check yourself")}</AccordionHeader>
           <AccordionPanel>
             <PlanBuilder meta={meta} plan={plan} onChange={onPlan} />
           </AccordionPanel>
@@ -184,7 +219,9 @@ export function AskPanel({ meta, question, plan, scope, onClearScope, busy, onEx
             ? t("Pick a question above or choose the {params}", { params: missing.map((m) => t(m.replace(/_/g, " "))).join(", ") })
             : t("Register query · no model call · $0")}
         </span>
-        <Button appearance="primary" size="large" icon={busy ? <Spinner size="tiny" /> : <Play16Filled />} disabled={busy || missing.length > 0} onClick={onRun}>
+        {/* the one hero action of the screen, in the talk's mint-to-cyan (decision 77) */}
+        <Button appearance="primary" size="large" className="hero-btn" icon={busy ? <Spinner size="tiny" /> : <Play16Filled />}
+                disabled={busy || missing.length > 0} onClick={onRun}>
           {scope ? t("Check the {n} selected contracts", { n: scope.doc_ids.length }) : t("Check all contracts")}
         </Button>
       </div>

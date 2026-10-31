@@ -56,6 +56,26 @@ export const DOC_TYPE_SINGULAR: Record<string, string> = {
   unknown: "Unknown type",
 };
 
+// Short column labels for the register matrix; the full label and the definition stay in the tooltip
+export const CLAUSE_SHORT: Record<string, string> = {
+  liability_limitation: "Liability cap",
+  consumer_terms_checkout: "Consumer terms",
+  dpa_reference: "DPA Art. 28",
+  subprocessor_clause: "Sub-processors",
+  audit_clause: "Audit rights",
+};
+
+// The kind of question, in lawyers' words (by the check it runs, not by the internal use case)
+export const CHECK_CATEGORY: Record<string, string> = {
+  missing_clause: "Missing clause",
+  legacy_names: "Former company name",
+  governing_law_not: "Governing law",
+  duplicates: "Duplicates",
+};
+
+// Confidence as a word; 0.8 is REVIEW_BELOW in pipeline/portfolio.py (below it a person reviews)
+export const confidenceWord = (c: number) => (c >= 0.8 ? "high" : c >= 0.5 ? "medium" : "low");
+
 export const LAYER_LABEL: Record<string, string> = {
   model: "What the model said",
   quote_found_in_source: "Quote found in the contract",
@@ -67,9 +87,10 @@ export const LAYER_LABEL: Record<string, string> = {
   register: "What the register says",
 };
 
+// one name for the injection signal everywhere: the warning bar's title is "Text addressed to AI systems"
 export const FLAG_LABEL: Record<string, string> = {
-  prompt_injection_suspected: "Contains text addressed to software",
-  document_contains_suspected_injection: "Contains text addressed to software",
+  prompt_injection_suspected: "Contains text addressed to AI systems",
+  document_contains_suspected_injection: "Contains text addressed to AI systems",
   quote_in_suspected_injection: "Quote from a suspicious passage",
   amendment_contradiction: "Contradicting metadata",
   amendment_base_not_in_register: "Base agreement not in register",
@@ -89,6 +110,29 @@ export const flagLabel = (flag: string) => FLAG_LABEL[flag.split(":")[0]] ?? fla
 // t translates the labels; the tool passes it in, without it they stay English
 export const warningLabels = (flags: string[], t: T = (text) => text) =>
   [...new Set(flags.filter((f) => !NOT_A_WARNING.has(f.split(":")[0])).map((f) => t(flagLabel(f))))];
+
+// Sentences the server builds from fixed templates (pipeline/portfolio.py _exclusion): they are
+// interface text, not evidence, so the tool matches the template and shows it in the chosen
+// language. Anything that matches no template is shown as it came (free text stays as it is).
+const EXCLUSION: [RegExp, string, (m: RegExpMatchArray, t: T) => Record<string, string>][] = [
+  [/^duplicate of (\S+) - the original is checked$/, "duplicate of {id} – the original is checked", (m) => ({ id: m[1] })],
+  [/^amendment of (\S+) - read together with its base agreement$/, "amendment of {id} – read together with its base agreement", (m) => ({ id: m[1] })],
+  [/^amendment, base agreement not in register$/, "amendment, base agreement not in register", () => ({})],
+  [/^document type unknown - check manually$/, "document type unknown – check manually", () => ({})],
+  [/^not extracted \(status (\w+)\)$/, "not extracted (status {status})", (m) => ({ status: m[1] })],
+  [/^selected, but an? (.+?) - the question is about (.+?)s$/, "selected, but another type ({type}) – the question is about {types}",
+   (m, t) => {
+     const key = (s: string) => s.replace(/ /g, "_");
+     return { type: t(DOC_TYPE_SINGULAR[key(m[1])] ?? m[1]), types: t(DOC_TYPE_LABEL[key(m[2])] ?? `${m[2]}s`) };
+   }],
+];
+export function exclusionReason(reason: string, t: T): string {
+  for (const [pattern, key, params] of EXCLUSION) {
+    const m = reason.match(pattern);
+    if (m) return t(key, params(m, t));
+  }
+  return reason;
+}
 
 // How a selection was made in the register (decision 75), e.g. "law: DE · dated from: 2020-01-01"
 const SCOPE_FILTER: Record<string, string> = {
