@@ -1,0 +1,98 @@
+/* Chapter 7 - the architecture map: target, prototype and boundaries in one SVG. Box colours
+   come from the shared flow styles (story.css), so a colour means the same in every figure. */
+.ar-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 8px; }
+.ar-modes { display: flex; flex-wrap: wrap; gap: 4px; }
+.ar-note { font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.ar-live {
+  display: inline-flex; align-items: center; gap: 7px; padding: 3px 10px; border-radius: 999px;
+  font-size: 12.5px; color: var(--green); background: var(--green-tint);
+}
+.ar-live.off { color: var(--amber); background: var(--amber-tint); }
+.ar-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.ar-live.off .ar-dot { background: none; border: 1.5px solid currentColor; }
+
+/* the map scrolls inside its own box on narrow screens instead of shrinking until it is unreadable */
+.ar-scroll { overflow-x: auto; }
+.ar-map { display: block; width: 100%; min-width: 760px; height: auto; }
+
+/* boxes */
+.ar-box.clickable { cursor: pointer; }
+.ar-box.clickable:hover rect { stroke-width: 2.5; }
+.ar-box:focus { outline: none; }
+.ar-box:focus-visible rect { stroke: var(--brand-dark); stroke-width: 3; }
+.ar-box.on rect { stroke-width: 3; filter: drop-shadow(0 2px 4px rgba(16, 32, 28, 0.2)); }
+.ar-box.k-platform rect { fill: #f3f5f5; stroke: #8a9693; }
+.ar-role { font-size: 9.5px; font-weight: 600; letter-spacing: 0.07em; fill: var(--ink-3); }
+.ar-name { font-size: 12.5px; font-weight: 600; fill: var(--ink); }
+.ar-detail { font-size: 10.5px; fill: var(--ink-2); }
+.ar-box-text, .ar-zone, .ar-edge-label, .ar-phase { animation: ar-fade 0.35s ease; }
+@keyframes ar-fade { from { opacity: 0; } to { opacity: 1; } }
+.ar-phase text { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; fill: var(--ink-3); }
+
+/* zones of the boundary view */
+.ar-zone rect { stroke-width: 1.5; }
+.ar-zone text { font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em; }
+.ar-zone.z-m365 rect { fill: #f8f6fd; stroke: #6b4fbb; }
+.ar-zone.z-m365 text { fill: #6b4fbb; }
+.ar-zone.z-eu rect { fill: #f5f9f8; stroke: var(--brand); }
+.ar-zone.z-eu text { fill: var(--brand); }
+.ar-zone.z-model rect { fill: #fffaf1; stroke: var(--amber); }
+.ar-zone.z-model text { fill: var(--amber); }
+.ar-zone.z-storage rect { fill: #fef7f8; stroke: var(--red); }
+.ar-zone.z-storage text { fill: var(--red); }
+
+/* arrows; labels get a white halo so they stay readable over lines and zone borders */
+.ar-edge-label {
+  font-size: 10.5px; font-weight: 600; fill: var(--ink-2);
+  paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round;
+}
+.ar-edge.gate line { stroke: var(--red); stroke-width: 2.5; }
+.ar-edge.gate .ar-edge-label { fill: var(--red); }
+.ar-arrowhead-gate { fill: var(--red); }
+
+/* legend additions to the shared flow legend */
+.ar-legend .flow-swatch.k-platform { background: #f3f5f5; border-color: #8a9693; }
+.ar-swatch-gate { display: inline-block; width: 16px; margin-right: 4px; vertical-align: middle; border-top: 2.5px solid var(--red); }
+
+/* under the map: boundary rules and the service card. Alone, the rules run in two columns;
+   with a card open, rules and card share the width. */
+.ar-below { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px 22px; margin-top: 10px; align-items: start; }
+.ar-below.with-card { grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); }
+.ar-rules {
+  margin: 0; padding-left: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 4px 28px;
+  font-size: 13px; line-height: 1.45; color: var(--ink-2);
+}
+.ar-below.with-card .ar-rules { grid-template-columns: minmax(0, 1fr); }
+.ar-rules b { color: var(--ink); }
+.ar-ref { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.ar-hint { margin-top: 8px; font-size: 13px; color: var(--ink-3); }
+.ar-card {
+  padding: 12px 16px 14px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--brand);
+  border-radius: 10px; box-shadow: var(--shadow);
+}
+.ar-card header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ar-card-role { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--brand); }
+.ar-card-close { display: inline-grid; place-items: center; padding: 2px; border: 0; border-radius: 4px; background: none; color: var(--ink-3); cursor: pointer; }
+.ar-card-close:hover { color: var(--ink); background: var(--brand-tint); }
+.ar-card dl { margin: 6px 0 0; display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: 4px 12px; font-size: 13px; line-height: 1.45; }
+.ar-card dt { font-weight: 600; color: var(--ink-2); }
+.ar-card dd { margin: 0; color: var(--ink-2); }
+/* next to the boundary rules the card is half as wide: each heading above its text */
+.ar-rules + div .ar-card dl { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.ar-rules + div .ar-card dt { margin-top: 4px; }
+.ar-card code {
+  display: inline-block; margin: 0 6px 2px 0; padding: 0 5px; border-radius: 4px;
+  font-family: Consolas, "Courier New", monospace; font-size: 12px; background: var(--brand-tint); color: var(--brand-dark);
+}
+
+/* step 2: the cost line */
+.ar-cost { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ar-cost > div { display: grid; gap: 2px; align-content: start; padding: 10px 14px; border-left: 4px solid var(--brand); border-radius: 8px; background: #f8faf9; }
+.ar-cost b { font-size: 26px; line-height: 1.15; font-weight: 600; color: var(--brand-dark); font-variant-numeric: tabular-nums; }
+.ar-cost span { font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+
+@media (max-width: 760px) {
+  .ar-cost { grid-template-columns: minmax(0, 1fr); }
+  .ar-card dl { grid-template-columns: minmax(0, 1fr); }
+  .ar-card dt { margin-top: 4px; }
+}

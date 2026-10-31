@@ -1,0 +1,133 @@
+/* Chapter 3 - How I worked: Double Diamond, paper trail with the decision explorer, AI loop.
+   Phase colours come from story.css (--ph-discover, --ph-define, --ph-develop, --ph-deliver). */
+
+/* ---- Double Diamond (SVG); scrolls inside its own box on a phone */
+.ap-dd-scroll { overflow-x: auto; }
+.ap-dd { display: block; width: 100%; min-width: 600px; height: auto; }
+.ap-dd polygon { stroke-width: 2; stroke-linejoin: round; fill-opacity: 0.13; }
+.ap-dd-discover polygon { fill: var(--ph-discover); stroke: var(--ph-discover); }
+.ap-dd-define polygon { fill: var(--ph-define); stroke: var(--ph-define); }
+.ap-dd-develop polygon { fill: var(--ph-develop); stroke: var(--ph-develop); }
+.ap-dd-deliver polygon { fill: var(--ph-deliver); stroke: var(--ph-deliver); }
+.ap-dd-name { font-size: 20px; font-weight: 700; }   /* large text: the phase colour keeps enough contrast */
+.ap-dd-discover .ap-dd-name { fill: var(--ph-discover); }
+.ap-dd-define .ap-dd-name { fill: var(--ph-define); }
+.ap-dd-develop .ap-dd-name { fill: var(--ph-develop); }
+.ap-dd-deliver .ap-dd-name { fill: var(--ph-deliver); }
+.ap-dd-mode { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--ink-3); }
+.ap-dd-gist { font-size: 12.5px; fill: var(--ink-2); }
+.ap-dd-point { font-size: 12px; font-weight: 600; fill: var(--ink-2); }
+.ap-dd-dot { fill: var(--ink); }
+
+/* ---- the four phases with their artefacts */
+.ap-phases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.ap-phase {
+  --ph-color: var(--ink-3);
+  display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; background: #fbfcfc;
+  border: 1px solid var(--line); border-top: 4px solid var(--ph-color); border-radius: 10px;
+}
+.ap-ph-discover { --ph-color: var(--ph-discover); }
+.ap-ph-define { --ph-color: var(--ph-define); }
+.ap-ph-develop { --ph-color: var(--ph-develop); }
+.ap-ph-deliver { --ph-color: var(--ph-deliver); }
+.ap-phase h3 { font-size: 15px; line-height: 20px; }
+.ap-phase-q { font-size: 12.5px; font-style: italic; color: var(--ink-3); }
+.ap-arts { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ap-arts > li { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; line-height: 1.4; color: var(--ink-2); min-width: 0; }
+.ap-arts b { font-size: 13px; color: var(--ink); }
+.ap-arts details summary { cursor: pointer; font-size: 12px; color: var(--brand); }
+.ap-arts details ul { margin: 4px 0 0; padding-left: 16px; }
+.ap-src { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 2px; }
+.ap-src code, .ap-count code, .ap-enforce code {
+  font-size: 11px; color: var(--ink-3); background: #eef2f1; padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere;
+}
+.ap-ref {
+  font: inherit; font-size: 11px; font-weight: 600; line-height: 16px; padding: 0 6px; border-radius: 999px; cursor: pointer;
+  color: var(--brand); background: var(--brand-tint); border: 1px solid var(--brand-tint-2);
+}
+.ap-ref:hover { background: var(--brand); color: #fff; }
+.ap-ref:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+.ap-phase-foot { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); }
+.ap-phase-foot a { margin-left: 4px; color: var(--brand); font-weight: 600; }
+
+/* ---- paper trail: counters and the latest development step */
+.ap-counts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.ap-count {
+  display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 10px;
+  background: #f8faf9; border: 1px solid var(--line); border-left: 4px solid var(--brand);
+}
+.ap-count-value { font-size: 34px; line-height: 40px; font-weight: 600; color: var(--brand-dark); font-variant-numeric: tabular-nums; }
+.ap-count-label { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.ap-count-sub { font-size: 12px; line-height: 1.4; color: var(--ink-2); }
+.ap-count code { align-self: flex-start; margin-top: 4px; }
+.ap-latest {
+  display: flex; flex-direction: column; gap: 3px; margin: 12px 0 0; padding: 10px 14px; font-size: 13px; line-height: 1.45;
+  color: var(--ink-2); border-left: 3px solid var(--brand); background: var(--brand-tint); border-radius: 0 8px 8px 0;
+}
+.ap-latest-head { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+.ap-latest b { color: var(--ink); }
+.ap-gap { height: 22px; }
+
+/* ---- decision explorer: dot grid and card */
+.ap-explorer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; scroll-margin-top: 16px; }
+.ap-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.ap-filter button {
+  font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line-strong); background: #fff; color: var(--ink-2);
+}
+.ap-filter button[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: #fff; }
+.ap-filter button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+/* ten per row, so every row is a decade (1-10, 11-20, ...) and a number is quick to find */
+.ap-dots { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(10, minmax(0, 36px)); gap: 6px; }
+.ap-dot {
+  width: 100%; aspect-ratio: 1; padding: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+  color: var(--ink-2); background: #fff; border: 1.5px solid var(--ink-3); transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.ap-dot.main { color: #fff; background: var(--brand-dark); border-color: var(--brand-dark); }
+.ap-dot.proposal { border-style: dashed; }
+.ap-dot.dim { opacity: 0.2; }
+.ap-dot:hover { transform: scale(1.12); }
+.ap-dot.on { outline: 3px solid var(--amber); outline-offset: 2px; }
+.ap-dot:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.ap-dot-legend { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-3); }
+.ap-swatch { display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -2px; border-radius: 50%; border: 1.5px solid var(--ink-3); background: #fff; }
+.ap-swatch.main { background: var(--brand-dark); border-color: var(--brand-dark); }
+.ap-swatch.proposal { border-style: dashed; }
+.ap-card {
+  display: flex; flex-direction: column; gap: 10px; min-height: 260px; padding: 16px 18px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow);
+}
+.ap-card-meta { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--brand); }
+.ap-card-title { margin: 0; font-size: 17px; line-height: 1.35; font-weight: 600; color: var(--ink); }
+.ap-card-none { font-size: 13px; color: var(--ink-3); }
+.ap-de { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; background: #fbfaf6; border-left: 3px solid var(--line-strong); border-radius: 0 8px 8px 0; }
+.ap-de-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+.ap-de-title { font-family: Georgia, "Times New Roman", serif; font-size: 15px; line-height: 1.45; color: var(--ink); }
+.ap-de dl { margin: 0; display: grid; gap: 3px; font-size: 13px; line-height: 1.45; }
+.ap-de dt { margin-top: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3); }
+.ap-de dd { margin: 0; color: var(--ink-2); overflow-wrap: anywhere; }
+
+/* ---- how I used AI: the loop and what enforces it */
+.ap-loop-scroll { overflow-x: auto; }
+.ap-loop-scroll .flow { min-width: 640px; max-width: 900px; }
+.ap-ai-who { margin-top: 14px; max-width: 780px; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.ap-enforce { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.ap-enforce > li {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 14px; font-size: 12.5px; line-height: 1.45;
+  color: var(--ink-2); background: #fff; border: 1px solid var(--line); border-top: 3px solid var(--red); border-radius: 10px;
+}
+.ap-enforce b { font-size: 13.5px; color: var(--ink); }
+.ap-enforce q { font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
+.ap-refs-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 10px; font-size: 12.5px; color: var(--ink-3); }
+
+@media (max-width: 1200px) {
+  .ap-phases, .ap-enforce { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 1000px) {
+  .ap-explorer { grid-template-columns: minmax(0, 1fr); }
+  .ap-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .ap-phases, .ap-enforce { grid-template-columns: minmax(0, 1fr); }
+}

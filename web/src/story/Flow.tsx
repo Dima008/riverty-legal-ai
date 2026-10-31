@@ -3,6 +3,7 @@
 // explained. Nodes sit on a grid (column, row); the colour says who acts - a person, plain code,
 // a model, stored data or an outside system - because "deterministic first, model only for
 // meaning" (decision 9) should be visible at a glance.
+import { useId } from "react";
 
 export type NodeKind = "person" | "code" | "model" | "data" | "external" | "gate";
 
@@ -49,6 +50,7 @@ interface Props {
 }
 
 export function Flow({ nodes, edges, lanes, ariaLabel, legend = true }: Props) {
+  const arrow = `flow-arrow-${useId().replace(/:/g, "")}`;   // own marker per diagram on the page
   const cols = Math.max(...nodes.map((n) => n.col)) + 1;
   const rows = Math.max(lanes?.length ?? 0, ...nodes.map((n) => n.row + 1));
   const left = lanes ? LANE_LABEL_W : 0;
@@ -62,7 +64,7 @@ export function Flow({ nodes, edges, lanes, ariaLabel, legend = true }: Props) {
     <div className="flow">
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
         <defs>
-          <marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <marker id={arrow} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M0 0 L10 5 L0 10 z" className="flow-arrowhead" />
           </marker>
         </defs>
@@ -90,7 +92,7 @@ export function Flow({ nodes, edges, lanes, ariaLabel, legend = true }: Props) {
             : `M${start.x} ${start.y} C${start.x} ${mid}, ${end.x} ${mid}, ${end.x} ${end.y}`;
           return (
             <g key={`${e.from}-${e.to}`}>
-              <path d={d} className={e.dashed ? "flow-edge dashed" : "flow-edge"} markerEnd="url(#flow-arrow)" />
+              <path d={d} className={e.dashed ? "flow-edge dashed" : "flow-edge"} markerEnd={`url(#${arrow})`} />
               {e.label && (
                 <text x={(start.x + end.x) / 2} y={(start.y + end.y) / 2 - 6} className="flow-edge-label" textAnchor="middle">
                   {e.label}

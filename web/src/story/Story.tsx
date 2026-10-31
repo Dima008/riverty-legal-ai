@@ -57,6 +57,12 @@ export function Story({ chapterId, step }: { chapterId: string; step: number }) 
     page.current?.focus({ preventScroll: true });
   }, [index]);
 
+  // A step revealed with → may sit below the fold: bring it into view.
+  useEffect(() => {
+    if (current === 0) return;
+    page.current?.querySelectorAll(".story-body .reveal")[current]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [index, current]);
+
   return (
     <div className="story">
       <nav className="story-rail" aria-label="Chapters">

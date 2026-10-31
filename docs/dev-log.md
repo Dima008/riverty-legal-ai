@@ -7,6 +7,31 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Chapters 2, 3, 4 and 7 of the talk
+
+- **Problem:** Six chapters were still placeholders three days before the dress rehearsal.
+- **Cause:** Building them one after the other would take the whole weekend.
+- **Technique and why:** Three subagents in separate git worktrees, each with chapter 1 as the
+  template, `docs/approach.md` as the source of content and numbers, and one rule: every figure
+  carries its justification. They could only create files of their own chapter; I copied and
+  reviewed every file. Chapter 2: today's process as swimlanes, root causes → responses, top-k
+  against the register live (k selector, M14 missed from k = 10), the quality goal. Chapter 4: the
+  same lanes for tomorrow, compile once vs. ask many times, five flip cards. Chapter 3: the Double
+  Diamond with the real artefacts, the paper trail counted from the files themselves, a decision
+  explorer, the AI loop. Chapter 7: one map with a target | prototype toggle and a service card per
+  box, the boundaries. Shared fixes from their reports: one SVG arrow marker per diagram (several
+  diagrams on a page shared one id – arrowheads could vanish), and a step revealed with → scrolls
+  into view.
+- **Rejected alternative:** Merging the agents' branches (they started from an older commit);
+  letting agents edit shared files (conflicts, and the shared parts need one owner).
+- **Metric before → after:** Chapters with content 3 → 7 of 10; figures with a justification 2 →
+  15. Walking the whole talk with →: 25 steps from chapter 1 to the live doorway, 0 console
+  errors, no horizontal overflow; agents' walkthroughs 33/33, all steps, 28/28. Build green.
+- **Links:** `web/src/story/chapters/` (Problem, Solution, Approach, Architecture),
+  `web/src/story/Flow.tsx`, `web/src/story/Story.tsx`
+
+---
+
 ## 2026-10-31 · Follow one contract through the pipeline (GET /documents/{id}/journey)
 
 - **Problem:** Chapter 5 shows one contract travelling through the pipeline with time, tokens and

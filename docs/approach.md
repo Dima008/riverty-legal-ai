@@ -25,7 +25,7 @@ convincing wrong answer, M14 the injection, C11 the vanishing contract, M15 the 
 **What the page shows.**
 - The promise: *find the contracts that do not contain something – for every contract, with the
   passage as proof. Lawyers decide.*
-- Riverty's task text, unchanged, with eight highlighted sentences. Each opens a note:
+- Riverty's task text, unchanged, with nine highlighted sentences. Each opens a note:
   sentence → derived requirement → decision.
 
 | Sentence in the task | Requirement derived | Decisions |

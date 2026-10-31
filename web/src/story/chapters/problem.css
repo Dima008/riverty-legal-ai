@@ -1,0 +1,134 @@
+/* Chapter 2 - the problem: today's process, root causes, top-k against the register, quality goal.
+   Every class starts with pr- so nothing collides with the tool's styles. */
+
+/* ---- step 1: today's swimlanes (data in process/process.ts) */
+.pr-flow-scroll { overflow-x: auto; }
+.pr-flow-scroll .flow svg { min-width: 760px; }           /* below that, the figure scrolls in its box */
+.pr-flow-note { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.pr-flow-note > svg { flex: none; margin-top: 2px; color: var(--brand); }
+/* the dashed edges are the loop per contract: they "march" unless the user asked for less motion */
+@media (prefers-reduced-motion: no-preference) {
+  .pr-process .flow-edge.dashed { animation: pr-loop 0.9s linear infinite; }
+}
+@keyframes pr-loop { to { stroke-dashoffset: -18; } }   /* two dash periods of "5 4" - seamless */
+
+/* ---- step 2: root causes -> responses */
+.pr-quote {
+  margin: 0 0 18px; padding: 14px 18px; border-left: 4px solid var(--amber); border-radius: 0 8px 8px 0;
+  background: var(--amber-tint); font-family: Georgia, "Times New Roman", serif; font-size: 16px; line-height: 1.5; color: var(--ink);
+}
+.pr-quote cite { display: block; margin-top: 6px; font-family: "Segoe UI", sans-serif; font-style: normal; font-size: 12px; color: var(--ink-3); }
+.pr-cause-head, .pr-cause-row { display: grid; grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1.25fr); gap: 0 6px; }
+.pr-cause-head { margin-bottom: 6px; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+.pr-cause-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pr-cause, .pr-response {
+  display: flex; flex-direction: column; gap: 2px; padding: 9px 14px; border-radius: 10px;
+  font-size: 13.5px; line-height: 1.4; color: var(--ink-2);
+}
+.pr-cause { background: var(--red-tint); border: 1px solid #f3c9d1; }
+.pr-response { background: var(--brand-tint); border: 1px solid var(--brand-tint-2); }
+.pr-cause b, .pr-response b { font-size: 14px; color: var(--ink); }
+.pr-refs { margin-top: 2px; font-size: 11.5px; color: var(--ink-3); }
+.pr-connector { position: relative; display: grid; place-items: center; color: var(--brand); }
+.pr-connector::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 2px solid var(--brand); }
+.pr-connector svg { position: relative; padding: 3px; border-radius: 50%; background: var(--brand); color: #fff; }
+
+/* ---- step 3: the same grid twice - search on the left, register on the right */
+.pr-vs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.pr-side { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfc; }
+.pr-side-head { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; min-height: 32px; }
+.pr-side-head h3 { display: flex; align-items: center; gap: 6px; font-size: 15px; }
+.pr-k { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--ink-3); }
+.pr-k .fui-ToggleButton { min-width: 40px; }
+.pr-side-lead { min-height: 40px; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.pr-tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+.pr-tile {
+  display: flex; flex-direction: column; gap: 1px; padding: 6px 6px 6px 8px; border-radius: 8px; border: 1.5px solid var(--line-strong);
+  background: #eef2f1; transition: background 0.2s ease, border-color 0.2s ease;
+}
+.pr-tile-id { font-size: 14px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pr-tile-state { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+.pr-tile-state svg { flex: none; }
+/* search side: lit = in the top k; grey = not in the top k, read as "missing" */
+.pr-tile.t-hit { background: var(--brand-tint); border-color: var(--brand); }
+.pr-tile.t-hit .pr-tile-state { color: var(--brand); }
+.pr-tile.t-miss { background: var(--red-tint); border: 2px solid var(--red); }
+.pr-tile.t-alarm { border: 2px dashed var(--amber); }
+.pr-tile.t-miss .pr-tile-state { color: var(--red); font-weight: 600; }
+.pr-tile.t-alarm .pr-tile-state { color: var(--amber); font-weight: 600; }
+/* register side: found / missing / unclear */
+.pr-tile.t-found { background: var(--green-tint); border-color: #9fd3b4; }
+.pr-tile.t-found .pr-tile-state { color: var(--green); }
+.pr-tile.t-missing { background: var(--red-tint); border-color: var(--red); }
+.pr-tile.t-missing .pr-tile-state { color: var(--red); font-weight: 600; }
+.pr-tile.t-unclear { background: var(--amber-tint); border-color: var(--amber); }
+.pr-tile.t-unclear .pr-tile-state { color: var(--amber); font-weight: 600; }
+.pr-score { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
+.pr-score b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.pr-score-detail { display: block; margin-top: 2px; font-size: 12.5px; color: var(--ink-3); }
+.pr-callout {
+  display: flex; gap: 10px; align-items: flex-start; margin: 14px 0 0; padding: 12px 16px; border-radius: 10px;
+  border: 1px solid var(--line); background: #f8faf9; font-size: 13.5px; line-height: 1.5; color: var(--ink-2);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.pr-callout > svg { flex: none; margin-top: 2px; color: var(--ink-3); }
+.pr-callout.on { background: var(--red-tint); border-color: #f3c9d1; color: var(--ink); }
+.pr-callout.on > svg { color: var(--red); }
+.pr-table-scroll { overflow-x: auto; margin-top: 14px; }
+.pr-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.pr-table caption { margin-bottom: 4px; text-align: left; font-size: 12px; color: var(--ink-3); }
+.pr-table th {
+  padding: 5px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap;
+  font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3);
+}
+.pr-table td { padding: 5px 10px; border-bottom: 1px solid var(--line); text-align: right; }
+.pr-table th:first-child, .pr-table td:first-child, .pr-table th:last-child, .pr-table td:last-child { text-align: left; }
+.pr-table tr.on td { background: var(--brand-tint); font-weight: 600; }
+.pr-table-register td { font-weight: 600; color: var(--green); }
+
+/* ---- step 4: the quality goal */
+.pr-states { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.pr-state {
+  display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--line);
+  border-top: 4px solid var(--line-strong); font-size: 13.5px; line-height: 1.45; color: var(--ink-2);
+}
+.pr-state.s-present { border-top-color: var(--green); background: var(--green-tint); }
+.pr-state.s-absent { border-top-color: var(--red); background: var(--red-tint); }
+.pr-state.s-unclear { border-top-color: var(--amber); background: var(--amber-tint); }
+.pr-state-name { display: flex; align-items: center; gap: 6px; font-size: 18px; font-weight: 600; color: var(--ink); }
+.pr-state.s-present .pr-state-name svg { color: var(--green); }
+.pr-state.s-absent .pr-state-name svg { color: var(--red); }
+.pr-state.s-unclear .pr-state-name svg { color: var(--amber); }
+.pr-state-then { font-weight: 600; color: var(--ink); }
+.pr-state-count { margin-top: auto; font-size: 13px; color: var(--ink-3); }
+.pr-state-count b { margin-right: 4px; font-size: 26px; color: var(--ink); font-variant-numeric: tabular-nums; }
+/* a bracket under "missing" and "unclear": they are always shown together */
+.pr-bracket {
+  grid-column: 2 / 4; position: relative; margin-top: 4px; padding: 10px 12px 0; border-top: 2px solid var(--ink-2);
+  text-align: center; font-size: 14px; font-weight: 600; color: var(--ink);
+}
+.pr-bracket::before, .pr-bracket::after { content: ""; position: absolute; top: -12px; width: 2px; height: 12px; background: var(--ink-2); }
+.pr-bracket::before { left: 0; }
+.pr-bracket::after { right: 0; }
+.pr-judgement {
+  display: flex; gap: 10px; align-items: center; margin-top: 18px; padding: 12px 16px; border-radius: 10px;
+  border: 1px solid var(--line); background: #eef4fb; font-size: 14.5px; line-height: 1.45; color: var(--ink-2);
+}
+.pr-judgement > svg { flex: none; color: #1f6fb2; }
+.pr-judgement b { color: var(--ink); }
+
+.pr-error { font-size: 14px; color: var(--red); }
+
+@media (max-width: 1000px) {
+  .pr-vs { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .pr-cause-head { display: none; }
+  .pr-cause-row { grid-template-columns: minmax(0, 1fr); }
+  .pr-connector { height: 26px; }
+  .pr-connector::before { display: none; }
+  .pr-connector svg { transform: rotate(90deg); }
+  .pr-states { grid-template-columns: minmax(0, 1fr); }
+  .pr-bracket { grid-column: 1; margin-top: 0; padding: 10px 14px; border-top: 0; border-left: 4px solid var(--ink-2); text-align: left; }
+  .pr-bracket::before, .pr-bracket::after { display: none; }
+}
