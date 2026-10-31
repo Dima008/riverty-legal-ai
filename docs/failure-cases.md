@@ -26,6 +26,10 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F16 | "Not governed by US law" reports every contract under a US state's law; the coverage assertion can never fail | queries | nobody at first - found by the repo audit, reproduced on a register copy | fixed, regression test |
 | F17 | A new file named like an existing contract (M03_copy.pdf) is merged into it, and the second contract is never read | ingest | nobody at first - found by the repo audit, reproduced in a temporary folder | fixed, regression test |
 | F18 | A reworded hidden instruction ("disregard your earlier guidance …", also in German) passes the injection guard: 3 of 4 variants not detected | checks | nobody at first - found by the research fact-check ("regex alone is brittle"), then a paraphrase test | open - fix proposed: Prompt Shields as a second detector (decision 80) |
+| F19 | A handwritten 2009 contract names the former provider twice; the legacy-name check finds nothing and counts it as "without hits" – the model's own reading says Arvato (H01, live demo) | families | nobody at first - found by measuring the live demo on a register copy | open - fix options below, decide with Dima |
+| F20 | The live-add card shows no problem at all for H01: it fetches the findings once, before they exist, and never again; its "poor scan" line can never fire; it would call an UNCLEAR clause "not found" | frontend | nobody at first - found by running the card in Edge against a register copy | open - card fix in act6.tsx |
+| F21 | A demo reset while the watcher was still extracting H01 crashed the watcher, `status` still said "ready", and the late model calls kept the bare id, so they merged into the next rehearsal's H01 (4 calls for one extraction) | extraction | nobody at first - found by the dry-run review (reset 1.6 s after the document row appeared) | fixed - late answer dropped, calls re-labelled, watcher survives, reset waits |
+| F22 | `forget --remove-file` deleted a git-tracked gold-set PDF without asking; restoring it made the original M01 the copy of M15, Q8 recall 0.00 (M01, M15) | families | nobody at first - found by the dry-run review on a scratch copy | fixed - forget never deletes from a source folder |
 
 ---
 
@@ -715,6 +719,266 @@ evaluation stays at recall 1.0.
 
 ---
 
+## F19 - The legacy-name check misses a former name on a poor handwritten scan (H01)
+
+**Symptom.** H01, the handwritten merchant agreement of 2009 for the live demo
+(`data/demo/H01.jpg`), names the former provider "Arvato Financial Solutions GmbH" twice: in the
+parties line and above the signature. After the watcher read it, the legacy-name check (Q2,
+portfolio check `legacy_names`) does not report H01. It is counted under `without_hits`, with no
+row and no review - although the page is LOW_QUALITY and the model's own reading of the party is
+"Arvato Financial Solutions GmbH". This is the pilot question "which contracts still name a
+legacy company?" answered with a silent miss.
+
+**Evidence** (register copy, watcher with `REGISTER_DB` and `INBOX_DIR` pointed at the copy,
+2026-10-31, `extract-v2`, gpt-4.1-mini; the same in two runs):
+
+```
+ingested 1: H01
+chunks: 6
+extracting 1 with gpt-4.1-mini (extract-v2)
+  H01    merchant_agreement           liability_li=A0.50 consumer_ter=U0.35 dpa_referenc=A0.50 subprocessor=A0.50 audit_clause=A0.50
+families: duplicates={'M15': 'M01'} amendments={'M05-A': 'M05'} base agreement not in register=['C16'] legacy name hits=14
+```
+
+14 legacy-name hits before and after the drop. The OCR text of the two lines (Tesseract deu+eng,
+mean confidence 61.3, status LOW_QUALITY):
+
+```
+zwisehen Arfto financial Solutions GmbH (AD oper)
+für Arvafr Finanecal Solutions Gmb; LÄLL
+```
+
+```
+name_hits H01: []
+metadata: own_entity_name 'Arvato Financial Solutions GmbH', current_own_entity_name 'Arvato Financial Solutions GmbH'
+GET /documents/H01: status LOW_QUALITY ocr 61.3421052631579 flags [] legacy_names [] own_entity_name Arvato Financial Solutions GmbH
+legacy_names | reported: ['M04', 'M06', 'M10', 'M13', 'M18'] | H01: [] | counts: {"with_open_hits": 5, "resolved_by_amendment": 1, "without_hits": 39}
+```
+
+**Root cause.** `families.py` step 4 finds former names by an exact pattern (case and spacing
+tolerant) in the document text. On a poor scan the exact name is not in the text, so "no hit"
+looks like "no former name". This is the same trap as top-k for missing clauses: an exact match
+on bad OCR cannot prove absence. The LOW_QUALITY status caps the confidence of every clause
+finding (`extract.assess`), but the legacy-name check never looks at it. The model read the
+garbled text correctly as Arvato (`metadata.own_entity_name`); the check does not use that.
+Fuzzy scores of the two OCR lines against "arvato financial solutions" (`fuzz.partial_ratio`):
+92.3 and 88.5.
+
+**Layer.** Families (legacy-name occurrences), and the coverage of the portfolio check.
+
+**Fix.** Open, to decide with Dima (core design: recall first). Options, not exclusive:
+1. Recall first: in the legacy-name check, a LOW_QUALITY document without hits is not
+   "without hits" but a REVIEW row "cannot rule out - poor scan" (coverage: not readable).
+2. Compare the extracted own entity name with the legacy list (`token_set_ratio` >= 90, as
+   `families._same_party` does) and report a REVIEW row "model reading, no verified quote".
+3. Fuzzy search for the legacy names in OCR text only (one line scores 92.3, the other 88.5) -
+   risk of false hits on clean text, so only for OCR pages and only as REVIEW.
+Long term: the multimodal fallback for LOW_QUALITY pages (decision 10) reads the page again.
+
+**Proof.** Open - after the fix: H01 is a REVIEW row of the legacy-name check, the evaluation
+on the 47 documents stays at recall 1.00.
+
+**Reproduce.** On a copy: set `REGISTER_DB` and `INBOX_DIR` (docs/demo.md, "Dry run"), start
+`python -m pipeline.run --watch`, run `python -m tools.demo drop --wait`, then
+`python -m pipeline.show H01`; `python -m tools.demo reset` afterwards. One extraction, about
+$0.001. Automated test missing (needs a model call).
+
+---
+
+## F20 - The live-add card shows no problem at all for the new contract (H01)
+
+**Symptom.** The card "live-add" (act 6, title "Add a contract – and watch the problems being
+found.") is meant to show the new document's type, "not found: …" for required clauses that
+are not PRESENT, and "poor scan → a person" for a bad scan. Run in Edge against a register copy
+while the watcher reads H01, it shows only "H01 is new · merchant agreement" - for 40 seconds,
+no missing clause, no poor scan.
+
+**Evidence** (`#/present/live-add/1` on a private API and Vite on the register copy, drop by
+`python -m tools.demo drop`, the card's text read every second):
+
+```
+baseline: 47 | documents in the register, live | waiting for a new contract …
+2.6 s: 47 | documents in the register, live | waiting for a new contract …
+11.8 s: 48 | documents in the register, live | H01 is new · type unknown – a person checks
+13.8 s: 48 | documents in the register, live | H01 is new · merchant agreement
+findings requests: ["10.8s 200 /api/documents/H01/findings"]
+errors: []
+```
+
+What the register holds once extraction is done (the card's two API calls, answered by the API
+code on the copy):
+
+```
+GET /documents: count 48 | H01 row: {"doc_id": "H01", "format": "jpeg", "status": "LOW_QUALITY", "page_count": 1, "language": "de", "family_id": "H01", "duplicate_of": null, "flags": [], "doc_type": "merchant_agreement", "title": "Händlervertrag über den Kauf auf Rechnung", "counterparty_name": "Garhkisty Krüger uK", "effective_date": "2009-03-17", "governing_law": "DE", "is_amendment": false}
+GET /documents/H01/findings:
+   {"label": "Consumer terms in checkout", "required": true, "status": "UNCLEAR", "model_status": "PRESENT", "confidence": 0.35}
+   {"label": "Data processing agreement (Art. 28 GDPR)", "required": true, "status": "ABSENT", "model_status": "ABSENT", "confidence": 0.5}
+   {"label": "Limitation of liability", "required": true, "status": "ABSENT", "model_status": "ABSENT", "confidence": 0.5}
+```
+
+**Root cause.** Three separate faults in `web/src/deck/slides/act6.tsx`:
+1. The findings are fetched once per document id (`useEffect(…, [newest?.doc_id])`). The
+   document row is written after OCR, the findings about 5 s later, after the model call (on the
+   copy: row at 5.3 s, findings at 10.7 s after the drop). The card polls every 3 s, so it
+   always sees the document before its findings, fetches an empty list and never asks again.
+   Metadata and findings are written in one transaction (`extract._store`), so `doc_type`
+   turning non-null is the moment the findings exist.
+2. LOW_QUALITY is the document's `status`; the document `flags` never contain it, and
+   `low_ocr_quality` is a flag of each clause finding. The poor-scan line can never appear, for
+   any document.
+3. Every required clause that is not PRESENT is called "not found". Consumer terms are on the
+   page (clause 2: "Der Händler muss im Checkout seines Onlineshops die Verbraucherbedingungen
+   des Anbieters anzeigen"); the model said PRESENT with a garbled quote and the checks made it
+   UNCLEAR - in the register that means "a person looks", not "missing". ABSENT and UNCLEAR
+   belong on the list together (recall first), but under their own words.
+
+**Layer.** Frontend (deck card).
+
+**Fix.** Open - in `act6.tsx`: fetch the findings again when `doc_type` arrives (dependency
+`[newest?.doc_id, newest?.doc_type]`); add `status` to the `Doc` type and show the poor-scan line
+for `status === "LOW_QUALITY"`; split the list into "not found" (ABSENT) and "unclear → a
+person" (UNCLEAR).
+
+**Proof.** Open - the same browser run shows the poor-scan line, "not found: Limitation of
+liability, Data processing agreement" and "unclear: Consumer terms in checkout".
+
+**Reproduce.** On a copy (docs/demo.md, "Dry run"): API and Vite pointed at the copy, the
+watcher on the copy's inbox, the card at `#/present/live-add/1`, then `python -m tools.demo drop`.
+About $0.001. Automated test missing.
+
+---
+
+## F21 - A reset during the model call crashes the watcher and merges rehearsals (H01)
+
+**Symptom.** In a rehearsal the card shows 48, and the reset follows at once. The watcher is
+still waiting for the model's answer on H01. The reset succeeds and `status` says "ready for the
+live demo: yes", but the watcher dies with a TypeError. The model calls of the half-done
+extraction are written after the forget, under the bare id H01, so the next rehearsal's H01
+inherits them: one extraction shows as 4 calls, and after the next reset two extraction calls
+share one forgotten label (the deck's "one extraction call per contract" guard would fire).
+
+**Evidence** (dry-run review on a register copy, `REGISTER_DB`, `INBOX_DIR`, `WORKBENCH_DB` on
+scratch; verbatim):
+
+```
+H01 row at 4.9 s, clauses now: 0
+reset at 6.5 s, exit 0
+forgot H01: documents 1, pages 1, doc_text 1, chunks 6, chunks_fts 0, metadata 0, clauses 0, name_hits 0, embeddings 0, llm_calls (kept, re-labelled) 0
+ready for the live demo: yes
+```
+
+Watcher log: `extracting 1 with gpt-4.1-mini (extract-v2)`, then
+`File "...pipeline\extract.py", line 263, in assess  offsets = json.loads(con.execute("SELECT page_offsets_json FROM doc_text WHERE doc_id=?", ... TypeError: 'NoneType' object is not subscriptable`
+(the watcher process ended with exit code 1). llm_calls after the reset:
+
+```
+(158, '2026-10-31T21:36:27+00:00', 'extract', 'H01', 0.00078)
+(159, '...21:36:28...', 'check', 'H01', 0.000188)
+```
+
+Next drop: `pipeline.show H01` printed `model calls for this document: 4, $0.0019`; the next reset
+printed `llm_calls (kept, re-labelled) 4`; GROUP BY doc_id over extract calls gave
+`('forgotten:H01@2026-10-31T21:38:55+00:00', 2)`. A rarer variant: a reset while the watcher only
+polls can remove H01.jpg between `discover()` and the hash read -
+`ingest raised: FileNotFoundError [Errno 2] No such file or directory: ...\race\inbox\H01.jpg`.
+
+**Root cause.** Forget runs in another process. The watcher had listed H01 for extraction and
+sent it to the model; when the answer came back, `assess` read the document's text, which was
+gone. Nothing in the watcher expected a document to leave mid-pass, and one exception ended the
+watch loop. The model calls are recorded by the adapter when they return, under the id the call
+was made for - after forget had re-labelled the (then zero) calls of H01. `status` only counted
+documents. docs/demo.md said "stop the watcher first", but nothing enforced it.
+
+**Layer.** Extraction (watcher), with the demo kit.
+
+**Fix.** `pipeline/extract.py`: a document that is no longer in the register when the answer
+arrives is dropped (`DocumentGone`), metadata is written only `WHERE EXISTS` its document row (one
+statement, so a forget in another process cannot slip in between), and the late calls get the
+label of that forget (`forget.late_calls`, audit `extraction_dropped`). `pipeline/index.py`:
+search rows and embeddings are written only while their chunk exists. `pipeline/ingest.py`: a
+file that vanishes before or while it is read is skipped, not registered and not marked FAILED.
+`pipeline/run.py`: an error ends the pass, not the watcher (`pass failed, still watching`, audit
+`run_failed`). `tools/demo.py`: `reset` refuses while the pass that read H01 has not finished (no
+`run` entry after its `ingested` entry), `--force` after Ctrl+C; `status` lists rows of H01
+without a document and says NO; `reset` removes them.
+
+**Proof.** Same dry run after the fix (register copy, watcher left running):
+
+```
+H01 row at 3.6 s, clauses 0
+$ python -m tools.demo reset   (exit 2)
+  refused, nothing changed: the watcher is still working on H01 - wait until it printed 'run cost', or stop it (Ctrl+C) and run `python -m tools.demo reset --force`
+$ python -m tools.demo reset --force   (exit 0)
+  forgot H01: documents 1, pages 1, doc_text 1, chunks 6, chunks_fts 0, metadata 0, clauses 0, name_hits 0, embeddings 0, llm_calls (kept, re-labelled) 0
+  ready for the live demo: yes
+watcher log:   H01 was forgotten while the model read it - result dropped, 2 model calls re-labelled
+watcher alive: True
+bare H01 calls: 0
+H01 rows anywhere: {'documents': 0, 'pages': 0, 'doc_text': 0, 'chunks': 0, 'chunks_fts': 0, 'metadata': 0, 'clauses': 0, 'name_hits': 0}
+orphan embeddings: 0
+next drop: model calls for this document: 2, $0.0010
+extract calls per H01 label: [('forgotten:H01@2026-10-31T21:54:37+00:00', 1, 2), ('forgotten:H01@2026-10-31T21:54:45+00:00', 1, 2), ('forgotten:H01@2026-10-31T21:55:05+00:00', 1, 2)]
+```
+
+After the last reset every data table is content-identical to the start; `eval.check_register`
+on the copy: Q1–Q8 precision and recall 1.00, metadata 27/27, CUAD 19/20.
+
+**Reproduce.** On a copy (docs/demo.md, "Dry run"): start the watcher, `python -m tools.demo
+drop`, and as soon as H01 has a document row run `python -m tools.demo reset`, then `--force`.
+About $0.001. Tests: `test_a_late_model_answer_is_dropped`, `test_the_watcher_survives_a_failed_pass`,
+`test_ingest_skips_a_file_that_left_while_being_read`, `test_demo_status_and_reset_see_leftovers`,
+`test_demo_drop_and_reset_restore_the_register` (refusal before `--force`).
+
+---
+
+## F22 - forget deleted a gold-set file, and the restored original became the copy (M01, M15)
+
+**Symptom.** `python -m pipeline.forget M04` is refused because the PDF is in `data/raw`, and the
+refusal suggests `--remove-file`. That flag deleted the git-tracked gold-set PDF without asking,
+and `--dry-run` did not list it. The obvious repair - `git checkout` the file and run the
+pipeline - does not bring the gold set back: the restored M01 is a new document with a new
+first-ingest time, the families step keeps the earlier document as the original, so M01 becomes
+the copy of M15 and Q8 fails.
+
+**Evidence** (dry-run review, scratch copy; the "remove it first" path simulated, data/raw
+untouched; verbatim):
+
+```
+refused, nothing changed: the next run would read these files again: M04: C:\Users\Dima\Documents\Riverty\riverty-legal-ai\data\raw\merchant\M04_Velo.pdf - remove them first or pass --remove-file
+```
+
+`python -m pipeline.forget M04 --remove-file --dry-run` printed only
+`would remove M04: documents 1, pages 2, doc_text 1, chunks 12, chunks_fts 12, metadata 1, clauses 5, name_hits 2, embeddings 12, llm_calls (kept, re-labelled) 2`.
+Before: `('M01', '2026-10-30T12:09:08+00:00', None), ('M15', '2026-10-30T12:09:08+00:00', 'M01')`.
+After forget and a normal run: `families: duplicates={'M01': 'M15'} ...`, then
+`('M01', '2026-10-31T21:40:15+00:00', 'M15'), ('M15', ..., None)`, and `eval.check_register`:
+`Q8        0.00    0.00      0.00  ['M01'] / ['M15'] / []`, `RESULT: MISSED contracts - see above`.
+
+**Root cause.** `--remove-file` deleted every file `discover()` found for the id, in the source
+folders as well as in the inbox. But the source folders are the library: in Azure a deletion in
+SharePoint is what triggers forget, never the other way round. And forget deletes the
+document's first-ingest time, which the families step uses to decide which of two identical
+documents is the original (F6).
+
+**Layer.** Families (which document is the original), via the forget tool.
+
+**Fix.** `pipeline/forget.py`: a document whose file is in a source folder is refused, with or
+without `--remove-file` ("in a source folder (the library - here the gold set) … forget never
+deletes from the library"); `--remove-file` deletes inbox files only; `--dry-run` prints
+`would remove file …`. The "forgotten" audit entry keeps `ingested_at`, so the old first-ingest
+time can be restored by hand. docs/pipeline.md says that a forgotten document that comes back is
+a new document.
+
+**Proof.** `test_remove_file_never_deletes_from_a_source_folder` (temporary source folder: refused
+with and without `--dry-run`, file kept, no row changed) and
+`test_refused_while_the_file_would_be_read_again` (real data/raw, M01) pass; the dry run of
+`--remove-file` on an inbox file lists the file (`test_remove_file_deletes_the_inbox_file`).
+
+**Reproduce.** `python -m pipeline.forget M01 --remove-file --dry-run` on any register - refused,
+exit 2, the file stays. Automated tests above.
+
+---
+
 ## Engineering issues (short)
 
 | Issue | Fix |
@@ -726,6 +990,7 @@ evaluation stays at recall 1.0.
 | Found by the repo audit (2026-10-30): `test_reason_required_for_review_rows_and_corrections` relied on M08 being a REVIEW row in Q1. M08 is CONFIRM (ABSENT, 0.9) in 4 of 5 repeat registers (F7), so after a rebuild the suite turns red without a code change: `assert 201 == 422` | The test uses M14 (four eyes in every build because of the injected note); the module docstring says which rows are stable. Proof: `tests/test_api_review.py` 6 of 6 passed against the production register and all five repeat registers, including the four where M08 is CONFIRM |
 | Found by the browser walkthrough of the register review (before commit): the contract file is a full-screen drawer that covers the reviewer switch in the header, so the second pair of eyes could not be given without closing the file (`waiting for getByRole('combobox', { name: 'Signed in as' })` - timeout) | After the first approval the review panel offers "Continue as Legal Reviewer B" (a switch context next to the user context) |
 | First API smoke test on the laptop "passed" against the wrong server: port 8000 belongs to another local app (`/health` answered `{"status":"ok","scenario":"sunny_surplus"}`), our uvicorn failed with WinError 10048 | API runs on port 8010; `/health` now names the service (`"service": "legal-workbench-api"`) and the test checks it |
+| Found while measuring the live-demo fallback (2026-10-31, register copy, endpoint pointed at a closed local port): a connection error counts as a server error, so the adapter retries it with backoff - `H01 extraction failed: Connection error.` only after 203.9 s; meanwhile the watcher reads no other file. H01 itself was in the register after 5.5 s (OCR is local), status LOW_QUALITY, type unknown | Accepted for the prototype: nothing is lost, the document waits for the model and is extracted at the next poll once Azure answers. docs/demo.md tells what to say. Open: fail fast on connection errors in the watcher |
 
 ## Caveat for the presentation
 

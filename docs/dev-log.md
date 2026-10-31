@@ -7,6 +7,38 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-01 · A live contract that can be taken back: forget, the demo kit and H01
+
+- **Problem:** Dima wants to add a contract live in the talk and show that its problems are
+  found. The register had no way to remove a document again (known gap "deletion sync"), so every
+  rehearsal would leave a 48th document and break the 47-document evaluation. The handwritten H01
+  sat in `data/raw/handwritten`, where the next `pipeline.run` would have read it silently as a
+  48th gold document.
+- **Cause:** The pipeline only ever added; documents were keyed by id across 17 tables, an FTS
+  index and the embeddings, and the watcher could not survive an error in one pass.
+- **Technique and why:** H01 moved to `data/demo` (not a source folder; decision 82).
+  `pipeline/forget.py` removes a document and everything derived from it in one transaction,
+  including the family rebuild, keeps the model calls under a `forgotten:<id>@<time>` label (the
+  money was spent) and never deletes a file outside the inbox. `INBOX_DIR` points the watcher at
+  another folder, like `REGISTER_DB` for the register, so rehearsals run on copies.
+  `tools/demo.py status|drop|reset` and `docs/demo.md` (the rehearsal kit). A dry-run verifier
+  and a code reviewer attacked it: a reset during the model call crashed the watcher and merged
+  the late calls into the next rehearsal (F21), and `--remove-file` could delete a gold PDF
+  (F22) – both fixed; extraction now drops a result whose document was forgotten meanwhile, and
+  one failed pass no longer ends the watcher. Measured on H01: F19 (the legacy name is not found
+  on the poor scan) and F20 (the live-add card shows nothing) recorded, still open.
+- **Rejected alternative:** H01 as the 48th gold document (every number of the talk changes right
+  before the interview); deleting the model calls with the document (the cost view would lie);
+  rehearsing only on the real register and restoring a backup (no proof that nothing else moved).
+- **Metric before → after:** documents found by the pipeline 48 (H01 in data/raw) → 47; ways to
+  remove a document 0 → 1; tests 88 → 95 (14 in `test_forget.py`, no model call); dry run on a
+  register copy: H01 findings after 7.5–10.7 s, $0.0010 per drop, after reset every data table
+  identical (47 documents, 938 passages, 235 clauses, 14 name hits), evaluation on the real
+  register unchanged (recall and precision 1.00 on Q1–Q8, metadata 27/27, CUAD 19/20, $0.1191).
+- **Links:** decisions 82, 86; F19–F22; `pipeline/forget.py`, `extract.py`, `index.py`,
+  `ingest.py`, `run.py`, `config.py`, `tools/demo.py`, `tools/make_handwritten.py`, `docs/demo.md`,
+  `docs/pipeline.md`, `docs/explorer.md` station 12
+
 ## 2026-10-31 · Proof cards and four more deep dives, each number traced and each claim attacked
 
 - **Problem:** Act 4 still had three grey drafts (results, what-if, cost) – exactly the cards that

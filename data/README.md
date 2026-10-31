@@ -11,7 +11,7 @@ whose correct answers are known. That makes recall and precision measurable.
 | `raw/merchant/` | 17 merchant agreements (M01–M20 without the three scans) plus the amendment M05-A, as text PDFs | Outbound side, B2B2C payment services (invoice, instalments, direct debit) |
 | `raw/scans/` | M16 and M18 as image-only PDFs, M20 as JPEG pages | Scans without a text layer, tests OCR |
 | `raw/vendor_dpa/` | 6 data processing agreements (V01–V06) | Inbound side, Art. 28 GDPR |
-| `raw/handwritten/` | empty, see below | Handwritten old contract (UC7) |
+| `demo/` | H01, a handwritten merchant agreement as a phone photo (JPEG) – **not** part of the 47, see below | Live demo: handwritten old contract (UC7) |
 | `cuad_subset/` | 20 real public contracts (C01–C20) as text with expert labels | Realism check on real contract language |
 | `ground_truth.csv` | One row per synthetic document | Known truth per clause and attribute |
 | `gold_queries.json` | 8 test questions with expected answers | Demo questions and evaluation |
@@ -48,12 +48,19 @@ case from the task ("contracts in which a company name needs to be updated").
 | Q7 | Which data processing agreements lack a sub-processor clause? | V03, V05 |
 | Q8 | Are there duplicates? | M15 (copy of M01) |
 
-## Handwritten contract (to add)
+## Handwritten contract (live demo, not in the gold set)
 
-Write a short contract by hand (half a page is enough), for example a 2009 service agreement
-between "Arvato Financial Solutions" and a fictional merchant, with or without a liability
-sentence. Photograph it, save it as `raw/handwritten/H01.jpg` and add one row to
-`ground_truth.csv`.
+`demo/H01.jpg` is a synthetic handwritten merchant agreement of 2009 between "Arvato Financial
+Solutions GmbH" (the former provider name) and the fictional merchant "Garnkiste Krüger e.K.":
+no liability cap, consumer terms in the checkout (clause 2), no data processing agreement,
+German law. It is rendered by `tools/make_handwritten.py` (fixed seed, Windows handwriting fonts)
+as a phone photo of the page, with the watermark footer. Tesseract reads it at a mean confidence
+of 61, below the threshold of 70, so the pipeline marks it LOW_QUALITY.
+
+`demo/` is not a source folder, so the gold set stays at 47 documents and H01 has no row in
+`ground_truth.csv`. It is the document of the live demo: copied into `inbox/` during the talk
+and removed afterwards with `python -m tools.demo reset` (rehearsal kit: `docs/demo.md`). What
+the register makes of it: `docs/demo.md` and failure case F19 (the former name is missed).
 
 ## Sources and licences
 

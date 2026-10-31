@@ -15,7 +15,9 @@ DB_PATH = Path(os.environ.get("REGISTER_DB", VAR / "register.sqlite"))
 # Source folders. In production a Microsoft Graph connector on the SharePoint
 # library replaces the watch folder; the rest of the pipeline stays the same.
 SOURCE_DIRS = [DATA / "raw", DATA / "cuad_subset"]
-WATCH_DIR = DATA / "inbox"
+# INBOX_DIR points the watcher at another folder, like REGISTER_DB for the register: a rehearsal
+# of the live demo (tools/demo.py) or a test never touches data/inbox.
+WATCH_DIR = Path(os.environ.get("INBOX_DIR", DATA / "inbox"))
 
 # Deterministic thresholds
 MIN_TEXT_CHARS_PER_PAGE = 30        # below this a page is treated as image and sent to OCR

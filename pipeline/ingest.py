@@ -157,6 +157,18 @@ def normalise_for_hash(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
 
+def stored_path(files: list[Path]) -> str:
+    """The files of a document as stored in documents.source_path: relative to the repo, joined by
+    ";". A file outside the repo (INBOX_DIR in a temporary folder, e.g. a demo rehearsal) keeps its
+    absolute path instead of crashing the run; the API serves page images only from data/."""
+    def one(path: Path) -> str:
+        try:
+            return str(path.resolve().relative_to(config.ROOT))
+        except ValueError:
+            return str(path.resolve())
+    return ";".join(one(p) for p in files)
+
+
 def check_ocr_languages() -> None:
     """Fail loudly: without the language model Tesseract silently falls back to English (no umlauts)."""
     available = set(pytesseract.get_languages(config=""))
@@ -170,7 +182,10 @@ def ingest(con, sources: list[SourceDoc] | None = None, actor: str = "pipeline")
     check_ocr_languages()
     processed = []
     for src in sources or discover():
-        file_hash = hashlib.sha256(b"".join(p.read_bytes() for p in src.files)).hexdigest()
+        try:
+            file_hash = hashlib.sha256(b"".join(p.read_bytes() for p in src.files)).hexdigest()
+        except FileNotFoundError:
+            continue  # removed since discover() (e.g. `tools.demo reset`): it left the library, nothing to read
         row = con.execute("SELECT file_sha256, ingested_at FROM documents WHERE doc_id=?", (src.doc_id,)).fetchone()
         if row and row["file_sha256"] == file_hash:
             continue  # unchanged (delta logic, like a Graph delta query)
@@ -180,9 +195,11 @@ def ingest(con, sources: list[SourceDoc] | None = None, actor: str = "pipeline")
         try:
             pages = read_pages(src)
         except Exception as exc:  # keep going, mark as failed
+            if not all(p.exists() for p in src.files):
+                continue  # removed while being read: a document that left, not a failed one
             with transaction(con):
                 con.execute("INSERT OR REPLACE INTO documents (doc_id, source_path, file_sha256, status, ingested_at)"
-                            " VALUES (?,?,?,?,?)", (src.doc_id, str(src.files[0]), file_hash, "FAILED", first_ingested))
+                            " VALUES (?,?,?,?,?)", (src.doc_id, stored_path(src.files), file_hash, "FAILED", first_ingested))
                 audit(con, actor, "ingest_failed", src.doc_id, error=str(exc))
             continue
         full = "\n".join(p.text for p in pages)
@@ -198,13 +215,15 @@ def ingest(con, sources: list[SourceDoc] | None = None, actor: str = "pipeline")
             status = "INGESTED"
         else:
             status = "LOW_QUALITY" if mean_conf < config.OCR_LOW_QUALITY_CONFIDENCE else "OCR_DONE"
+        if not all(p.exists() for p in src.files):
+            continue  # removed while OCR ran (a reset during the live demo): do not register what left
         with transaction(con):
             con.execute("DELETE FROM pages WHERE doc_id=?", (src.doc_id,))
             con.execute(
                 "INSERT OR REPLACE INTO documents (doc_id, source_path, file_sha256, text_sha256, format, language,"
                 " page_count, ocr_mean_conf, status, family_id, duplicate_of, ingested_at)"
                 " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                (src.doc_id, ";".join(str(p.relative_to(config.ROOT)) for p in src.files), file_hash,
+                (src.doc_id, stored_path(src.files), file_hash,
                  hashlib.sha256(normalise_for_hash(full).encode()).hexdigest(), fmt, detect_language(full),
                  len(pages), mean_conf, status, src.doc_id, None, first_ingested))
             for p in pages:

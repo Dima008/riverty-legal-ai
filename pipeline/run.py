@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import time
+import traceback
 
 from . import chunking, config, extract, families, index, ingest
 from .llm import ModelAdapter
@@ -69,6 +70,23 @@ def run_once(con, adapter, only: list[str] | None = None, force: bool = False, l
     return result
 
 
+def watch_pass(con, adapter, log=print, **kwargs) -> dict | None:
+    """One pass of the watcher. An error ends the pass, not the watcher - e.g. a document that was
+    forgotten while it was being read (`tools.demo reset` during the live demo) or a file that
+    vanished. The next pass starts from the register as it is; Ctrl+C still stops the watcher."""
+    try:
+        return run_once(con, adapter, log=log, **kwargs)
+    except Exception as exc:
+        traceback.print_exc()
+        log(f"pass failed, still watching: {type(exc).__name__}: {exc}")
+        try:   # the pass is over either way (tools/demo.py reads "run" and "run_failed")
+            with transaction(con):
+                audit(con, "pipeline", "run_failed", "*", error=f"{type(exc).__name__}: {exc}"[:500])
+        except Exception:
+            pass
+        return None
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Contract pipeline")
     ap.add_argument("--only", help="comma-separated doc ids")
@@ -87,13 +105,16 @@ def main() -> None:
         extract.reassess(con)
         families.run(con)
         return
-    run_once(con, adapter, only, args.force, build_index=not args.no_index)
-    if args.watch:
-        config.WATCH_DIR.mkdir(parents=True, exist_ok=True)
-        print(f"watching {config.WATCH_DIR} - drop a PDF, JPEG or TXT there (Ctrl+C to stop)")
-        while True:
-            time.sleep(args.interval)
-            run_once(con, adapter)
+    first = dict(only=only, force=args.force, build_index=not args.no_index)
+    if not args.watch:
+        run_once(con, adapter, **first)
+        return
+    watch_pass(con, adapter, **first)
+    config.WATCH_DIR.mkdir(parents=True, exist_ok=True)
+    print(f"watching {config.WATCH_DIR} - drop a PDF, JPEG or TXT there (Ctrl+C to stop)")
+    while True:
+        time.sleep(args.interval)
+        watch_pass(con, adapter)
 
 
 if __name__ == "__main__":

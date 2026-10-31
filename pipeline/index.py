@@ -40,8 +40,10 @@ def contextualise(con, doc_ids: list[str]) -> None:
             for r in rows:
                 ctx = _context(meta, r["section_title"])
                 con.execute("UPDATE chunks SET context=? WHERE chunk_id=?", (ctx, r["chunk_id"]))
-                con.execute("INSERT INTO chunks_fts (chunk_id, doc_id, text) VALUES (?,?,?)",
-                            (r["chunk_id"], doc_id, f"{ctx}\n{r['text']}"))
+                # only while the chunk exists: a document forgotten meanwhile leaves no search row
+                con.execute("INSERT INTO chunks_fts (chunk_id, doc_id, text) SELECT ?,?,?"
+                            " WHERE EXISTS (SELECT 1 FROM chunks WHERE chunk_id=?)",
+                            (r["chunk_id"], doc_id, f"{ctx}\n{r['text']}", r["chunk_id"]))
                 if ctx != r["context"]:   # re-embed only if the context line changed
                     con.execute("DELETE FROM embeddings WHERE chunk_id=?", (r["chunk_id"],))
 
@@ -56,6 +58,8 @@ def embed_missing(con, adapter) -> int:
         with transaction(con):
             for r, v in zip(batch, vectors):
                 arr = np.asarray(v, dtype=np.float32)
-                con.execute("INSERT OR REPLACE INTO embeddings VALUES (?,?,?,?)",
-                            (r["chunk_id"], config.EMBED_DEPLOYMENT, arr.size, arr.tobytes()))
+                # only while the chunk exists: a document forgotten during the call leaves no vector
+                con.execute("INSERT OR REPLACE INTO embeddings SELECT ?,?,?,?"
+                            " WHERE EXISTS (SELECT 1 FROM chunks WHERE chunk_id=?)",
+                            (r["chunk_id"], config.EMBED_DEPLOYMENT, arr.size, arr.tobytes(), r["chunk_id"]))
     return len(rows)

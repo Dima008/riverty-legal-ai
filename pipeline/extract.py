@@ -24,9 +24,21 @@ from rapidfuzz import fuzz
 
 from . import catalogue, config
 from .chunking import page_of
+from .forget import late_calls
 from .store import audit, now, transaction
 
 MAX_SINGLE_PASS_CHARS = 200_000   # above this: map-reduce over section batches
+
+
+class DocumentGone(Exception):
+    """The document left the register while the model was reading it (pipeline/forget.py, e.g.
+    `tools.demo reset` during the live demo). Its result is dropped, never stored as orphan rows."""
+
+
+def _registered(con, doc_id: str) -> bool:
+    return con.execute("SELECT 1 FROM documents d JOIN doc_text t ON t.doc_id = d.doc_id WHERE d.doc_id=?",
+                       (doc_id,)).fetchone() is not None
+
 
 SYSTEM_PROMPT = """You are a contract analyst for the legal team of Riverty, a European payment and financial \
 services group (former brands: Arvato Financial Solutions, AfterPay). You extract facts from ONE contract \
@@ -260,8 +272,10 @@ def assess(con, doc_id: str, result: dict, checks: dict, text: str,
     """Run every check on every finding and keep all signals, so we can see which layer caught what.
     `off` switches layers off for the what-if demo (eval/what_if.py); production never passes it."""
     doc = con.execute("SELECT status FROM documents WHERE doc_id=?", (doc_id,)).fetchone()
-    offsets = json.loads(con.execute("SELECT page_offsets_json FROM doc_text WHERE doc_id=?",
-                                     (doc_id,)).fetchone()[0])
+    stored = con.execute("SELECT page_offsets_json FROM doc_text WHERE doc_id=?", (doc_id,)).fetchone()
+    if doc is None or stored is None:
+        raise DocumentGone(doc_id)
+    offsets = json.loads(stored[0])
     chunks = con.execute("SELECT chunk_id, section_title, char_start, char_end FROM chunks WHERE doc_id=? "
                          "ORDER BY seq", (doc_id,)).fetchall()
     injected = [] if "injection_guard" in off else catalogue.injection_spans(text)
@@ -345,17 +359,22 @@ def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], text_
     else:
         is_amendment, doc_flags = check_metadata(result)
     with transaction(con):
-        con.execute(
+        # Written only while the document is still in the register, in one statement, so a forget
+        # in another process cannot slip in between the check and the write.
+        stored = con.execute(
             "INSERT OR REPLACE INTO metadata (doc_id, doc_type, title, own_entity_name, current_own_entity_name,"
             " counterparty_name, parties_json, effective_date, governing_law, language, is_amendment,"
             " amended_agreement_date, renames_from, renames_to, raw_json, text_sha256, model, prompt_version,"
-            " extracted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " extracted_at) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
+            " WHERE EXISTS (SELECT 1 FROM documents WHERE doc_id=?)",
             (doc_id, result["doc_type"], result["title"], result["own_entity_name"], result["own_entity_name"],
              result["counterparty_name"], json.dumps(result["parties"], ensure_ascii=False),
              result["effective_date"], result["governing_law"], result["language"], int(is_amendment),
              a["amended_agreement_date"], a["renames_from"], a["renames_to"],
              json.dumps({"extraction": result, "checks": checks}, ensure_ascii=False), text_sha,
-             config.CHAT_DEPLOYMENT, config.PROMPT_VERSION, now()))
+             config.CHAT_DEPLOYMENT, config.PROMPT_VERSION, now(), doc_id)).rowcount
+        if not stored:
+            raise DocumentGone(doc_id)   # rolls the transaction back: nothing of it is written
         con.execute("DELETE FROM clauses WHERE doc_id=?", (doc_id,))
         for r in rows:
             con.execute(
@@ -402,25 +421,41 @@ def pending(con, force: bool = False) -> list[str]:
     return [r[0] for r in con.execute(sql)]
 
 
+def _dropped(con, doc_id: str, log) -> None:
+    n = late_calls(con, doc_id)
+    log(f"  {doc_id} was forgotten while the model read it - result dropped, {n} model calls re-labelled")
+
+
 def run(con, adapter, doc_ids: list[str], workers: int = 4, log=print) -> dict:
     done, failed = [], []
-    prepared = {d: prepare(con, d) for d in doc_ids}
+    for d in [d for d in doc_ids if not _registered(con, d)]:   # forgotten since pending() listed it
+        log(f"  {d} is no longer in the register - skipped")
+    prepared = {d: prepare(con, d) for d in doc_ids if _registered(con, d)}
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(call_model, adapter, d, prepared[d][0]): d for d in doc_ids}
+        futures = {pool.submit(call_model, adapter, d, prepared[d][0]): d for d in prepared}
         for fut in as_completed(futures):
             doc_id = futures[fut]
             _, sections, text = prepared[doc_id]
             try:
                 result, checks = fut.result()
             except Exception as exc:
+                if not _registered(con, doc_id):
+                    _dropped(con, doc_id, log)
+                    continue
                 failed.append(f"{doc_id}: {str(exc)[:200]}")
                 log(f"  {doc_id} extraction failed: {exc}")
                 with transaction(con):
                     audit(con, "pipeline", "extraction_failed", doc_id, error=str(exc)[:500])
                 continue
-            rows = assess(con, doc_id, result, checks, text)
-            text_sha = con.execute("SELECT text_sha256 FROM documents WHERE doc_id=?", (doc_id,)).fetchone()[0]
-            _store(con, doc_id, result, checks, rows, text_sha, bool(catalogue.injection_spans(text)))
+            try:
+                rows = assess(con, doc_id, result, checks, text)
+                text_sha = con.execute("SELECT text_sha256 FROM documents WHERE doc_id=?", (doc_id,)).fetchone()
+                if text_sha is None:
+                    raise DocumentGone(doc_id)
+                _store(con, doc_id, result, checks, rows, text_sha[0], bool(catalogue.injection_spans(text)))
+            except DocumentGone:
+                _dropped(con, doc_id, log)
+                continue
             done.append(doc_id)
             log(f"  {doc_id:6} {result['doc_type']:28} " +
                 " ".join(f"{r['clause_type'][:12]}={r['status'][0]}{r['confidence']:.2f}" for r in rows))

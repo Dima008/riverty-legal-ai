@@ -177,6 +177,9 @@ agree; otherwise the document stays a contract and is flagged (F10).
 **What went wrong.** F6: a new copy turned the original into the duplicate (sorted by name). F14: reading the original again reset its ingest time and did the same; the first ingest time is now kept.
 F10: the model marked services agreement C11 as an amendment; register queries skip
 amendments, so C11 silently vanished from every answer although it lacks a liability cap.
+F19: the handwritten H01 (live demo) names "Arvato Financial Solutions GmbH" twice, but OCR
+wrote "Arfto financial Solutions" and "Arvafr Finanecal Solutions" - the exact-name search finds
+nothing and counts H01 as "without hits", although the scan is LOW_QUALITY (open).
 
 **Live.** `GET /documents/M05` (family M05, M05-A; legacy name resolved), `GET /documents/C11`
 (flag `amendment_contradiction`).
@@ -345,3 +348,48 @@ workflow database (decision 56), which survives a rebuild of the register. Runs 
 the audit shows what the reviewer actually saw.
 
 **Live.** `GET /summary` (`cost`), `GET /audit`.
+
+---
+
+## 12. Adding and removing a document (live demo, deletion sync)
+
+**What.** The register follows the library: a contract dropped into the folder is read within
+seconds; a contract taken out leaves the register with everything derived from it.
+
+**In our system.** Adding: the watcher (`python -m pipeline.run --watch`) looks into
+`data/inbox` every 5 s - the stand-in for the SharePoint library. Live demo: H01, a handwritten
+merchant agreement photographed on a desk (`data/demo/H01.jpg`, not part of the 47). Measured on
+a register copy: in the register after 5.3 s (OCR confidence 61.3 → LOW_QUALITY), findings after
+10.5–10.7 s (extraction 4.4 s, checker 0.9 s), $0.0010–0.0014 per drop. Register says:
+liability cap and DPA reference ABSENT, consumer terms UNCLEAR (on the page, but the OCR quote is
+garbled and the checker rejects it), all at most 0.5 confidence → a person reviews.
+Removing: `python -m pipeline.forget <id>` deletes the document's rows in nine tables (document,
+pages, text, sections, search rows, embeddings, metadata, findings, legacy names) and rebuilds
+the families; model calls stay for the cost audit, re-labelled `forgotten:<id>@<time>`.
+`python -m tools.demo reset` uses it after every rehearsal: four times on a copy, the register
+came back identical, table by table, and the evaluation stayed at 1.00.
+
+**Why this way.** Watch folder as stand-in for SharePoint (35); in Azure a Graph delta query
+reports new, changed and deleted items, and a deleted item calls the same forget step. Recall
+first: a poor scan is not reported as "clause missing" without a person. Costs are never
+deleted - the cost view must add up (core design: show costs).
+
+**What went wrong.** F19: the former company name on H01 is missed - exact match on bad OCR
+cannot prove absence. F20: the live card fetched the findings before they existed and never
+again, so it showed no problem at all; its poor-scan line could never fire. With Azure
+unreachable, the watcher retries for 204 s before it gives up; the document is in the register
+after 5.5 s anyway, as "type unknown – a person checks" (engineering issue). F21: a reset during
+the model call crashed the watcher and left the late model calls under the bare id, so they
+merged into the next rehearsal - now the late answer is dropped, its calls get the reset's label,
+the watcher survives a failed pass, and the reset waits for the pass to end. F22: forget could
+delete a gold-set PDF, and a restored original came back as the copy of its duplicate - now
+forget never deletes from a source folder.
+
+**Live.** `GET /documents` (count 47 → 48), `GET /documents/H01` (status LOW_QUALITY, OCR
+confidence, `own_entity_name` as read by the model; `legacy_names` stays empty - F19),
+`GET /documents/H01/findings`, `GET /documents/H01/journey`; after
+the reset `GET /documents/H01` → 404 and `GET /summary` still counts the cost.
+
+**Diagram.** A folder with a photo dropping in → watcher (clock, 5 s) → OCR (61 %, amber) →
+model + checks → register (47 → 48); the way back: delete → forget → nine tables emptied,
+families rebuilt, the cost row kept and greyed out ("forgotten").

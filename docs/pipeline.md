@@ -15,6 +15,48 @@ contract register (SQLite here, PostgreSQL + Azure AI Search in Azure)
 Run: `python -m pipeline.run` (idempotent), `--watch` for the inbox, `--reassess` to replay
 the deterministic checks on stored model output without model calls,
 `python -m eval.check_register` to compare against the gold set.
+`REGISTER_DB` and `INBOX_DIR` point a run at another register and another watched folder
+(evaluation runs, demo rehearsals), so experiments never touch `var/register.sqlite` or `data/inbox`.
+
+## Adding and removing a document
+
+Adding is the normal run: a file in a source folder or the inbox is read, extracted and joined
+to its family; the watcher looks every 5 s. A handwritten photo (H01, live demo) is in the
+register with its findings about 10.5 s after the drop, for about $0.001 (`docs/demo.md`).
+
+Removing: `python -m pipeline.forget <doc_id> [...]` (`pipeline/forget.py`), the first building
+block of deletion sync. In Azure the Graph delta query on the SharePoint library returns a
+removed item with a "deleted" facet, and the connector calls the same function.
+
+- **Removed, in one transaction:** every row of the document in `documents`, `pages`,
+  `doc_text`, `chunks`, `chunks_fts` (search rows), `embeddings` (by chunk id), `metadata`,
+  `clauses` and `name_hits`. Documents that pointed at it (`duplicate_of`, `family_id`) are reset,
+  then the families step runs again as in `pipeline.run` - a copy becomes an original, an
+  amendment can lose its base agreement (flag `amendment_base_not_in_register`), a renaming
+  amendment that is forgotten gives its base agreement the old name back. The rebuild is part of
+  the same transaction: if it fails, nothing is removed and forget can be run again.
+- **Kept on purpose:** `llm_calls` - the money was spent, the cost view must still add up; the
+  rows are re-labelled `forgotten:<id>@<time>`, so no per-document count (journey, show, calls per
+  document) mixes them with a later document of the same id. `audit_log` - history is
+  append-only, a "forgotten" entry records what was removed, the label and the first-ingest time.
+  The workflow database (runs are snapshots, reviews are human decisions) is never touched.
+- **Refused, nothing changed:** an unknown id; a document whose file is in a source folder -
+  the library, here the gold set (forget never deletes from the library: in Azure the deletion
+  there is what calls forget); a document whose file is still in the inbox unless `--remove-file`
+  is given (it deletes inbox files only; `--dry-run` lists them).
+- **A forgotten document that comes back is a new document.** It gets a new first-ingest time,
+  and the families step keeps the earlier document of a pair as the original - so a forgotten
+  original that is restored becomes the copy of its own duplicate (M01 / M15: Q8 fails, F22).
+  The old time is in the "forgotten" audit entry if it has to be restored by hand.
+- **Forgotten while the watcher still works on it (F21):** the watcher drops the late model
+  answer instead of writing findings for a document that is gone, re-labels the late calls with
+  the label of that forget, and skips files that vanish while it reads them. An error in one pass
+  ends that pass, not the watcher (`pass failed, still watching: …`, audit entry `run_failed`).
+  `tools.demo reset` refuses until the watcher's pass is over (`--force` after Ctrl+C).
+- **Proof:** on a register copy, H01 added and forgotten in seven cycles (one of them a forced
+  reset during the model call) - every table has the same
+  rows as before (content, not only the count), recall and precision stay 1.00 on Q1–Q8.
+  Tests: `tests/test_forget.py` (14, no model call).
 
 ## Why one call over the whole contract
 

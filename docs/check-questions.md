@@ -267,6 +267,19 @@ The page loads, but the header says "API offline" and the views say "API not rea
 frontend only shows data – everything comes from the FastAPI backend on port 8010. Vite forwards
 every `/api` call there.
 
+**28. After the live demo you run `python -m tools.demo reset`. Why does it refuse while the watcher
+is still working on H01 – and why are the model calls of H01 not deleted?**
+
+While the model reads H01, the watcher will still write its answer. A reset in that moment used to
+crash the watcher and leave the late calls under the plain id H01, so they joined the next
+rehearsal (F21). So the reset waits until the watcher's pass is over. The calls stay, with a new
+label "forgotten:H01@time": the money was really spent, and the cost view must not lie. Only the
+document and everything made from it leave the register.
+
+*Numbers:* H01 findings after 7.5–10.7 s, $0.0010 per drop; after the reset: 47 documents, 938
+passages, 235 clauses, as before. *Where:* `pipeline/forget.py`, `tools/demo.py`, `docs/demo.md`,
+decision 86, F21, F22.
+
 ## The talk
 
 **15. In present mode on the top-k card you press → three times. What happens on the third press?**
