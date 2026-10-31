@@ -11,11 +11,13 @@ export const ACTS: Act[] = [
   { n: 4, title: "Proof" },
   { n: 5, title: "Running it at Riverty" },
   { n: 6, title: "Live" },
+  { n: 7, title: "Deep dives" },
 ];
 
 export const SLIDES: Slide[] = [...ACT1, ...ACT2, ...LATER];
 
-export const TOTAL_SECONDS = SLIDES.reduce((sum, s) => sum + s.seconds, 0);
+/** The timed track: deep dives after the close are opened only on a question (decision 78). */
+export const TOTAL_SECONDS = SLIDES.filter((s) => !s.deep).reduce((sum, s) => sum + s.seconds, 0);
 
 /** 75 -> "1:15" */
 export const mmss = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;

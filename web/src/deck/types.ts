@@ -14,6 +14,7 @@ export interface Slide {
   notes: string[];          // what to say, one entry per build (B2 English) - only in the presenter view
   words?: { word: string; say: string }[];   // pronunciation help for hard words on this card
   draft?: boolean;          // planned in the new structure, not rebuilt yet
+  deep?: boolean;           // deep dive after the close (decision 78): opened on a question, not part of the timed track
   Body?: ComponentType;     // the visual; reads the revealed step with useStep()
 }
 
