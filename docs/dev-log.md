@@ -7,6 +7,28 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Prompt Shields measured before it becomes a check layer (F18)
+
+- **Problem:** The injection guard finds M14 because the hidden note uses one of six fixed English
+  phrases. Reworded, the same instruction passes (F18). Microsoft's Prompt Shields is the obvious
+  second detector - but what does it catch, and what does it flag that is harmless?
+- **Cause:** A phrase list only finds what someone thought of; the gold set happens to use a listed phrase.
+- **Technique and why:** `eval/prompt_shields_probe.py` measures before anything is built in: the
+  M14 note and three paraphrases (one German) through both detectors, then all 938 chunks of the
+  register through Prompt Shields in batches within the service limit (10,000 characters of
+  documents per request). The result is stored in `eval/results/`, so the numbers on a card have a
+  file behind them. Endpoint and key are never printed.
+- **Rejected alternative:** More regex phrases (an endless list, still English only); Prompt
+  Shields as a block (it flags one harmless chunk); building it in before measuring.
+- **Metric before → after:** Variants detected: regex 1 of 4, Prompt Shields 4 of 4. False alarms
+  on the register: 1 of 938 chunks (C18:058). Cost of a full pass about $0.33 (878,915 characters).
+  Fix proposed as decision 80 (Prompt Shields hit = four-eyes signal, pattern spans stay for the
+  highlight); decisions 77–80 logged.
+- **Links:** `eval/prompt_shields_probe.py`, `eval/results/2026-10-31_prompt_shields_probe.json`,
+  `docs/failure-cases.md` F18, `docs/context/decisions.md` 77–80
+
+---
+
 ## 2026-10-31 · Speaker notes Dima can read aloud: B2 English, one paragraph per build
 
 - **Problem:** Dima presents in English at B2 level and reads from the presenter view. The notes
