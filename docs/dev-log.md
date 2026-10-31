@@ -7,6 +7,38 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Driving the talk live: mouse, keys, clicker, two windows - tested by five agents
+
+- **Problem:** Dima asked how to move forward with the mouse: the control bar was invisible until
+  hovered, a click on the card did nothing, the scrolling page had no keys, and the presenter
+  window could pull the projector back. A Gamma audit (77 sourced facts, 25 gaps) listed what a
+  presenter needs; five tester agents then tried to break the result in a real browser and found
+  27 bugs (e.g. ← going forward when the mouse rested on the bar, card clicks dead after any text
+  selection, a presenter window opened later pulling the talk back to its own card, the address
+  on the page naming a card that was not on screen, the act-2 ring running through its headline).
+- **Cause:** The first deck was built for keys only; the sync announced every rendered position;
+  positions were read from the last render instead of the address at the moment of the event.
+- **Technique and why:** Present mode: a plain left click advances (not on controls, not after a
+  drag), one wheel notch or trackpad gesture = one step, swipe, ↑/↓/Backspace for clickers that send
+  them; the bar appears on mouse movement and stays while the mouse rests on it, the cursor hides;
+  a one-time hint, `?` shortcut list, B black screen (any key or click brings it back), S
+  spotlight, end-of-talk pill, wake lock. The overview's selection is the keyboard focus. Sync is a
+  small protocol: announce only own moves (an address set by code is counted, so browser Back or a
+  typed address still counts as the user's), the later move wins (tie broken per window), a new
+  window asks "where are you?" and follows. The page: ← → / PageUp PageDown card by card measured
+  from the layout (not from transformed boxes) below the sticky header, the address follows the card
+  in the middle, Ctrl+Enter presents, outline toggle, unknown addresses corrected. Development
+  guard: a card that overflows gets a red frame.
+- **Rejected alternative:** A slide library (reveal.js: a dependency, and the cards must also work
+  as a page); click-to-advance only, like PowerPoint (Gamma does not advance on click, but Dima
+  asked for the mouse); last-message-wins sync without timestamps (two windows swapped positions).
+- **Metric before → after:** Tester scripts: mouse 58/67 → 67/67, page 56/69 → 69/70, layout 282/298
+  → 297/298, keyboard and two-window sync all real failures fixed (left: tests expecting `/last`
+  instead of the numbered build, an intended clock behaviour, a hard-coded 61 px). No console errors.
+- **Links:** `web/src/deck/nav.ts`, `Present.tsx`, `Presenter.tsx`, `Page.tsx`, `Overview.tsx`, `SlideView.tsx`, `deck.css`
+
+---
+
 ## 2026-10-31 · Prompt Shields measured before it becomes a check layer (F18)
 
 - **Problem:** The injection guard finds M14 because the hidden note uses one of six fixed English
