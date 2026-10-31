@@ -98,7 +98,7 @@ export const PHASES: DiamondPhase[] = [
         detail: "Proving that a clause is missing needs every contract; top-k retrieval cannot prove absence.",
         source: "docs/approach.md, chapter 2", decisions: [5, 17] },
       { title: "Quality goal: 100 % traceable instead of 100 % accurate",
-        detail: "Found, missing, unclear – missing and unclear shown together. Observations, not legal judgments.",
+        detail: "Found, not found, unclear – not found and unclear shown together. Observations, not legal judgments.",
         source: "docs/approach.md, chapter 2", decisions: [3, 21] },
       { title: `Use cases ${USE_CASES[0].id}–${USE_CASES[USE_CASES.length - 1].id}, narrowed to an MVP`,
         detail: `MVP: ${ucs("MVP")} · as examples: ${ucs("example")} · later: ${ucs("later")}.`,

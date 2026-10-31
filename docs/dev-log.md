@@ -7,6 +7,25 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · "Not found" instead of "Missing"
+
+- **Problem:** "Missing" reads like a verdict on the contract ("the contract is deficient"),
+  although the system only observes that no passage meets the playbook definition.
+- **Cause:** The status label was written from the question ("which contracts lack X?"), not from
+  what the system can state (decision 21: observations, not legal judgments).
+- **Technique and why:** The register status ABSENT is shown as "Clause not found" / "Not found"
+  (German "Klausel nicht gefunden" / "Nicht gefunden"); one change in `labels.ts` and the German
+  dictionary, plus the chapter texts that name the three states. The questions keep "lack" and
+  the top-k tiles in chapter 2 keep "missing" – there it is exactly the wrong reading being shown.
+  Confirmed by Dima (decision 74).
+- **Rejected alternative:** "Absent" (the internal code word, not lawyers' language); keeping
+  "Missing" and relying on the note "an observation, not a legal assessment".
+- **Metric before → after:** Screens and chapters calling the state "Missing": all → none.
+  English walkthroughs (reviews, what-if) and the German walkthrough 14/14 still green; tsc green.
+- **Links:** decisions 21, 74; `web/src/labels.ts`, `web/src/i18n.tsx`, `docs/approach.md`
+
+---
+
 ## 2026-10-31 · Chapters 2, 3, 4 and 7 of the talk
 
 - **Problem:** Six chapters were still placeholders three days before the dress rehearsal.

@@ -63,8 +63,9 @@ retrieval can never prove that a clause is missing.
   makes it look covered. A silent miss, caused by the attacker's text. The register: precision
   and recall 1.00.
 - The quality goal: **100 % traceable instead of 100 % accurate.** Three states – found,
-  missing, unclear. Missing and unclear are always shown together (recall first). The system
-  reports observations; lawyers decide (decision 21, confirmed).
+  not found, unclear. "Not found" and "unclear" are always shown together (recall first). The
+  system reports observations – "not found" says what the text shows, not that the contract is
+  deficient; lawyers decide (decisions 21, 74).
 
 **Decisions and failures.** 3, 4, 5, 17, 21, 37, 41; F10 (a filter that hides a contract).
 

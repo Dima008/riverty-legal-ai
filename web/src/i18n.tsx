@@ -1,7 +1,7 @@
 // Language switch for the tool layer (decision 74): Riverty's legal team works in German, and
 // the tool speaks the lawyers' language. The presentation stays English.
 //
-// How it works: the English text is the key. t("Clause missing") looks the text up in the German
+// How it works: the English text is the key. t("Clause not found") looks the text up in the German
 // dictionary below; when an entry is missing it falls back to the English text, so a forgotten
 // translation shows English, never an empty string. Placeholders like {n} are filled in after
 // the lookup: t("{done} of 2 approvals", { done: 1 }).
@@ -31,14 +31,14 @@ export const DE: Record<string, string> = {
 
   // ---- labels.ts: status of a finding (long and short form)
   "Clause found": "Klausel vorhanden",
-  "Clause missing": "Klausel fehlt",
+  "Clause not found": "Klausel nicht gefunden",
   "Unclear – needs a look": "Unklar – bitte prüfen",
   "Former company name": "Früherer Firmenname",
   "Other governing law": "Anderes anwendbares Recht",
   "Governing law not found": "Keine Rechtswahl gefunden",
   "Duplicate": "Dublette",
   "Found": "Vorhanden",
-  "Missing": "Fehlt",
+  "Not found": "Nicht gefunden",
   "Unclear": "Unklar",
   "Former name": "Alter Name",
   "Other law": "Anderes Recht",

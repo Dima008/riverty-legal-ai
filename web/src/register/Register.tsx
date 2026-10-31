@@ -1,5 +1,5 @@
 // Contract register: every document compared with Legal's playbook. Rows are documents, columns are
-// the clauses of the playbook - the comparison standard - and cells say found / missing / unclear.
+// the clauses of the playbook - the comparison standard - and cells say found / not found / unclear.
 import { MessageBar, MessageBarBody, SearchBox, Spinner, Switch, ToggleButton } from "@fluentui/react-components";
 import {
   CheckmarkCircle16Filled,

@@ -43,7 +43,7 @@ export const FIGURES: FigureMeta[] = [
     looks: "The same grid twice, so the method is the only variable. A k selector instead of one number, because the failure changes shape with k: false alarms at k = 5, a silent miss from k = 10 on.",
     refs: "decisions 4, 5, 37, 41 · eval/negative_search.py" },
   { id: "quality-goal", title: "The quality goal: three states, two of them always together",
-    shows: "Found, missing and unclear, each with its count for Q1 from the register; missing and unclear bracketed as the answer the lawyer gets.",
+    shows: "Found, not found and unclear, each with its count for Q1 from the register; not found and unclear bracketed as the answer the lawyer gets.",
     why: "No OCR and no model is free of errors. The promise is evidence for every row and no silent miss – not accuracy.",
     looks: "Three cards with icon and word, never colour alone; the bracket turns “recall first” into layout.",
     refs: "decisions 3, 5, 21" },
@@ -253,7 +253,7 @@ function SearchVsRegister({ matrix }: { matrix: Matrix }) {
             <h3 id="pr-side-register"><CheckmarkCircle16Filled /> The register</h3>
           </div>
           <p className="pr-side-lead">
-            Every contract was read completely. Missing and unclear are <b>reported together</b>.
+            Every contract was read completely. Not found and unclear are <b>reported together</b>.
           </p>
           <Tiles tiles={checked.map(registerTile)} label="Register answer" />
           <p className="pr-score">
@@ -335,7 +335,7 @@ function QualityGoal({ matrix }: { matrix: Matrix }) {
           </div>
         ))}
         <div className="pr-bracket">
-          Missing and unclear are always shown together – recall first: overlooking a contract that lacks the clause is
+          Not found and unclear are always shown together – recall first: overlooking a contract that lacks the clause is
           the expensive error.
         </div>
       </div>

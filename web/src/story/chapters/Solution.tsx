@@ -190,7 +190,7 @@ function cards(n: { cost: string; documents: string; visible: string }): Card[] 
       decisions: "9, 38, 39 · F1",
       code: "pipeline/extract.py check_findings(), assess()" },
     { title: "Recall first, coverage visible",
-      front: "Missing and unclear are always reported together; every excluded contract is listed with its reason.",
+      front: "Not found and unclear are always reported together; every excluded contract is listed with its reason.",
       headline: n.visible, caption: "other commercial agreements visible to queries (F10 fixed)",
       rejected: "Promising accuracy; filters that drop contracts silently.",
       number: `F10: C11 vanished from every answer. Today ${n.visible} other commercial agreements are visible to queries.`,

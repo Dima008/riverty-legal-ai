@@ -4,7 +4,7 @@ import type { T } from "./i18n";
 
 export const STATUS_LABEL: Record<string, string> = {
   PRESENT: "Clause found",
-  ABSENT: "Clause missing",
+  ABSENT: "Clause not found",
   UNCLEAR: "Unclear – needs a look",
   LEGACY_NAME: "Former company name",
   OTHER_LAW: "Other governing law",
@@ -15,7 +15,7 @@ export const STATUS_LABEL: Record<string, string> = {
 // Short form for the results table
 export const STATUS_SHORT: Record<string, string> = {
   PRESENT: "Found",
-  ABSENT: "Missing",
+  ABSENT: "Not found",
   UNCLEAR: "Unclear",
   LEGACY_NAME: "Former name",
   OTHER_LAW: "Other law",
