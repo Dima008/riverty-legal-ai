@@ -1,5 +1,6 @@
-// App shell: one website with two layers. "Case study" is the presentation (chapter by chapter),
-// "Legal Workbench" is the tool; the story ends in the tool. The address (hash route) says where
+// App shell: one website with two layers. "Case study" is the talk - a page of cards, a present
+// mode and a presenter view, each full screen on its own (decision 76) - and "Legal Workbench" is
+// the tool; the talk ends in the tool. The address (hash route) says where
 // you are, so every chapter and view can be opened directly. The reviewer switch stands in for
 // the Entra ID sign-in (decision 54). The tool switches between English and German (decision 74);
 // the presentation stays English.
@@ -11,8 +12,10 @@ import { AuditLog } from "./AuditLog";
 import { LangContext, translate, type Lang, type Params } from "./i18n";
 import { Register } from "./register/Register";
 import { navigate, TOOL_AREAS, useHashRoute } from "./routing";
-import { CHAPTERS } from "./story/chapters";
-import { Story } from "./story/Story";
+import { Page } from "./deck/Page";
+import { Present } from "./deck/Present";
+import { Presenter } from "./deck/Presenter";
+import { SLIDES } from "./deck/slides";
 import { darkTheme } from "./theme";
 import { SwitchUserContext, UserContext, USERS } from "./user";
 import { Workbench } from "./workbench/Workbench";
@@ -33,7 +36,7 @@ export function App() {
   const [lang, setLang] = useState<Lang>(savedLang);
   const [version, setVersion] = useState<string | null>(null);
   // Switching layers returns to where you left off: the chapter you were on, the view you used.
-  const [lastChapter, setLastChapter] = useState(CHAPTERS[0].id);
+  const [lastChapter, setLastChapter] = useState(SLIDES[0].id);
   const [lastArea, setLastArea] = useState("workbench");
   const area = TOOL_AREAS.includes(route.page) ? route.page : "workbench";
   // German only in the tool; the presentation is always English
@@ -44,7 +47,7 @@ export function App() {
     api.health().then((h) => setVersion(h.prompt_version)).catch(() => setVersion(null));
   }, []);
   useEffect(() => {
-    if (route.layer === "story" && route.page) setLastChapter(route.page);
+    if (route.layer !== "tool" && route.page) setLastChapter(route.page);
     if (route.layer === "tool") setLastArea(area);
   }, [route, area]);
 
@@ -61,6 +64,11 @@ export function App() {
     }
   };
 
+  // the talk has its own full-screen stage, without the tool's header
+  if (route.layer === "story") return <Page slideId={route.page} />;
+  if (route.layer === "present") return <Present slideId={route.page || SLIDES[0].id} step={route.step} />;
+  if (route.layer === "presenter") return <Presenter slideId={route.page || SLIDES[0].id} step={route.step} />;
+
   return (
     <LangContext.Provider value={shown}>
     <UserContext.Provider value={user}>
@@ -75,7 +83,7 @@ export function App() {
               <div>
                 <div className="brand-name">Legal Workbench</div>
                 <div className="brand-sub">
-                  {route.layer === "story" ? "Case study · Software Engineer (RAG)" : t("Contract register · Legal")}
+                  {t("Contract register · Legal")}
                 </div>
               </div>
             </div>
@@ -128,11 +136,10 @@ export function App() {
             </TabList>
           </nav>
         )}
-        <main className={route.layer === "story" ? "content story-content" : "content"}>
-          {route.layer === "story" && <Story chapterId={route.page} step={route.step} />}
-          {route.layer === "tool" && area === "workbench" && <Workbench />}
-          {route.layer === "tool" && area === "register" && <Register />}
-          {route.layer === "tool" && area === "audit" && <AuditLog />}
+        <main className="content">
+          {area === "workbench" && <Workbench />}
+          {area === "register" && <Register />}
+          {area === "audit" && <AuditLog />}
         </main>
         <footer className="footer">
           {t("Observations, not legal advice – lawyers decide · Synthetic and public test data (CUAD, CC BY 4.0) · Every model call is logged with its cost")}

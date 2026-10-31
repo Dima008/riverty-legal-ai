@@ -7,6 +7,39 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · The talk rebuilt as a Gamma-style page of cards (acts 1 and 2)
+
+- **Problem:** Dima: too much to read, not intuitive, not modern, not building up – "we talk about
+  top-k before we even said that we use agents". Chapter 2 opened with "agents fail on the size of
+  the environment, and top-k retrieval can never prove …" before RAG, top-k or an agent had been
+  explained; every figure carried three text blocks (shows / why / how to read) next to it.
+- **Cause:** The chapters were written as a document with figures, not as a talk: the text that
+  belongs to the speaker was on the screen, and the order followed the argument, not the audience.
+- **Technique and why:** Decision 76. A new deck (`web/src/deck/`): the talk as data – acts and
+  cards, each with one headline, one visual, builds and speaker notes. Three views of the same
+  cards: a scrolling page in the style of Gamma (Dima's wish: the talk is a web page; cards fade in
+  and play their builds when they come into view), present mode (one card, full screen, → / ←,
+  O overview, F full screen) and a presenter view in a second window with notes, next card and
+  clock, synchronised over a BroadcastChannel. Everything inside a card is sized in container
+  units, so one card renders the same at every size. Acts 1 and 2 are rebuilt as the sample
+  (12 cards, every term introduced before it is used: chatbot over documents → top-k → why it
+  cannot prove absence, with the measured numbers → what an agent is → why a free agent cannot
+  prove it read everything, with OverclaimBench); acts 3–6 are in place as drafts with their
+  statement and planned visual, so the whole arc shows in the overview.
+- **Rejected alternative:** Shortening the old chapters (the order problem stays); a slide
+  library (reveal.js – another dependency, and the cards must also work as a scrolling page);
+  a light or mixed look (Dima chose dark).
+- **Metric before → after:** Text next to a figure: three blocks → none on screen (all in notes).
+  Terms used before explained in chapter 2: RAG, top-k, agent → 0. Cards: 33 (12 built, 21 drafts),
+  planned 18:34 min. Browser walkthrough 8/8 checks (keys, double press, overview, Esc, notes in
+  sync, Workbench untouched), no console errors. Two problems found on the way and fixed: a fast
+  double press lost a build (position now read from the address at the key press), and the deck
+  CSS would have turned the Workbench's run overview into a full-screen layer (class `overview`) –
+  card styles are now scoped under `.slide`.
+- **Links:** `web/src/deck/`, `web/src/routing.ts`, `web/src/App.tsx`, decision 76
+
+---
+
 ## 2026-10-31 · Legal chooses the contracts: filters, ticks, a run over a selection
 
 - **Problem:** Dima: "we cannot filter contracts ourselves and choose which ones to work on – why?"
