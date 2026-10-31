@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-31T21:01:23+00:00",
+  "generated_at": "2026-10-31T23:09:23+00:00",
   "produced_by": "eval.what_if.what_if(register, off) - the function behind GET /what-if - on var/register.sqlite (read-only); checked equal to the running API",
   "register": {
     "documents": 47,
@@ -38,7 +38,7 @@
     {
       "id": "injection_guard",
       "group": "Checks on a found clause",
-      "label": "Text addressed to software is fenced off",
+      "label": "Hidden instructions are flagged (pattern check)",
       "guards": "instructions hidden in a contract (prompt injection, M14)",
       "failures": []
     },
@@ -89,7 +89,7 @@
       "off": [
         "checker"
       ],
-      "seconds": 0.61,
+      "seconds": 0.85,
       "result": {
         "off": [
           "checker"
@@ -306,7 +306,7 @@
         "checker",
         "clause_vocabulary"
       ],
-      "seconds": 0.65,
+      "seconds": 0.68,
       "result": {
         "off": [
           "checker",
@@ -589,7 +589,7 @@
       "off": [
         "injection_guard"
       ],
-      "seconds": 0.56,
+      "seconds": 0.57,
       "result": {
         "off": [
           "injection_guard"

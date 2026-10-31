@@ -35,7 +35,7 @@ LAYERS = [
      "label": "A second model call must agree (maker-checker)",
      "guards": "a quote that does not meet Legal's definition", "failures": ["F1", "F7", "F11"]},
     {"id": "injection_guard", "group": "Checks on a found clause",
-     "label": "Text addressed to software is fenced off",
+     "label": "Hidden instructions are flagged (pattern check)",
      "guards": "instructions hidden in a contract (prompt injection, M14)", "failures": []},
     {"id": "absence_signals", "group": "Signals that call a human",
      "label": "Clause words in the text question a 'missing'",
