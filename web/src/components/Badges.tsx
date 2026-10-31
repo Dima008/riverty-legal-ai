@@ -7,6 +7,7 @@ import {
   DismissCircle16Filled,
   Edit16Regular,
   Eye16Regular,
+  Flag16Regular,
   Info16Regular,
   People16Regular,
   Person16Regular,
@@ -42,6 +43,7 @@ const REVIEW: Record<string, Look> = {
   REJECTED: { color: "danger", icon: <Dismiss16Regular /> },
   CORRECTED: { color: "brand", icon: <Edit16Regular /> },
   DISPUTED: { color: "danger", icon: <ShieldError16Regular /> },
+  ESCALATED: { color: "warning", icon: <Flag16Regular /> },
 };
 
 function Tag({ look, text }: { look?: Look; text: string }) {

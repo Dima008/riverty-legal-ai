@@ -7,9 +7,9 @@ import {
   QuestionCircle16Filled,
   Warning16Filled,
 } from "@fluentui/react-icons";
-import { useEffect, useMemo, useState } from "react";
-import { api, type Matrix, type MatrixCell, type MatrixRow } from "../api";
-import { DOC_TYPE_LABEL, STATUS_LABEL, warningLabels } from "../labels";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { api, type Matrix, type MatrixCell, type MatrixRow, type ReviewStateName } from "../api";
+import { DOC_TYPE_LABEL, REVIEW_LABEL, STATUS_LABEL, warningLabels } from "../labels";
 import { ContractFile } from "./ContractFile";
 
 const TYPES = [
@@ -35,7 +35,12 @@ function source(r: MatrixRow): string {
   return r.ocr_mean_conf != null ? `${kind} · OCR ${Math.round(r.ocr_mean_conf)} %` : kind;
 }
 
-function Cell({ cell, label, onOpen }: { cell?: MatrixCell; label: string; onOpen: () => void }) {
+// review state of a finding in the register (decision 73): a small mark in the corner of the cell
+const REVIEW_MARK: Partial<Record<ReviewStateName, string>> = {
+  CONFIRMED: "✓", CORRECTED: "✓", REJECTED: "✗", IN_REVIEW: "½", ESCALATED: "⚑", DISPUTED: "!",
+};
+
+function Cell({ cell, label, review, onOpen }: { cell?: MatrixCell; label: string; review?: ReviewStateName; onOpen: () => void }) {
   if (!cell) return <td className="mx-cell none">·</td>;
   const icon =
     cell.status === "PRESENT" ? <CheckmarkCircle16Filled /> : cell.status === "ABSENT" ? <DismissCircle16Filled /> : <QuestionCircle16Filled />;
@@ -43,12 +48,14 @@ function Cell({ cell, label, onOpen }: { cell?: MatrixCell; label: string; onOpe
   const text =
     `${label}: ${STATUS_LABEL[cell.status]}` +
     (cell.required ? " – required for this type" : " – not required for this type") +
-    (changed ? `. The model said “${STATUS_LABEL[cell.model_status]}”, the checks changed it.` : "");
+    (changed ? `. The model said “${STATUS_LABEL[cell.model_status]}”, the checks changed it.` : "") +
+    (review ? `. Review: ${REVIEW_LABEL[review] ?? review}.` : "");
   return (
     <td className={`mx-cell s-${cell.status.toLowerCase()} ${cell.required ? "req" : "opt"}`}>
       <button type="button" onClick={onOpen} aria-label={text} title={text}>
         {icon}
         {changed && <span className="mx-dot" aria-hidden />}
+        {review && REVIEW_MARK[review] && <span className={`mx-rev r-${review.toLowerCase()}`} aria-hidden>{REVIEW_MARK[review]}</span>}
       </button>
     </td>
   );
@@ -62,6 +69,11 @@ export function Register() {
   const [query, setQuery] = useState("");
   const [showDefinitions, setShowDefinitions] = useState(false);
   const [open, setOpen] = useState<{ docId: string; clause: string | null } | null>(null);
+  const [reviews, setReviews] = useState<Record<string, Record<string, ReviewStateName>>>({});
+  const loadReviews = useCallback(() => {
+    api.reviewStates().then(setReviews).catch((e: Error) => setError(e.message));
+  }, []);
+  useEffect(loadReviews, [loadReviews]);
 
   useEffect(() => {
     api.matrix().then(setMatrix).catch((e) => setError(`API not reachable (${e})`));
@@ -188,7 +200,8 @@ export function Register() {
                     <td>{r.governing_law ?? "–"}</td>
                     <td className="src">{source(r)}</td>
                     {clauseKeys.map((k) => (
-                      <Cell key={k} cell={r.cells[k]} label={matrix.clauses[k].label} onOpen={() => setOpen({ docId: r.doc_id, clause: k })} />
+                      <Cell key={k} cell={r.cells[k]} label={matrix.clauses[k].label} review={reviews[r.doc_id]?.[k]}
+                            onOpen={() => setOpen({ docId: r.doc_id, clause: k })} />
                     ))}
                     <td className="mx-name">
                       {r.former_names.open > 0 ? (
@@ -207,7 +220,7 @@ export function Register() {
         </div>
       </section>
 
-      <ContractFile open={open} clauses={matrix.clauses} onClose={() => setOpen(null)} />
+      <ContractFile open={open} clauses={matrix.clauses} onClose={() => setOpen(null)} onReviewed={loadReviews} />
     </div>
   );
 }

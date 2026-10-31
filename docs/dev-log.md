@@ -7,6 +7,38 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Review in the contract register, reused by every run; the archive gate is clickable
+
+- **Problem:** A review belonged to one run. Asking Q1 again showed M14 as "to look at" although
+  two lawyers had decided it the day before, so review work grew with every question. A lawyer
+  browsing the register could not decide or escalate a finding there at all. And the archive
+  button was disabled before approval, so the server-side tool gate could never be shown.
+- **Cause:** Reviews were keyed by run (decision 56: runs are snapshots); nothing tied a review
+  to the finding it was about.
+- **Technique and why:** A review now belongs to a finding *version* – document, clause, text
+  hash, prompt version, status (`finding_reviews`, `api/findings.py`). Runs merge their own
+  reviews with those of the same version from the register and other runs; a review made in a run
+  is also stored per finding. Same rules everywhere (reason, four eyes, one vote per person,
+  DISPUTED); ESCALATED needs a reason, is not a vote and raises the finding to four eyes. A changed
+  text, extraction or status makes old reviews "earlier version" – never carried over silently.
+  In the UI: a review panel in the contract file, marks in the matrix (✓ ½ ⚑ ! ✗), sources
+  shown on every review; the archive button stays clickable and the 409 refusal is visible.
+  The walkthrough found that the full-screen file covers the reviewer switch, so the panel offers
+  "Continue as Legal Reviewer B".
+- **Rejected alternative:** Reviews only per run (double work); one review per finding without a
+  version (a changed result would count as reviewed); a third simulated user for escalations
+  (changes the demo cast, decision 54).
+- **Metric before → after:** A finding decided once is open again in the next run → reused
+  (M14 confirmed in the register shows "Confirmed, in the register" in a new Q1 run and unlocks
+  the archive copy). Archive refusals shown in the UI: 0 → visible with the server's message and
+  audited. Tests 60 → 66 green (6 new); Edge walkthrough `reviews.mjs` 8 of 8, 0 console errors;
+  build green.
+- **Links:** decisions 71, 73; `api/findings.py`, `api/review.py`, `api/workbench.py`,
+  `pipeline/portfolio.py`, `web/src/register/FindingReview.tsx`, `tests/test_api_findings.py`;
+  explorer station 9
+
+---
+
 ## 2026-10-30 · Review test no longer depends on one model answer
 
 - **Problem:** `test_reason_required_for_review_rows_and_corrections` passed on today's register

@@ -59,7 +59,7 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 | `docs/` | `pipeline.md`, `failure-cases.md`, **`explorer.md` (frontend explanations per step)**, `setup-windows.md`, `context/` (task, briefing, decisions); ADRs later in `docs/adr/` |
 | `pipeline/evidence.py` | Maps a verified quote back onto the page's word boxes (highlight, also across page breaks) |
 | `pipeline/portfolio.py` | Portfolio checks: fixed check types, coverage (never drop a contract silently), triage |
-| `api/` | FastAPI: `register.py` read-only register + explorer; `workflow.py` runs, audit; `review.py` reviews + archive; `storage_mock.py` write-only storage stand-in; `workbench.py` workflow DB |
+| `api/` | FastAPI: `register.py` read-only register + explorer; `workflow.py` runs, audit; `review.py` reviews + archive; `findings.py` review and escalation directly in the register, reused by runs (decision 73); `storage_mock.py` write-only storage stand-in; `workbench.py` workflow DB |
 | `tests/` | pytest against the built register; check invariants, not one model answer (F7) |
 | `web/` | Vite + React + TypeScript + Fluent UI v9. One website, two layers: `story/` (the presentation: `chapters.ts` = storyline as data, `Story.tsx` = rail, keys, next/back) and the tool: `workbench/` (ask, plan, run, coverage, evidence with page highlight, four-eyes review, archive), `register/`, `AuditLog.tsx`. `routing.ts`: hash routes `#/story/<chapter>`, `#/tool/<area>`. Texts in `labels.ts` (lawyers' language) |
 | `var/register.sqlite` | Generated register (git-ignored) |

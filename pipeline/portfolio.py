@@ -98,7 +98,8 @@ def sampled(run_id: str, doc_id: str) -> bool:
 def _documents(con) -> list[dict]:
     rows = con.execute(
         "SELECT d.doc_id, d.status, d.duplicate_of, d.family_id, d.flags, m.doc_type, m.title, m.counterparty_name,"
-        " m.governing_law, m.is_amendment FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id "
+        " m.governing_law, m.is_amendment, m.text_sha256 AS extracted_sha256, m.prompt_version"
+        " FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id "
         "ORDER BY d.doc_id").fetchall()
     docs = [dict(r) for r in rows]
     for d in docs:
@@ -144,7 +145,9 @@ def _missing_clause(con, docs: list[dict], params: dict) -> tuple[list[dict], di
         flags = json.loads(f["flags"] or "[]") + d["flags"]
         rows.append(_row(d, status=f["status"], model_status=f["model_status"], confidence=f["confidence"],
                          quote=f["quote"], page=f["page"], section=f["section"], rationale=f["rationale"],
-                         flags=flags, triage=triage(f["status"], f["confidence"], flags)))
+                         flags=flags, triage=triage(f["status"], f["confidence"], flags),
+                         # the finding version, so reviews made elsewhere can be reused (decision 73)
+                         text_sha256=d["extracted_sha256"], prompt_version=d["prompt_version"]))
     return rows, dict(counts), {}
 
 

@@ -358,6 +358,7 @@ Verworfen: Alles auf einmal vor der Webseite (kostet einen Tag); Ordner umbauen 
 Präsentation · Entschieden · Kurz erwähnen
 Begründung: Bisher sperrte die Oberfläche den Knopf, die Server-Sperre (Tool-Gate, Entscheidungen 2, 57) wurde nie vorgeführt. Klickbar mit Schloss-Symbol und Hinweis zeigt die Demo: „Der Button ist nicht die Kontrolle, der Server ist es.“ Die Ablehnung erscheint im Audit-Log.
 Verworfen: Sperre nur in der Oberfläche (beweist nichts über den Server).
+Umgesetzt 31.10.: Knopf klickbar mit Schloss und Hinweis; Ablehnung „tool gate: archive copy only after approval; M03 is FOUND“ erscheint in der Oberfläche und im Audit-Log.
 
 ### 72 (in Notion ausstehend). Held-out-Testset: 10 weitere CUAD-Verträge (Zufall mit festem Seed) und 2–4 von Dima geschriebene Verträge, vor dem ersten Lauf versiegelt
 Analyse · Entschieden · Hauptpunkt
@@ -368,6 +369,7 @@ Verworfen: Nur weitere synthetische Verträge vom selben Generator; Messen vor d
 Vorgehen · Entschieden · Hauptpunkt
 Begründung: Idee von Dima. Bisher hing ein Review an einem Lauf (Entscheidung 56): Wer Q1 erneut stellt, sieht M08 wieder als „zu prüfen“, obwohl zwei Juristen es schon geklärt haben. Ein Review ist eine Aussage über den Vertrag, nicht über eine Frage. Gleiche Regeln wie im Lauf (Begründung, Vier-Augen bei kritischen Befunden, DISPUTED bei Widerspruch); „Eskalieren“ schickt einen Befund mit Begründung in die Vier-Augen-Prüfung. Ändern sich Vertragstext oder Extraktion, gilt das alte Review nicht mehr und wird als „geprüft an einer früheren Fassung“ gezeigt. Die Archivkopie bleibt an den freigegebenen Lauf gebunden (57). Wirkung für die Einführung: Prüflast sinkt mit jeder Frage („reviewed once, reused in every question“). Umsetzung direkt nach den Fehlerkorrekturen.
 Verworfen: Reviews nur im Lauf (doppelte Arbeit, Prüflast wächst mit jeder Frage); Review ohne Fassung (ein geändertes Ergebnis würde stillschweigend als geprüft gelten).
+Umgesetzt 31.10.: Tabelle finding_reviews, api/findings.py, Läufe übernehmen Reviews derselben Fassung, Review aus dem Lauf zählt auch im Register; Eskalieren ist keine Stimme, hebt aber auf vier Augen (wer eskaliert, darf eine der zwei Stimmen abgeben – sonst bliebe der Fall mit zwei simulierten Prüfern hängen).
 
 ### 74 (in Notion ausstehend). Werkzeug zweisprachig (Deutsch/Englisch umschaltbar), Präsentation bleibt Englisch
 Präsentation · Entschieden · Kurz erwähnen

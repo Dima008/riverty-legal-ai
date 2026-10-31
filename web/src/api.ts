@@ -4,7 +4,7 @@
 
 export type Status = "PRESENT" | "ABSENT" | "UNCLEAR";
 export type Triage = "CONFIRM" | "REVIEW" | "FOUR_EYES";
-export type ReviewStateName = "FOUND" | "IN_REVIEW" | "CONFIRMED" | "REJECTED" | "CORRECTED" | "DISPUTED";
+export type ReviewStateName = "FOUND" | "IN_REVIEW" | "CONFIRMED" | "REJECTED" | "CORRECTED" | "DISPUTED" | "ESCALATED";
 export type Decision = "CONFIRMED" | "REJECTED" | "CORRECTED";
 
 export interface Plan {
@@ -29,17 +29,26 @@ export interface CheckSpec {
 export interface Review {
   reviewer: string;
   reviewer_name: string;
-  decision: Decision;
+  decision: Decision | "ESCALATED";
   corrected_status: string | null;
   reason: string | null;
   ts: string;
+  source?: string;          // "register" or the run the review was made in (decision 73)
 }
 
 export interface ReviewState {
   state: ReviewStateName;
   required: number;
   done: number;
+  escalated?: boolean;
   reviews: Review[];
+}
+
+// Review of a finding in the register (api/findings.py)
+export interface FindingReviewState extends ReviewState {
+  triage: Triage;
+  status: Status;
+  earlier_reviews: number;  // reviews of an earlier version that no longer apply
 }
 
 export interface NameHit {
@@ -326,6 +335,12 @@ export const api = {
     request<{ page: number; boxes: number[][] }>(`/documents/${id}/pages/${page}/locate?q=${encodeURIComponent(q)}`),
   text: (id: string) => request<DocText>(`/documents/${id}/text`),
   pageImageUrl: (id: string, page: number) => `/api/documents/${id}/pages/${page}/image`,
+  findingReview: (docId: string, clause: string) =>
+    request<FindingReviewState>(`/findings/${docId}/${clause}/review`),
+  reviewFinding: (docId: string, clause: string,
+                  body: { decision: Decision | "ESCALATED"; reason?: string; corrected_status?: string }) =>
+    post<FindingReviewState>(`/findings/${docId}/${clause}/reviews`, body),
+  reviewStates: () => request<Record<string, Record<string, ReviewStateName>>>("/findings/review-states"),
   whatIfLayers: () => request<{ layers: WhatIfLayer[]; model_alone: string[] }>("/what-if/layers"),
   whatIf: (off: string[]) => request<WhatIfResult>(`/what-if?off=${encodeURIComponent(off.join(","))}`),
   whatIfEveryLayer: () => request<WhatIfRow[]>("/what-if/every-layer"),

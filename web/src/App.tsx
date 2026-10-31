@@ -12,7 +12,7 @@ import { navigate, TOOL_AREAS, useHashRoute } from "./routing";
 import { CHAPTERS } from "./story/chapters";
 import { Story } from "./story/Story";
 import { darkTheme } from "./theme";
-import { UserContext, USERS } from "./user";
+import { SwitchUserContext, UserContext, USERS } from "./user";
 import { Workbench } from "./workbench/Workbench";
 
 export function App() {
@@ -39,6 +39,7 @@ export function App() {
 
   return (
     <UserContext.Provider value={user}>
+      <SwitchUserContext.Provider value={switchUser}>
       <div className="app">
         <FluentProvider theme={darkTheme} className="topbar-provider">
           <header className="topbar">
@@ -103,6 +104,7 @@ export function App() {
           Observations, not legal advice – lawyers decide · Synthetic and public test data (CUAD, CC BY 4.0) · Every model call is logged with its cost
         </footer>
       </div>
+      </SwitchUserContext.Provider>
     </UserContext.Provider>
   );
 }

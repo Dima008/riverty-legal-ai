@@ -20,7 +20,7 @@ export function ReviewBox({ run, row, onChanged }: { run: Run; row: RunRow; onCh
 
   const { state, required, done, reviews } = row.review;
   const decided = FINAL.includes(state);
-  const alreadyReviewed = reviews.some((r) => r.reviewer === user);
+  const alreadyReviewed = reviews.some((r) => r.reviewer === user && r.decision !== "ESCALATED");
   const reasonNeeded = row.triage !== "CONFIRM";
   const canCorrect = run.plan.check === "missing_clause";
 
@@ -67,6 +67,9 @@ export function ReviewBox({ run, row, onChanged }: { run: Run; row: RunRow; onCh
               <Text weight="semibold">{r.reviewer_name}</Text>: {r.decision.toLowerCase()}
               {r.corrected_status && ` → ${r.corrected_status.toLowerCase()}`}
               {r.reason && <span className="muted"> – “{r.reason}”</span>}
+              {r.source && r.source !== run.run_id && (
+                <span className="fr-source">{r.source === "register" ? "in the register" : `in run ${r.source}`}</span>
+              )}
             </li>
           ))}
         </ul>
@@ -110,14 +113,16 @@ export function ReviewBox({ run, row, onChanged }: { run: Run; row: RunRow; onCh
       )}
 
       <div className="actions archive-row">
-        <Button
-          icon={APPROVED.includes(state) ? <Archive16Regular /> : <LockClosed16Regular />}
-          disabled={busy || !APPROVED.includes(state)}
-          onClick={storeCopy}
-        >
+        {/* Clickable on purpose (decision 71): the server is the control, not the button. Before
+            approval it refuses with 409 and writes the refusal to the audit log. */}
+        <Button icon={APPROVED.includes(state) ? <Archive16Regular /> : <LockClosed16Regular />} disabled={busy} onClick={storeCopy}>
           Store archive copy
         </Button>
-        <Caption1>{APPROVED.includes(state) ? "Write-only contract storage, one copy per file" : "Locked until the finding is approved"}</Caption1>
+        <Caption1>
+          {APPROVED.includes(state)
+            ? "Write-only contract storage, one copy per file"
+            : "Locked until the finding is approved – the server refuses and logs every attempt"}
+        </Caption1>
       </div>
       {archive && (
         <MessageBar intent="success">

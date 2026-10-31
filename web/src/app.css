@@ -325,6 +325,19 @@ p { margin: 0; }
 .audit-who { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
 .audit-who time { color: var(--ink-3); margin-left: 6px; font-variant-numeric: tabular-nums; }
 
+/* ---------------------------------------------------------------- review in the register (decision 73) */
+.finding-review { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.finding-review .section-title.small { margin: 0; }
+.fr-list { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
+.fr-source { margin-left: 8px; font-size: 11.5px; color: var(--ink-3); }
+.mx-cell button { position: relative; }
+.mx-rev {
+  position: absolute; right: -6px; bottom: -6px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px;
+  font-size: 10px; line-height: 15px; font-weight: 700; color: #fff; background: var(--green);
+}
+.mx-rev.r-rejected, .mx-rev.r-disputed { background: var(--red); }
+.mx-rev.r-in_review, .mx-rev.r-escalated { background: var(--amber); }
+
 /* ---------------------------------------------------------------- tool sub-navigation */
 .subnav { background: var(--panel); border-bottom: 1px solid var(--line); padding: 2px 28px 0; }
 

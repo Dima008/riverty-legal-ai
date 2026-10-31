@@ -34,6 +34,7 @@ export const REVIEW_LABEL: Record<string, string> = {
   REJECTED: "Rejected",
   CORRECTED: "Corrected",
   DISPUTED: "Disputed – escalate",
+  ESCALATED: "Escalated – four eyes",
 };
 
 export const DOC_TYPE_LABEL: Record<string, string> = {

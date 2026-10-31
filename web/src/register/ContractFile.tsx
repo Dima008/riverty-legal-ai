@@ -9,11 +9,13 @@ import { Checks, Quote, Verdict } from "../components/Finding";
 import { PageView, TextExcerpt } from "../components/PageView";
 import { DOC_TYPE_SINGULAR, STATUS_LABEL, warningLabels } from "../labels";
 import { findingBoxes } from "../workbench/Evidence";
+import { FindingReview } from "./FindingReview";
 
 interface Props {
   open: { docId: string; clause: string | null } | null;
   clauses: Record<string, ClauseSpec>;
   onClose: () => void;
+  onReviewed?: () => void;
 }
 
 interface Highlight {
@@ -21,7 +23,7 @@ interface Highlight {
   hint: string | null;
 }
 
-export function ContractFile({ open, clauses, onClose }: Props) {
+export function ContractFile({ open, clauses, onClose, onReviewed }: Props) {
   const [doc, setDoc] = useState<DocumentInfo | null>(null);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [text, setText] = useState<DocText | null>(null);
@@ -142,6 +144,10 @@ export function ContractFile({ open, clauses, onClose }: Props) {
                     <div className="section-title small">The playbook says</div>
                     <p className="note">{clauses[finding.clause_type]?.definition}</p>
                     <p className="note">{STATUS_LABEL[finding.status]} is an observation about the text, not a legal assessment.</p>
+                    {open && (
+                      <FindingReview key={`${open.docId}-${finding.clause_type}`} docId={open.docId}
+                                     clause={finding.clause_type} onChanged={onReviewed} />
+                    )}
                   </div>
                 )}
 

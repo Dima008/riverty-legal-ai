@@ -271,11 +271,22 @@ REVIEW or FOUR_EYES rows or spot-check samples: no bulk confirmation of critical
 Reviewers are simulated (reviewer A / B via a header); in production the user comes from the
 Entra ID token.
 
+A review belongs to the finding, not to the question (decision 73). It can also be made directly
+in the contract register, and it is stored per finding version – document, clause, the text it
+was extracted from, prompt version and status. Every run that reports the same version reuses it
+("confirmed by A and B, in the register"), so review work shrinks with every question; when the
+text, the extraction or the status changes, the old review no longer applies and is shown as
+"reviewed on an earlier version". "Escalate" (with a reason) raises a routine finding to four
+eyes. The archive button is clickable before approval on purpose (decision 71): the server
+refuses with 409 and the refusal is audited – the button is not the control, the server is.
+
 **Why this way.** Risk-based human-in-the-loop (13); triage rule (53); simulated reviewers
 (54). Automation bias is real: evidence before verdict, reasons on record.
 
 **Live.** `POST /runs/{run_id}/reviews` as reviewer A on M14 → `IN_REVIEW`; again as A →
-409 "the second review must come from a different person"; as B → `CONFIRMED`.
+409 "the second review must come from a different person"; as B → `CONFIRMED`. In the register:
+`POST /findings/M14/liability_limitation/reviews` (A, then B) → a new Q1 run shows M14 as
+`CONFIRMED`, sources "in the register"; `GET /findings/review-states` feeds the marks in the matrix.
 
 **Diagram.** State machine FOUND → IN_REVIEW → CONFIRMED / REJECTED / CORRECTED, with the
 DISPUTED branch; two avatars (A, B) on the four-eyes path.
