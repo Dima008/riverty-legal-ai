@@ -41,7 +41,7 @@ function Azure() {
           every finding with evidence – the framework stays replaceable.
         </Build>
         <Build at={2} className="x-step-proof">
-          Planned, not built: tools as MCP servers, an agent framework, a CI pipeline, tracing.
+          Planned, not built: tools as MCP servers, an agent framework, agentic RAG, reranking, a CI pipeline, tracing.
         </Build>
       </div>
     </div>
