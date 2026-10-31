@@ -187,6 +187,9 @@ def get_document(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> dic
         "page_count": d["page_count"], "ocr_mean_conf": d["ocr_mean_conf"],
         "flags": _json(d["flags"], []),
         "family_id": d["family_id"], "duplicate_of": d["duplicate_of"],
+        # both directions, so the file of a copy leads to its original and the original to its copies
+        "copies": [r[0] for r in con.execute("SELECT doc_id FROM documents WHERE duplicate_of=? ORDER BY doc_id",
+                                             (doc_id,))],
         "family": [r[0] for r in con.execute("SELECT doc_id FROM documents WHERE family_id=? ORDER BY doc_id",
                                              (d["family_id"],))],
         "metadata": meta,

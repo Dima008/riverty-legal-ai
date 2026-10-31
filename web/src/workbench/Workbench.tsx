@@ -4,6 +4,7 @@ import { MessageBar, MessageBarBody, Spinner } from "@fluentui/react-components"
 import { DocumentSearch24Regular, PeopleTeam24Regular, ShieldCheckmark24Regular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { api, ApiError, type Plan, type Run, type RunRow } from "../api";
+import { ContractFile } from "../register/ContractFile";
 import { useLang, useT } from "../i18n";
 import { AskPanel, type Meta } from "./AskPanel";
 import { Evidence } from "./Evidence";
@@ -40,6 +41,9 @@ export function Workbench() {
   const [plan, setPlan] = useState<Plan>({ check: "missing_clause", params: {} });
   const [run, setRun] = useState<Run | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  // a contract file opened from the evidence (e.g. the original of a copy); the run stays as it is
+  const [file, setFile] = useState<{ docId: string; clause: string | null } | null>(null);
+  const openDoc = (docId: string) => setFile({ docId, clause: null });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -108,12 +112,13 @@ export function Workbench() {
             <ResultList run={run} selected={selected} busy={busy} onSelect={setSelected} onConfirmRoutine={confirmRoutine} />
             <section aria-label={t("Evidence")}>
               {row ? (
-                <Evidence run={run} row={row} onChanged={refresh} />
+                <Evidence run={run} row={row} onChanged={refresh} onOpenDoc={openDoc} />
               ) : (
                 <div className="panel empty">{t("Select a contract to see the evidence.")}</div>
               )}
             </section>
           </div>
+          <ContractFile open={file} clauses={meta.clauses} onClose={() => setFile(null)} onOpen={openDoc} />
         </>
       )}
     </div>

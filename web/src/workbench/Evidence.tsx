@@ -54,7 +54,8 @@ async function load(run: Run, row: RunRow): Promise<Loaded> {
   return { doc, finding, boxes, hint, text, firstPage };
 }
 
-export function Evidence({ run, row, onChanged }: { run: Run; row: RunRow; onChanged: () => void }) {
+export function Evidence({ run, row, onChanged, onOpenDoc }:
+  { run: Run; row: RunRow; onChanged: () => void; onOpenDoc: (docId: string) => void }) {
   const t = useT();
   const [data, setData] = useState<Loaded | null>(null);
   const [page, setPage] = useState(1);
@@ -148,7 +149,12 @@ export function Evidence({ run, row, onChanged }: { run: Run; row: RunRow; onCha
           {row.duplicate_of && (
             <div className="panel">
               <div className="section-title">{t("Duplicate")}</div>
-              <p className="note">{t("Copy of {id}. The original is checked; this copy is not counted twice.", { id: row.duplicate_of })}</p>
+              <p className="note">
+                {t("Copy of {id}. The original is checked; this copy is not counted twice.", { id: row.duplicate_of })}{" "}
+                <button type="button" className="link-btn" onClick={() => onOpenDoc(row.duplicate_of!)}>
+                  {t("Open {id}", { id: row.duplicate_of })}
+                </button>
+              </p>
             </div>
           )}
 

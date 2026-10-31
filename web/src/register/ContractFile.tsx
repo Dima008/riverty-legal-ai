@@ -1,6 +1,9 @@
 // The contract file: one document with all its findings against the playbook, the original page
-// with the selected evidence highlighted, its family and former company names.
-import { Button, DrawerBody, DrawerHeader, DrawerHeaderTitle, OverlayDrawer, Spinner } from "@fluentui/react-components";
+// with the selected evidence highlighted, its family and former company names. Original, copies
+// and family members are links: each opens its own file in the same drawer.
+import {
+  Button, DrawerBody, DrawerHeader, DrawerHeaderTitle, MessageBar, MessageBarBody, OverlayDrawer, Spinner,
+} from "@fluentui/react-components";
 import { Dismiss24Regular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { api, type ClauseSpec, type DocText, type DocumentInfo, type Finding } from "../api";
@@ -14,9 +17,26 @@ import { FindingReview } from "./FindingReview";
 
 interface Props {
   open: { docId: string; clause: string | null } | null;
-  clauses: Record<string, ClauseSpec>;
+  clauses: Record<string, Pick<ClauseSpec, "label" | "definition">>;
   onClose: () => void;
   onReviewed?: () => void;
+  onOpen?: (docId: string) => void;     // open another contract of the register in this drawer
+}
+
+/** Other contracts this file points to; each one opens its own file. */
+function Related({ label, ids, onOpen }: { label: string; ids: string[]; onOpen?: (docId: string) => void }) {
+  if (ids.length === 0) return null;
+  return (
+    <span>
+      {label}{" "}
+      {ids.map((id, i) => (
+        <span key={id}>
+          {i > 0 && " · "}
+          {onOpen ? <button type="button" className="link-btn" onClick={() => onOpen(id)}>{id}</button> : id}
+        </span>
+      ))}
+    </span>
+  );
 }
 
 interface Highlight {
@@ -24,7 +44,7 @@ interface Highlight {
   hint: string | null;
 }
 
-export function ContractFile({ open, clauses, onClose, onReviewed }: Props) {
+export function ContractFile({ open, clauses, onClose, onReviewed, onOpen }: Props) {
   const t = useT();
   const [doc, setDoc] = useState<DocumentInfo | null>(null);
   const [findings, setFindings] = useState<Finding[]>([]);
@@ -96,12 +116,27 @@ export function ContractFile({ open, clauses, onClose, onReviewed }: Props) {
               <span>{m?.effective_date ?? t("no date")}</span>
               <span>{m?.governing_law ? t("{law} law", { law: m.governing_law }) : t("law not found")}</span>
               <span>{doc.source_files.join(", ")}</span>
-              {doc.family.length > 1 && <span>{t("family: {ids}", { ids: doc.family.join(" · ") })}</span>}
+              <Related label={t("Copies:")} ids={doc.copies} onOpen={onOpen} />
+              <Related label={t("Family:")} onOpen={onOpen}
+                       ids={doc.family.filter((id) => id !== doc.doc_id && id !== doc.duplicate_of && !doc.copies.includes(id))} />
               {m?.current_own_entity_name && <span>{t("our entity today: {name}", { name: m.current_own_entity_name })}</span>}
               {warningLabels(doc.flags, t).map((w) => (
                 <span key={w} className="warn-chip">{w}</span>
               ))}
             </div>
+
+            {doc.duplicate_of && (
+              <MessageBar intent="info" className="cf-dup">
+                <MessageBarBody>
+                  {t("Copy of {id}. The original is checked; this copy is not counted twice.", { id: doc.duplicate_of })}{" "}
+                  {onOpen && (
+                    <button type="button" className="link-btn" onClick={() => onOpen(doc.duplicate_of!)}>
+                      {t("Open {id}", { id: doc.duplicate_of })}
+                    </button>
+                  )}
+                </MessageBarBody>
+              </MessageBar>
+            )}
 
             <div className="cf-grid">
               <div className="panel ev-source">

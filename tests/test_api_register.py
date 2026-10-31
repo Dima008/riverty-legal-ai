@@ -52,6 +52,13 @@ def test_matrix_compares_every_document_with_the_playbook():
     assert rows["M05"]["former_names"]["resolved"] > 0 and rows["M04"]["former_names"]["open"] > 0
 
 
+def test_duplicate_and_original_lead_to_each_other():
+    copy = client.get("/documents/M15").json()
+    original = client.get("/documents/M01").json()
+    assert copy["duplicate_of"] == "M01" and copy["copies"] == []
+    assert original["duplicate_of"] is None and original["copies"] == ["M15"]
+
+
 def test_unknown_document_is_404():
     assert client.get("/documents/X99").status_code == 404
     assert client.get("/documents/X99/findings").status_code == 404

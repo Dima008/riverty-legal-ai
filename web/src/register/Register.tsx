@@ -9,6 +9,7 @@ import {
 } from "@fluentui/react-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, type Matrix, type MatrixCell, type MatrixRow, type ReviewStateName } from "../api";
+import { navigate, useHashRoute } from "../routing";
 import { useT, type T } from "../i18n";
 import { DOC_TYPE_LABEL, REVIEW_LABEL, STATUS_LABEL, STATUS_SHORT, warningLabels } from "../labels";
 import { ContractFile } from "./ContractFile";
@@ -73,6 +74,18 @@ export function Register() {
   const [query, setQuery] = useState("");
   const [showDefinitions, setShowDefinitions] = useState(false);
   const [open, setOpen] = useState<{ docId: string; clause: string | null } | null>(null);
+  // #/tool/register?doc=M01 opens a contract file directly (links from the Workbench and the talk)
+  const route = useHashRoute();
+  const linked = route.params.get("doc");
+  const linkedClause = route.params.get("clause");
+  useEffect(() => {
+    if (linked) setOpen({ docId: linked, clause: linkedClause });
+  }, [linked, linkedClause]);
+  const close = () => {
+    setOpen(null);
+    if (linked) navigate("/tool/register");
+  };
+  const openDoc = (docId: string) => setOpen({ docId, clause: null });
   const [reviews, setReviews] = useState<Record<string, Record<string, ReviewStateName>>>({});
   const loadReviews = useCallback(() => {
     api.reviewStates().then(setReviews).catch((e: Error) => setError(e.message));
@@ -192,8 +205,16 @@ export function Register() {
                       </button>
                       {(r.duplicate_of || r.is_amendment || warnings.length > 0) && (
                         <div className="mx-notes">
-                          {r.duplicate_of && <span>{t("copy of {id}", { id: r.duplicate_of })}</span>}
-                          {r.is_amendment && <span>{r.family_id !== r.doc_id ? t("amendment of {id}", { id: r.family_id }) : t("amendment, base not in register")}</span>}
+                          {r.duplicate_of && (
+                            <button type="button" className="link-btn" onClick={() => openDoc(r.duplicate_of!)}>
+                              {t("copy of {id}", { id: r.duplicate_of })}
+                            </button>
+                          )}
+                          {r.is_amendment && (r.family_id !== r.doc_id ? (
+                            <button type="button" className="link-btn" onClick={() => openDoc(r.family_id)}>
+                              {t("amendment of {id}", { id: r.family_id })}
+                            </button>
+                          ) : <span>{t("amendment, base not in register")}</span>)}
                           {warnings.map((w) => (
                             <span key={w} className="warn"><Warning16Filled /> {w}</span>
                           ))}
@@ -225,7 +246,7 @@ export function Register() {
         </div>
       </section>
 
-      <ContractFile open={open} clauses={matrix.clauses} onClose={() => setOpen(null)} onReviewed={loadReviews} />
+      <ContractFile open={open} clauses={matrix.clauses} onClose={close} onReviewed={loadReviews} onOpen={openDoc} />
     </div>
   );
 }

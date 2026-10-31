@@ -7,6 +7,31 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · A duplicate can be opened, not only named
+
+- **Problem:** The register marked M15 as "copy of M01", but only as text. To look at the original,
+  a lawyer had to close the file, find M01 in the list and open it again; the original did not
+  mention its copy at all, and a family showed as a plain list of ids. Found by Dima.
+- **Cause:** `duplicate_of` was stored in one direction only (copy → original) and shown as a label;
+  the contract file had no way to switch to another contract.
+- **Technique and why:** The document endpoint also returns `copies` (the other direction, one
+  query on `duplicate_of`). The contract file gets `onOpen`: original, copies and family members
+  are links that open their own file in the same drawer; a copy shows an info bar "Copy of M01 …
+  Open M01". The register notes "copy of …" and "amendment of …" are links. In the Workbench the
+  same drawer opens over the run, so the run and its selection stay. A deep link
+  `#/tool/register?doc=M15` opens a file directly (for the talk and for links from elsewhere);
+  closing it returns to the plain register address.
+- **Rejected alternative:** Navigating from the Workbench to the register page – it would leave
+  the run the reviewer is working in. A separate "duplicates" page – a duplicate is a property of
+  one contract and belongs in its file.
+- **Metric before → after:** Clicks from M15 to its original: close, find, open → 1. M01 names its
+  copy: no → yes. Tests 70 → 71 (both directions); browser walkthrough 10/10 checks in English
+  and German, no console or HTTP errors.
+- **Links:** `api/register.py`, `web/src/register/ContractFile.tsx`, `web/src/register/Register.tsx`,
+  `web/src/workbench/Workbench.tsx`
+
+---
+
 ## 2026-10-31 · Honest statistics: how low could the true recall still be?
 
 - **Problem:** The evaluation reported "recall 1.00" per question. On 5, 2 or even 1 expected

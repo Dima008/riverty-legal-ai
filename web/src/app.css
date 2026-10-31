@@ -276,6 +276,8 @@ p { margin: 0; }
 .mx-id { font-weight: 700; font-variant-numeric: tabular-nums; }
 .mx-party { color: var(--ink-2); }
 .mx-notes { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; font-size: 11.5px; color: var(--ink-3); }
+.mx-notes .link-btn { font-size: inherit; }
+.cf-dup { margin: 10px 0 0; }
 .mx-notes .warn { color: var(--amber); display: inline-flex; align-items: center; gap: 3px; }
 .mx-cell { text-align: center; padding: 4px !important; }
 .mx-cell button {

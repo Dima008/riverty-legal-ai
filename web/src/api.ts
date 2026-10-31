@@ -148,6 +148,7 @@ export interface DocumentInfo {
   family: string[];
   family_id: string;
   duplicate_of: string | null;
+  copies: string[];            // documents that are copies of this one
   metadata: {
     title: string | null;
     doc_type: string;
