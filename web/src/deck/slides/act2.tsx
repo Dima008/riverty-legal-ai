@@ -166,7 +166,7 @@ export const ACT2: Slide[] = [
     words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "clause", say: "KLAWZ" }, { word: "similar", say: "SIM-ih-ler" }],
   },
   {
-    id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 3, seconds: 60, Body: RagFails,
+    id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 3, seconds: 65, Body: RagFails,
     notes: [
       "Legal asks: which merchant agreements lack a limitation of liability? Our test set has 19 of them. Nineteen, not twenty: M15 is a copy of M01, one of my traps. It counts once.",
       "I search for 'limitation of liability', now with k = 10. The 10 best passages come from 8 contracts.",
