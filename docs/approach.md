@@ -115,7 +115,8 @@ become queries.
   behind it and where it lives in the code.
   1. Compile, don't search (4, 37) – rejected: an agent searching SharePoint live; top-k RAG.
   2. The prompt asks, the checks enforce (9, 38, 39) – rejected: trusting the answer or the
-     model's own confidence. Q1 with the model alone 0.60–1.00 over five runs, 1.00 with checks
+     model's own confidence. Every "found" must survive the checks; the checker verifies every
+     PRESENT claim, absence signals question every "missing". Q1 with the model alone 0.60–1.00 over five runs, 1.00 with checks
      every time.
   3. Recall first, coverage visible (3, 5, 51) – rejected: promising accuracy; silent filters.
      F10: C11 vanished from every answer; now 19 of 19 visible.
@@ -131,6 +132,18 @@ become queries.
 **Message.** The prompt asks, the checks enforce.
 
 **What the page shows** (the pipeline explorer, decision 49; texts in `docs/explorer.md`).
+- A workflow, not a free agent – by design (sources in `docs/research.md`). Vendor guidance agrees:
+  use the simplest pattern that works – "If you can write a function to handle the task, do that
+  instead of using an AI agent" (Microsoft Agent Framework). Agents asked to review every file did
+  not read every file in 67.9 % of runs, and LLM judges could not reliably tell (OverclaimBench,
+  2026). So the patterns are chosen per step: **map-reduce** (one isolated extraction call per
+  contract; the reduce step is a SQL query), **prompt chaining with gates** (the guardrail
+  sandwich), **factored maker-checker** (the checker sees only definition and quote; on
+  disagreement a human decides, not a revision loop), **deterministic routing** (OCR or text
+  layer, required clauses per type, triage), **plan-then-execute** over a fixed list of checks,
+  and an **approval gate** for the only action with an outside effect. Once a model has read
+  untrusted contract text it cannot trigger anything (OWASP "excessive agency"). Target: the same
+  shape in Microsoft Agent Framework workflows, with the register queries as read-only MCP tools.
 - The map in two rows: *compile once* – SharePoint → ingest/OCR → chunk → extract → checks →
   families → index → register; *ask many times* – plan → portfolio check with coverage → triage
   → review → archive copy → audit. Only extraction, the checker and embeddings call a model;
@@ -167,7 +180,10 @@ become queries.
   an amendment, foreign law) and 8 gold questions with known answers.
 - Results: recall and precision 1.00 on Q1–Q8 in all seven full runs (five with gpt-4.1-mini,
   two with gpt-4.1); metadata 27 of 27; CUAD agreement 19 of 20 – C03 is a definition question
-  for Legal (F8); about $0.12 per full run.
+  for Legal (F8); about $0.12 per full run. Said precisely: "0 misses in 5" on Q1 – with five
+  contracts, true recall could statistically still be as low as about 0.55 (one-sided 95 % bound).
+  That is why lawyers validate with an elusion sample – the method courts accept in e-discovery:
+  reasonableness, not perfection – and why the held-out set matters (`docs/research.md`).
 - What the checks are worth: Q1 recall of the model alone was 0.80, 0.60, 1.00, 0.80 and 0.80
   over five gpt-4.1-mini runs – with the checks 1.00 every time. 233 of 235 findings are stable
   between runs; only M08 and M10 flip, and every wrong "present" became "unclear", never a silent

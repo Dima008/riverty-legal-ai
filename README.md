@@ -34,6 +34,7 @@ liability cap; the gap is why the checks exist.
 | [`docs/context/case-study.md`](docs/context/case-study.md) | the task, verbatim | 5 min |
 | [`docs/approach.md`](docs/approach.md) | the talk chapter by chapter: problem, approach, decisions, architecture, proof, operations, adoption | 10 min |
 | [`docs/explorer.md`](docs/explorer.md) | how it works, station by station, with real numbers and one live API call each | 15 min |
+| [`docs/research.md`](docs/research.md) | how we know every contract was checked: e-discovery practice, where LLMs and agents miss items, agentic patterns – 93 verified sources | 10 min |
 | [`docs/failure-cases.md`](docs/failure-cases.md) | every failure found (F1–F17) with verbatim evidence and the layer that now catches it | 10 min |
 | [`docs/dev-log.md`](docs/dev-log.md) | every work step: problem, cause, technique, rejected alternative, metric before → after | skim |
 | [`docs/context/decisions.md`](docs/context/decisions.md) | all decisions with reason and rejected alternative (German mirror of the Notion log) | skim |
