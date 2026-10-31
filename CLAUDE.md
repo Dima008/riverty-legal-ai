@@ -114,63 +114,24 @@ cd web && npm run build             # type-check (tsc) + production bundle
 - Never put chat transcripts or the Azure endpoint/resource name into the repo.
 - Do not copy material from the AWS agentic workshop slides (confidential); reuse techniques only.
 
-## Status and next steps (2026-10-30)
+## Status and next steps (2026-10-31)
 
-Done: gold set, pipeline (recall/precision 1.0 on Q1–Q8, CUAD 19/20, ~$0.12 per full run),
-register viewer (`pipeline.show`), error catalogue F1–F8, ablation (model alone: Q1 recall
-0.80; with checks: 1.00). Explanations for Dima in Notion: "Prototyp: Was wir gebaut haben",
-"Konzepte verständlich erklärt".
+History of every step: `docs/dev-log.md`. Decisions 1–74 are in Notion and `docs/context/decisions.md`.
 
-Local setup on Dima's laptop done (2026-10-30): Python 3.12 `.venv`, Tesseract 5.4 with
-`deu` via `TESSDATA_PREFIX`, register built, evaluation green on the laptop
-(`eval/results/2026-10-30_extract-v2_laptop.txt`, $0.12). Package versions pinned. Failure
-cases F9 (OCR differs between machines, no impact, cause open) and F10 (C11 flagged as
-amendment, silently dropped from queries; fixed, decision 51).
+Done: gold set and pipeline (recall/precision 1.00 on Q1–Q8 in all 7 full runs, CUAD 19/20,
+~$0.12 per full run); Legal Workbench API and UI (runs with coverage and triage, four-eyes review,
+gated idempotent archive copy, audit); contract register with review and escalation per finding
+version, reused by every run (decision 73); comparison; evaluation (repeated runs, gpt-4.1
+comparison – production stays on gpt-4.1-mini, decision 65); what-if replay (decision 67);
+monitoring API; website frame with the approved storyline (decision 68, `docs/approach.md`);
+F13–F17 from the repo audit fixed.
 
-API step 1 done: read-only register and pipeline-explorer endpoints (`/summary`,
-`/documents/...` incl. findings with guardrail layers, highlight boxes, page images, chunks
-with fixed-size comparison, prompt, `/search` with BM25/vector/RRF lists), 12 tests green.
-API decisions 52–55: server-rendered page image + word boxes, triage rule, two simulated
-reviewers, planner without model first.
+Next, in this order: tool in German and English (decision 74; "Missing" → "Not found" still to
+confirm with Dima) · chapter content of the website (P0 list in the site plan: figure registry,
+pipeline map, M18 journey, trap map, architecture toggle, release gate, demo doorway, monitoring
+view, compare view, print/PDF) · held-out set (decision 72; Dima writes 2–4 contracts) ·
+`eval/negative_search.py` (top-k vs register, chapter 2) · demo reset and rehearsal kit.
 
-API step 2 done: `pipeline/portfolio.py` (fixed check types, plan validation, coverage
-"in scope = checked + excluded with reason", triage) and `api/workflow.py` (`/checks`,
-`/examples`, `/users`, `POST /runs`, `/runs`, `/audit`). Runs are stored as snapshots in
-`var/workbench.sqlite`, separate from the register (decision 56). All 8 gold questions pass
-through `POST /runs`.
-
-API step 3 done: `api/review.py` (reviews with reason, four-eyes with two different reviewers,
-DISPUTED on disagreement, batch only for CONFIRM rows, `GET /runs/{id}` shows review states;
-`POST /archive` with tool gate and per-file SHA-256 idempotency), `api/storage_mock.py`
-(write-only `PUT /contracts/{sha256}`, mounted at `/storage-mock`), `api/storage_client.py`
-(adapter, `STORAGE_API_URL`). Decision 57 ("Vorschlag"). End-to-end over real HTTP verified;
-38 tests green.
-
-Next (Step 5 – Legal Workbench). Flow: question → plan (which register query / which
-contracts) → per-contract result with status, quote and page highlight → triage (CONFIRM /
-REVIEW / FOUR_EYES) → approval → archive copy via a mock storage API (write-only, idempotent
-by document hash) → audit log. Show coverage and cost per run.
-1. ~~API steps 2 and 3~~ done (see above).
-2. **API step 4**: model planner (function calling over the same check types, asks back when
-   unclear; examples stay as fallback).
-3. **Frontend** `web/`: Workbench done and redesigned (brand theme in `src/theme.ts`, question
-   cards, KPI tiles, result cards, page as paper with highlight, checks as timeline; missing
-   findings highlight the passage that triggered a hint, e.g. the injected note in M14 on
-   page 3). Verified in Edge with a scripted walkthrough. Next: the **pipeline explorer**
-   (decision 49) built from `docs/explorer.md`.
-4. **Step 6 – Evaluation**: done: repeated runs (233/235 findings stable, F7) and model
-   comparison gpt-4.1 vs gpt-4.1-mini (same recall with checks, 5x cost; production stays on
-   mini, decision 65, F11, F12). Open: held-out test set (we tuned on the gold set), retrieval
-   quality, handwritten JPEG (H01 from Dima; expected: Tesseract fails on cursive → the
-   vision-model fallback of decision 10).
-5. Presentation website (chapters and minutes in `docs/context/briefing.md`, section 7):
-   frame done (decision 66: story and tool in one site, chapter rail, keys, tool as last stop);
-   chapter content after Dima approves the storyline. Planned: live failure demos ("switch a
-   check off" = replay stored model answers without that layer, no model cost; search instead
-   of register; prompt v1 vs v2; M14 prompt injection), PDF fallback, dress rehearsal.
-6. Known gap: amendments only change the company name so far. An amendment that **adds** a
-   clause leaves the base agreement "missing" (false alarm); one that **deletes** a clause
-   leaves it "present" (a miss – the dangerous direction). Needs clause-level merging per family.
-7. Open items: MCP server over `pipeline.queries`, planner (function calling), handwritten
-   example (Dima provides `data/raw/handwritten/H01.jpg`), deletion sync (known gap),
-   decision 21 "observations, not legal judgments" still to be confirmed by Dima.
+Known gaps: amendments that add or delete a clause (clause-level merging per family); deletion
+sync; handwritten example (Dima provides `data/raw/handwritten/H01.jpg`; Tesseract expected to
+fail on cursive → multimodal fallback, decision 10); model planner with function calling.
