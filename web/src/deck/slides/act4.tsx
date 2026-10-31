@@ -99,8 +99,8 @@ export const TEST_SET: Slide = {
     `Riverty can't share contracts. So we wrote ${DOCS.length} – and wrote down the answers first.`,
     "Then we hid traps. One: can it read? Scans, German, a cap split by a page break.",
     "Two: does it understand? Caps in other words. Look-alike clauses, but no cap. A hidden instruction for the AI.",
-    "Three: is the portfolio in order? An old name, already fixed by an amendment. A copy. Foreign law.",
-    `And real contracts: CUAD, the Contract Understanding Atticus Dataset, labelled by legal experts. On the liability cap, we agree on ${CUAD_AGREE} of ${CUAD_N} – all ${CUAD_NO_CAP_AGREED} without a cap included. ${[...CUAD_DIFFER].join(", ")} is a question for Legal.`,
+    "Three: is the portfolio in order? An old name, fixed by an amendment. A copy. Foreign law.",
+    `Real contracts: CUAD, the Contract Understanding Atticus Dataset, labelled by experts. On the liability cap, we agree on ${CUAD_AGREE} of ${CUAD_N} – all ${CUAD_NO_CAP_AGREED} without a cap included. ${[...CUAD_DIFFER].join(", ")} is a question for Legal.`,
   ],
   words: [{ word: "Atticus", say: "AT-ih-kus" }, { word: "portfolio", say: "port-FOH-lee-oh" }, { word: "amendment", say: "uh-MEND-ment" }],
 };

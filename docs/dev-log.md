@@ -7,6 +7,36 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Proof cards and four more deep dives, each number traced and each claim attacked
+
+- **Problem:** Act 4 still had three grey drafts (results, what-if, cost) – exactly the cards that
+  answer Dima's question "how do we show that the models perform?". Seven rows of the storyline
+  board (OCR, structured extraction, agent patterns, hybrid search, …) had no card.
+- **Cause:** The numbers existed (stored eval runs, what-if replay, llm_calls), the cards did not;
+  the board rows had never been matched against the built cards.
+- **Technique and why:** Research, build and two adversarial verifiers per strand (truth: recompute
+  every number from its file; presentation: screenshots, text size, word budget, first mentions),
+  then a fix round and an independent recheck. Results: a band per question with the
+  Clopper–Pearson lower bound (Q8: 1 of 1 → could be 5 %), pooled 28/28 ≥ 0.89, and the caveat
+  "16 contracts, and we tuned on them → sealed test set". All 7 stored runs counted; the first run
+  exists only as a text report and is parsed with a `?raw` import, not retyped. What-if: each
+  build replays its scenario on the running API (`GET /what-if`) when it is shown; the stored
+  replay (`eval/results/2026-10-31_what_if.json`) is the offline fallback. Cost: the small model
+  against gpt-4.1 (≈5× cost, ≈2× time, same contracts found). Deep dives ocr (M18 misreads counted
+  exactly by aligning OCR words with the source; H01 measured, `--measure-h01`), fixed-form,
+  agent-patterns, hybrid-search; three board rows were already covered by existing cards.
+- **Rejected alternative:** Fetching all what-if scenarios at page load (the time shown would not
+  be the click); counting 6 runs (contradicts CLAUDE.md and approach.md); a derived JSON of the
+  text report (can drift); "at least 3 misreads" (a weaker answer under questioning).
+- **Metric before → after:** draft cards 3 → 0; deep dives 5 → 9 (2:46 → 5:41, outside the timed
+  track); main track 18:59 → 18:59; verifier findings 38 (9 major) → 5 minor after the first fix →
+  0 after the second; numbers corrected on screen: search pool 938 → 229 passages, gpt-4.1-mini
+  "model alone" 4–5 → 3–5 of 5 (now agrees with the what-if card), runs 6 → 7, H01 "not measured" →
+  61.3 %; overflow at the last build of all 50 cards: none; `tsc` clean.
+- **Links:** decisions 83, 84, 85; `web/src/deck/slides/proof.tsx`, `proof.css`, `deep.tsx`,
+  `acts.css`, `act3.tsx`, `tools/deck_data.py`, `eval/results/2026-10-31_what_if.json`,
+  `2026-10-31_h01_ocr.json`; check questions 26, 27
+
 ## 2026-10-31 · The talk built through to the close: acts 3, 5, 6 and the deep dives, from real data
 
 - **Problem:** After acts 1 and 2, 17 of the planned cards were still grey drafts ("later"). Dima

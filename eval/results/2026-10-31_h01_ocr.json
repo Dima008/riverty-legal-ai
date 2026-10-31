@@ -1,0 +1,32 @@
+{
+ "date": "2026-10-31",
+ "doc_id": "H01",
+ "image": "data/demo/H01.jpg",
+ "sha256": "46909a566deb12777a4efa179eabf675605954fbfc908ebedb0b4b80b05ee2b8",
+ "ocr_call": "pipeline.ingest._ocr_image",
+ "tesseract": "5.4.0.20240606",
+ "languages": "deu+eng",
+ "words": 114,
+ "mean_conf": 61.3,
+ "threshold": 70.0,
+ "status": "LOW_QUALITY",
+ "text": [
+  "Händlorvertrag über den Kaup auf Rechnung",
+  "zwisehen Arfto financial Solutions GmbH (AD oper)",
+  "und Garhkisty Krüger uK (Händler)",
+  "1. DO, Annieter bitit dev Kunden Ay Hänger:",
+  "den Kouif uf Pani, an und Zieht Kie Beträge ein.",
+  "2. Dr Händler wry im Checkauf Winey OnliMeshopy",
+  "die VerbyiMcherpedimguyrgth dey Anbieters ankeinen,",
+  "3. Der Handler zahlt 3 x (om Bestellwert",
+  "Der Anbieter jiberweisy die, Beträge nacn 14 Togen,",
+  "4. Der Vertrag lauf inkofr ‘Stet ad kann mit",
+  "Drei Monaten Frisk genug werden",
+  "5. Es gilt Mypyetey Recht",
+  "Datum: 1 7.03.2009",
+  "für Arvafr Finanecal Solutions Gmb; LÄLL",
+  "7:",
+  "fir Garuffiste Krüger uk, _(LLAAN",
+  "SYNTHETIC TEST DOCUMENT - created for the Riverty case study — not a real contract"
+ ]
+}

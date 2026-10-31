@@ -1,0 +1,827 @@
+{
+  "generated_at": "2026-10-31T21:01:23+00:00",
+  "produced_by": "eval.what_if.what_if(register, off) - the function behind GET /what-if - on var/register.sqlite (read-only); checked equal to the running API",
+  "register": {
+    "documents": 47,
+    "prompt_version": "extract-v2"
+  },
+  "layers": [
+    {
+      "id": "quote_found",
+      "group": "Checks on a found clause",
+      "label": "The quote must exist in the contract",
+      "guards": "evidence the model invented or misquoted",
+      "failures": [
+        "F4"
+      ]
+    },
+    {
+      "id": "clause_vocabulary",
+      "group": "Checks on a found clause",
+      "label": "The quote must use the clause's vocabulary",
+      "guards": "a real quote filed under the wrong clause",
+      "failures": [
+        "F1"
+      ]
+    },
+    {
+      "id": "checker",
+      "group": "Checks on a found clause",
+      "label": "A second model call must agree (maker-checker)",
+      "guards": "a quote that does not meet Legal's definition",
+      "failures": [
+        "F1",
+        "F7",
+        "F11"
+      ]
+    },
+    {
+      "id": "injection_guard",
+      "group": "Checks on a found clause",
+      "label": "Text addressed to software is fenced off",
+      "guards": "instructions hidden in a contract (prompt injection, M14)",
+      "failures": []
+    },
+    {
+      "id": "absence_signals",
+      "group": "Signals that call a human",
+      "label": "Clause words in the text question a 'missing'",
+      "guards": "a 'missing' that nobody double-checks",
+      "failures": [
+        "F5"
+      ]
+    },
+    {
+      "id": "ocr_guard",
+      "group": "Signals that call a human",
+      "label": "Scanned text lowers the confidence",
+      "guards": "trusting text that OCR may have misread",
+      "failures": [
+        "F2",
+        "F9"
+      ]
+    },
+    {
+      "id": "amendment_check",
+      "group": "Register rules",
+      "label": "Only a real amendment is treated as one",
+      "guards": "a contract silently dropped from every answer as an 'amendment'",
+      "failures": [
+        "F10"
+      ]
+    },
+    {
+      "id": "recall_first",
+      "group": "Register rules",
+      "label": "Unclear counts as missing",
+      "guards": "dropping every case the system is unsure about",
+      "failures": []
+    }
+  ],
+  "model_alone": [
+    "checker",
+    "clause_vocabulary",
+    "injection_guard",
+    "quote_found"
+  ],
+  "scenarios": [
+    {
+      "off": [
+        "checker"
+      ],
+      "seconds": 0.61,
+      "result": {
+        "off": [
+          "checker"
+        ],
+        "questions": [
+          {
+            "id": "Q1",
+            "question": "Which merchant agreements do not contain a limitation of liability?",
+            "expected": [
+              "M03",
+              "M08",
+              "M10",
+              "M14",
+              "M18"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q2",
+            "question": "Which contracts still name a legacy provider (Arvato Financial Solutions, AfterPay) and need an update?",
+            "expected": [
+              "M04",
+              "M06",
+              "M10",
+              "M13",
+              "M18"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q3",
+            "question": "Which merchant agreements lack the obligation to display the provider's consumer terms in checkout?",
+            "expected": [
+              "M04",
+              "M08",
+              "M12",
+              "M19"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q4",
+            "question": "Which merchant agreements do not reference a data processing agreement under Art. 28 GDPR?",
+            "expected": [
+              "M03",
+              "M07",
+              "M12",
+              "M18"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q5",
+            "question": "Which merchant agreements are not governed by German law?",
+            "expected": [
+              "M06",
+              "M07",
+              "M08",
+              "M11",
+              "M13"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q6",
+            "question": "Which data processing agreements lack an audit clause?",
+            "expected": [
+              "V02",
+              "V05"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q7",
+            "question": "Which data processing agreements lack a sub-processor clause?",
+            "expected": [
+              "V03",
+              "V05"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q8",
+            "question": "Are there duplicate documents in the register?",
+            "expected": [
+              "M15"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          }
+        ],
+        "changes": [
+          {
+            "doc_id": "C08",
+            "clause_type": "audit_clause",
+            "before": {
+              "status": "UNCLEAR",
+              "confidence": 0.35,
+              "reported": true,
+              "triage": "REVIEW"
+            },
+            "after": {
+              "status": "PRESENT",
+              "confidence": 0.8,
+              "reported": false,
+              "triage": null
+            },
+            "no_longer_raised": [
+              "checker_rejected"
+            ]
+          },
+          {
+            "doc_id": "C11",
+            "clause_type": "subprocessor_clause",
+            "before": {
+              "status": "UNCLEAR",
+              "confidence": 0.35,
+              "reported": true,
+              "triage": "FOUR_EYES"
+            },
+            "after": {
+              "status": "PRESENT",
+              "confidence": 0.8,
+              "reported": false,
+              "triage": null
+            },
+            "no_longer_raised": [
+              "checker_rejected"
+            ]
+          }
+        ],
+        "summary": {
+          "questions_changed": 0,
+          "contracts_missed": [],
+          "findings_changed": 2,
+          "second_look_lost": 2,
+          "more_cautious": 0
+        }
+      }
+    },
+    {
+      "off": [
+        "checker",
+        "clause_vocabulary"
+      ],
+      "seconds": 0.65,
+      "result": {
+        "off": [
+          "checker",
+          "clause_vocabulary"
+        ],
+        "questions": [
+          {
+            "id": "Q1",
+            "question": "Which merchant agreements do not contain a limitation of liability?",
+            "expected": [
+              "M03",
+              "M08",
+              "M10",
+              "M14",
+              "M18"
+            ],
+            "recall": [
+              1.0,
+              0.6
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [
+              "M08",
+              "M10"
+            ],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q2",
+            "question": "Which contracts still name a legacy provider (Arvato Financial Solutions, AfterPay) and need an update?",
+            "expected": [
+              "M04",
+              "M06",
+              "M10",
+              "M13",
+              "M18"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q3",
+            "question": "Which merchant agreements lack the obligation to display the provider's consumer terms in checkout?",
+            "expected": [
+              "M04",
+              "M08",
+              "M12",
+              "M19"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q4",
+            "question": "Which merchant agreements do not reference a data processing agreement under Art. 28 GDPR?",
+            "expected": [
+              "M03",
+              "M07",
+              "M12",
+              "M18"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q5",
+            "question": "Which merchant agreements are not governed by German law?",
+            "expected": [
+              "M06",
+              "M07",
+              "M08",
+              "M11",
+              "M13"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q6",
+            "question": "Which data processing agreements lack an audit clause?",
+            "expected": [
+              "V02",
+              "V05"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q7",
+            "question": "Which data processing agreements lack a sub-processor clause?",
+            "expected": [
+              "V03",
+              "V05"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q8",
+            "question": "Are there duplicate documents in the register?",
+            "expected": [
+              "M15"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          }
+        ],
+        "changes": [
+          {
+            "doc_id": "C04",
+            "clause_type": "consumer_terms_checkout",
+            "before": {
+              "status": "UNCLEAR",
+              "confidence": 0.35,
+              "reported": true,
+              "triage": "REVIEW"
+            },
+            "after": {
+              "status": "PRESENT",
+              "confidence": 0.8,
+              "reported": false,
+              "triage": null
+            },
+            "no_longer_raised": [
+              "checker_rejected",
+              "quote_lacks_clause_terms"
+            ]
+          },
+          {
+            "doc_id": "C08",
+            "clause_type": "audit_clause",
+            "before": {
+              "status": "UNCLEAR",
+              "confidence": 0.35,
+              "reported": true,
+              "triage": "REVIEW"
+            },
+            "after": {
+              "status": "PRESENT",
+              "confidence": 0.8,
+              "reported": false,
+              "triage": null
+            },
+            "no_longer_raised": [
+              "checker_rejected"
+            ]
+          },
+          {
+            "doc_id": "C11",
+            "clause_type": "subprocessor_clause",
+            "before": {
+              "status": "UNCLEAR",
+              "confidence": 0.35,
+              "reported": true,
+              "triage": "FOUR_EYES"
+            },
+            "after": {
+              "status": "PRESENT",
+              "confidence": 0.8,
+              "reported": false,
+              "triage": null
+            },
+            "no_longer_raised": [
+              "checker_rejected"
+            ]
+          },
+          {
+            "doc_id": "M08",
+            "clause_type": "liability_limitation",
+            "before": {
+              "status": "UNCLEAR",
+              "confidence": 0.35,
+              "reported": true,
+              "triage": "REVIEW"
+            },
+            "after": {
+              "status": "PRESENT",
+              "confidence": 0.8,
+              "reported": false,
+              "triage": null
+            },
+            "no_longer_raised": [
+              "checker_rejected",
+              "quote_lacks_clause_terms"
+            ]
+          },
+          {
+            "doc_id": "M10",
+            "clause_type": "liability_limitation",
+            "before": {
+              "status": "UNCLEAR",
+              "confidence": 0.35,
+              "reported": true,
+              "triage": "REVIEW"
+            },
+            "after": {
+              "status": "PRESENT",
+              "confidence": 0.8,
+              "reported": false,
+              "triage": null
+            },
+            "no_longer_raised": [
+              "checker_rejected",
+              "quote_lacks_clause_terms"
+            ]
+          }
+        ],
+        "summary": {
+          "questions_changed": 1,
+          "contracts_missed": [
+            "M08",
+            "M10"
+          ],
+          "findings_changed": 5,
+          "second_look_lost": 5,
+          "more_cautious": 0
+        }
+      }
+    },
+    {
+      "off": [
+        "injection_guard"
+      ],
+      "seconds": 0.56,
+      "result": {
+        "off": [
+          "injection_guard"
+        ],
+        "questions": [
+          {
+            "id": "Q1",
+            "question": "Which merchant agreements do not contain a limitation of liability?",
+            "expected": [
+              "M03",
+              "M08",
+              "M10",
+              "M14",
+              "M18"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q2",
+            "question": "Which contracts still name a legacy provider (Arvato Financial Solutions, AfterPay) and need an update?",
+            "expected": [
+              "M04",
+              "M06",
+              "M10",
+              "M13",
+              "M18"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q3",
+            "question": "Which merchant agreements lack the obligation to display the provider's consumer terms in checkout?",
+            "expected": [
+              "M04",
+              "M08",
+              "M12",
+              "M19"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q4",
+            "question": "Which merchant agreements do not reference a data processing agreement under Art. 28 GDPR?",
+            "expected": [
+              "M03",
+              "M07",
+              "M12",
+              "M18"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q5",
+            "question": "Which merchant agreements are not governed by German law?",
+            "expected": [
+              "M06",
+              "M07",
+              "M08",
+              "M11",
+              "M13"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q6",
+            "question": "Which data processing agreements lack an audit clause?",
+            "expected": [
+              "V02",
+              "V05"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q7",
+            "question": "Which data processing agreements lack a sub-processor clause?",
+            "expected": [
+              "V03",
+              "V05"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          },
+          {
+            "id": "Q8",
+            "question": "Are there duplicate documents in the register?",
+            "expected": [
+              "M15"
+            ],
+            "recall": [
+              1.0,
+              1.0
+            ],
+            "precision": [
+              1.0,
+              1.0
+            ],
+            "missed": [],
+            "wrongly_reported": []
+          }
+        ],
+        "changes": [
+          {
+            "doc_id": "M14",
+            "clause_type": "audit_clause",
+            "before": {
+              "status": "ABSENT",
+              "confidence": 0.7,
+              "reported": true,
+              "triage": "FOUR_EYES"
+            },
+            "after": {
+              "status": "ABSENT",
+              "confidence": 0.9,
+              "reported": true,
+              "triage": "CONFIRM"
+            },
+            "no_longer_raised": [
+              "document_contains_suspected_injection",
+              "prompt_injection_suspected"
+            ]
+          },
+          {
+            "doc_id": "M14",
+            "clause_type": "liability_limitation",
+            "before": {
+              "status": "ABSENT",
+              "confidence": 0.6,
+              "reported": true,
+              "triage": "FOUR_EYES"
+            },
+            "after": {
+              "status": "ABSENT",
+              "confidence": 0.6,
+              "reported": true,
+              "triage": "REVIEW"
+            },
+            "no_longer_raised": [
+              "document_contains_suspected_injection",
+              "prompt_injection_suspected"
+            ]
+          },
+          {
+            "doc_id": "M14",
+            "clause_type": "subprocessor_clause",
+            "before": {
+              "status": "ABSENT",
+              "confidence": 0.7,
+              "reported": true,
+              "triage": "FOUR_EYES"
+            },
+            "after": {
+              "status": "ABSENT",
+              "confidence": 0.9,
+              "reported": true,
+              "triage": "CONFIRM"
+            },
+            "no_longer_raised": [
+              "document_contains_suspected_injection",
+              "prompt_injection_suspected"
+            ]
+          }
+        ],
+        "summary": {
+          "questions_changed": 0,
+          "contracts_missed": [],
+          "findings_changed": 3,
+          "second_look_lost": 2,
+          "more_cautious": 0
+        }
+      }
+    }
+  ]
+}

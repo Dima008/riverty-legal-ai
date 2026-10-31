@@ -1,6 +1,7 @@
 // Deep dives (decision 78): cards after the close, outside the timed track. The presenter opens
 // them from the overview (O) when a question comes. Numbers from deck-data.json and decisions 79/80.
-import { Build } from "../Build";
+import { useState } from "react";
+import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import "./acts.css";
 import deck from "./deck-data.json";
@@ -105,6 +106,232 @@ function GraphDetails() {
   );
 }
 
+// ---------------------------------------------------------------- OCR: a scan, word by word (M18)
+// deck.ocr: M18 read again with the pipeline's settings, guarded against the stored pages, because
+// the register keeps each word's box but not its confidence (tools/deck_data.py). Misreads are
+// counted by aligning the OCR words with the source text. H01 (the handwritten page of the live
+// demo, decision 82) comes from its measurement in eval/results: the demo reset removes it again.
+const OCR = deck.ocr;
+const OCR_P1 = OCR.pages[0];
+const OCR_SURE = [...OCR.misread].sort((a, b) => b.conf - a.conf)[0];   // the most confident misread
+const OCR_RING = new Set(OCR.misread.filter((m) => m.page === 1).map((m) => m.i));
+const HW = OCR.handwritten;
+const HW_PERSON = HW.status === "LOW_QUALITY";                          // below the threshold -> a person
+
+function Ocr() {
+  const step = useStep();
+  const [image, setImage] = useState(true);
+  return (
+    <div className="x-ocr">
+      <figure className="x-scan-wrap">
+        <div className="x-scan" style={{ aspectRatio: `${OCR_P1.size[0]} / ${OCR_P1.size[1]}` }} role="img"
+             aria-label={`${OCR.doc}, page 1: ${OCR_P1.words} word boxes found by OCR`}>
+          {image && <img src={`/api/documents/${OCR.doc}/pages/1/image`} alt="" onError={() => setImage(false)} />}
+          {OCR_P1.boxes.map(([l, t, w, h, c], i) => (
+            <span key={i} style={{ left: `${l}%`, top: `${t}%`, width: `${w}%`, height: `${h}%` }}
+                  className={`x-wbox${step >= 1 ? (c < OCR.threshold ? " low" : " ok") : ""}${step >= 2 && OCR_RING.has(i) ? " ring" : ""}`} />
+          ))}
+        </div>
+        <figcaption>{OCR.doc} · page 1 of {OCR.pages.length} · a scan, no text layer</figcaption>
+      </figure>
+      <div className="x-side">
+        <div className="x-fact">
+          <span className="big2">{OCR_P1.words} words</span>
+          on page 1 – each with its box
+        </div>
+        <Build at={1} className="x-fact">
+          <span className="x-sw low" /> below {OCR.threshold} % sure: <b>{OCR.low.length} words</b> in {OCR.doc}
+          <br />average <b>{OCR.mean_conf.toFixed(0)} %</b> · below {OCR.threshold} % → a person checks
+        </Build>
+        <Build at={1} className="x-hand">
+          <div><span className="x-tag built">measured</span> <b>{HW.doc_id}</b> (handwritten): <b>{HW.mean_conf.toFixed(0)} %</b>{HW_PERSON ? " → a person" : ""}</div>
+          <div><span className="x-tag planned">planned</span> multimodal fallback for handwriting (decision 10)</div>
+        </Build>
+        <Build at={2} className="x-fact x-misread">
+          OCR read <b className="x-said">“{OCR_SURE.word}”</b> – <span className="bad">{OCR_SURE.conf} % sure</span>
+          <br />The page says <b>“{OCR_SURE.truth}”</b> · {OCR.misread.length} words with wrong letters in {OCR.doc}
+        </Build>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- one model call, a fixed form
+// deck.form: the strict JSON schema of pipeline/extract.py and M18's real answer (metadata.raw_json).
+// Added after the call (clauses table): page and confidence by our code, the checker's verdict by a
+// second model call - never by the extraction call itself. The model cites a section by its marker
+// (S4); the card shows the section title the register stores for it.
+const FORM = deck.form;
+const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n).replace(/\s+\S*$/, "")} …` : s);
+const FORM_FOUND = FORM.clauses.find((c) => c.status === "PRESENT" && c.quote && c.section)!;
+const FORM_CAP = FORM.clauses.find((c) => c.key === "liability_limitation")!;
+const FORM_SECTION_NO = FORM_FOUND.section!.split(" ")[0].replace(/\.$/, "");   // "3. Checkout-…" -> "3"
+
+function FixedForm() {
+  const step = useStep();
+  const f = FORM.facts;
+  const facts: [string, string[]][] = [
+    ["type", [f.doc_type.replace(/_/g, " ")]], ["parties", f.parties], ["date", [f.effective_date]],
+    ["law", [f.governing_law]], ["amendment", [f.is_amendment ? "yes" : "no"]],
+  ];
+  const added = step >= 2 ? " on" : "";
+  const hide = step >= 1 ? "" : "x-form-hide";       // the answer is laid out from the start, so nothing jumps
+  // the card shows the quote of the found clause and the reason of the liability cap; the other
+  // reasons are in the form too, the note does not need them
+  const text = (c: (typeof FORM.clauses)[number]) =>
+    c.key === FORM_FOUND.key ? <q>“{cut(c.quote!, 64)}”</q> : c.key === FORM_CAP.key ? <i>{cut(c.rationale, 62)}</i> : <span className="x-form-dim">a reason</span>;
+  return (
+    <div className="x-form">
+      <div className="x-form-top">
+        <div className="x-form-facts">
+          {facts.map(([k, v]) => <div key={k}><span>{k}</span>{v.map((line, i) => <b key={i} className={hide}>{line}</b>)}</div>)}
+        </div>
+        {FORM.strict && <span className="x-tag built">a fixed form (JSON schema)</span>}
+      </div>
+      <div className="x-form-row head">
+        <span>Clause</span>
+        <span>Status<small>{FORM.statuses.join(" · ")}</small></span>
+        <span>Section</span>
+        <span>Quote – or the reason</span>
+        <span className={`x-form-code${added}`}>Added after the call<small>page, confidence (our code)</small><small>checker (a 2nd model call)</small></span>
+      </div>
+      {FORM.clauses.map((c) => (
+        <div key={c.key} className="x-form-row">
+          <span className="x-form-clause">{c.label.replace(/ \(.*\)$/, "")}</span>
+          <span className={`x-form-slot${step >= 1 ? ` x-form-${c.status}` : ""}`}><span className={hide}>{c.status}</span></span>
+          <span className="x-form-slot"><span className={`x-form-sec ${hide}`}>{c.section ?? "–"}</span></span>
+          <span className="x-form-slot text"><span className={hide}>{text(c)}</span></span>
+          <span className={`x-form-code${added}`}>
+            <span>{c.page ? `page ${c.page}` : "no page"} · {c.confidence.toFixed(2)}</span>
+            {c.checker === "checker_agreed" && <span>checker ✓</span>}
+          </span>
+        </div>
+      ))}
+      <div className="x-form-foot">
+        <Build at={2} className="inline"><b>{FORM.extract_calls} extraction calls</b> – one per contract</Build>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- agent patterns, no free agent
+// deck.patterns: the fixed check list (pipeline/portfolio.py), the checker's numbers from the
+// clauses table and llm_calls, Q1's triage (run without storing anything).
+const PAT = deck.patterns;
+const TRIAGE = PAT.q1.triage as Record<string, number>;
+// every Q1 row needs a person (api/review.py): REVIEW one lawyer, FOUR_EYES two, the CONFIRM rows one
+// click for all of them (batch), with a random spot-check sample (pipeline/portfolio.py)
+const TO_LAWYER = (TRIAGE.REVIEW ?? 0) + (TRIAGE.FOUR_EYES ?? 0);
+
+// name + one line each; what each pattern does, the speaker says (notes)
+const PATTERNS = [
+  { at: 0, name: "Plan first", data: <><b>{PAT.checks.length} fixed check types</b> – a plan can only pick one</> },
+  { at: 0, name: "Maker and checker",
+    data: <><b>{PAT.found_by_model} checked → {PAT.checker_rejected.length} overruled</b> · {PAT.checker_calls} calls · ${PAT.checker_cost.toFixed(3)}</> },
+  { at: 1, name: "Tool behind a gate",
+    data: <>the only outside action: a copy into the contract storage<br /><b>refused before approval</b> · once per file</> },
+  { at: 1, name: "A person decides",
+    data: <>triage decides how closely a lawyer looks<br /><b className="nw">{PAT.q1.id}: {TRIAGE.CONFIRM ?? 0} confirm · {TRIAGE.REVIEW ?? 0} review · {TRIAGE.FOUR_EYES ?? 0}{" "}four{" "}eyes</b></> },
+];
+
+function AgentPatterns() {
+  return (
+    <div className="x-pats">
+      <div className="x-key">Code fixes the order. The AI fills forms – it never picks the next step.</div>
+      <div className="x-pat-grid">
+        {PATTERNS.map((p, i) => (
+          <Build key={p.name} at={p.at} className="x-pat">
+            <span className="x-pat-n">{i + 1}</span>
+            <span className="x-pat-name">{p.name}</span>
+            <span className="x-tag built">built</span>
+            <span className="x-pat-data">{p.data}</span>
+          </Build>
+        ))}
+      </div>
+      <Build at={2} className="x-wide">
+        <span className="x-tag planned">planned</span>{" "}
+        a planner that uses a model · <b>Microsoft Agent Framework</b> · the tools as <b>MCP servers</b>
+      </Build>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- hybrid search, merged by rank
+// deck.hybrid: one real query through pipeline/search.py (explain=True): the keyword list (BM25),
+// the meaning list (cosine similarity) and both merged with Reciprocal Rank Fusion. Rows show the
+// contract and the value; a section title only where it carries the point (found only by meaning).
+const HY = deck.hybrid;
+const HY_KW = new Set(HY.keywords.map((x) => x.id));
+const HY_EXTRA = HY.meaning.filter((x) => !HY_KW.has(x.id));          // found only by meaning
+const HY_IN_ALL = HY.terms.filter((t) => HY.keywords.every((x) => x.words.includes(t)));     // "damages"
+const HY_IN_NONE = HY.terms.filter((t) => HY.keywords.every((x) => !x.words.includes(t)));   // "cap"
+const HY_SCOPE = `${HY.filter.doc_type.replace(/_/g, " ")}s`;                                // "merchant agreements"
+const ROW = 2.2, GAP = 0.25, LINK = 4;                                   // cqw: row height, row gap, link column
+const rowY = (i: number) => i * (ROW + GAP) + ROW / 2;
+const HY_ROWS = Math.max(HY.keywords.length, HY.meaning.length, HY.merged.length);
+const HY_H = HY_ROWS * ROW + (HY_ROWS - 1) * GAP;
+
+/** Lines between the same passage in two neighbouring lists (in cqw, like the rows). */
+function Links({ from, to, col, on }: { from: { id: string }[]; to: { id: string }[]; col: number; on: boolean }) {
+  return (
+    <svg className={`x-hs-links${on ? " on" : ""}`} viewBox={`0 0 ${LINK} ${HY_H}`} preserveAspectRatio="none" aria-hidden
+         style={{ gridColumn: col, gridRow: `2 / span ${HY_ROWS}`, height: `${HY_H}cqw` }}>
+      {from.map((a, i) => {
+        const j = to.findIndex((b) => b.id === a.id);
+        return j < 0 ? null : <line key={a.id} x1={0} y1={rowY(i)} x2={LINK} y2={rowY(j)} className={HY_KW.has(a.id) ? "both" : ""} />;
+      })}
+    </svg>
+  );
+}
+
+function HybridSearch() {
+  const step = useStep();
+  const cell = (x: { id: string; doc: string; title: string }, value: string, col: number, row: number, off = false) => (
+    <div key={`${col}-${x.id}`} className={`x-hs-item${HY_KW.has(x.id) ? " both" : ""}${off ? " off" : ""}`}
+         style={{ gridColumn: col, gridRow: row + 2 }}>
+      <b>{x.doc}</b><span>{HY_KW.has(x.id) ? "" : x.title.replace(/^\d+\.\s*/, "")}</span><span className="v">{value}</span>
+    </div>
+  );
+  const nought = (n: number, digits: number) => n.toFixed(digits).replace(/^0/, "");
+  return (
+    <div className="x-hs">
+      <div className="x-hs-q">
+        <span>I ask: <b>“{HY.query}”</b> · the top {HY.k} of {HY.passages} passages in {HY.contracts} {HY_SCOPE}</span>
+        <span className="x-hs-key"><i className="both" />in both lists<i />only by meaning</span>
+      </div>
+      <div className="x-hs-grid" style={{ gridTemplateRows: `auto repeat(${HY_ROWS}, ${ROW}cqw)`, rowGap: `${GAP}cqw` }}>
+        <div className="x-hs-head" style={{ gridColumn: 1 }}>Keywords<small>{HY.keywords.length} passages with “{HY_IN_ALL[0]}” – none with “{HY_IN_NONE[0]}”</small></div>
+        <div className="x-hs-head" style={{ gridColumn: 3 }}>Meaning<small>embeddings · similarity</small></div>
+        <div className={`x-hs-head merged${step < 1 ? " off" : ""}`} style={{ gridColumn: 5 }}>Merged by rank<small>1 / ({HY.rrf_k} + rank) per list, added</small></div>
+        {HY.keywords.map((x, i) => cell(x, `#${i + 1}`, 1, i))}
+        {HY.meaning.map((x, i) => cell(x, nought(x.sim, 3), 3, i))}
+        {HY.merged.map((x, i) => cell(x, nought(x.score, 4), 5, i, step < 1))}
+        <Links from={HY.keywords} to={HY.meaning} col={2} on={step >= 1} />
+        <Links from={HY.meaning} to={HY.merged} col={4} on={step >= 1} />
+      </div>
+      <Build at={2} className="x-wide">
+        <span className="x-tag planned">planned</span>{" "}
+        a reranker · a test set for open questions · <b>Azure AI Search</b> – and never for “which contracts lack …”
+      </Build>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- guards (development only)
+if (import.meta.env.DEV) {
+  const problems = [
+    FORM.most_calls_per_document !== 1 && `a document needed ${FORM.most_calls_per_document} extraction calls - "one model call per contract" is wrong`,
+    FORM.extract_calls !== FORM.documents && `${FORM.extract_calls} extraction calls for ${FORM.documents} documents`,
+    !FORM.strict && "the extraction call is no longer strict",
+    !OCR_SURE && "OCR misread nothing on M18 - card 'ocr' build 2 has no example",
+    HY_EXTRA.length === 0 && "hybrid search: meaning found nothing the keywords missed",
+    (HY_IN_ALL.length !== 1 || HY_IN_NONE.length !== 1) && "hybrid search: the keyword hits no longer share one query word and miss the other - fix the 'Keywords' line and note 0",
+    FORM.longest_chars > FORM.single_pass_chars && `a contract has ${FORM.longest_chars} characters - it is read in parts, "none here" in note 2 of 'fixed-form' is wrong`,
+    !HW_PERSON && `${HW.doc_id} is no longer below the OCR threshold - card 'ocr' says "a person"`,
+  ].filter(Boolean);
+  for (const p of problems) console.error(`deep dives: ${p}`);
+}
+
 export const DEEP: Slide[] = [
   {
     id: "deep-dives", act: 7, kind: "opener", title: "Deep dives – for your questions", steps: 0, seconds: 6, deep: true,
@@ -142,5 +369,49 @@ export const DEEP: Slide[] = [
       "And we ask only for read rights on the one library.",
     ],
     words: [{ word: "subscription", say: "sub-SKRIP-shun" }, { word: "privilege", say: "PRIV-ih-lij" }],
+  },
+  {
+    id: "ocr", act: 7, kind: "content", title: "OCR reads a scan word by word – its confidence is a hint, not proof.", steps: 2, seconds: 45, deep: true, Body: Ocr,
+    notes: [
+      `Page one of ${OCR.doc}, a scan. OCR found ${OCR_P1.words} words. Each box is one word with its position. So we can highlight evidence on a scan.`,
+      `Each word gets a confidence. Red is below ${OCR.threshold} percent: ${OCR.low.length} words in ${OCR.doc}. Below ${OCR.threshold} on average, a person checks the scan. ` +
+        `Like ${HW.doc_id}, the handwritten contract you saw live: ${HW.mean_conf.toFixed(0)} percent. A model that reads images is planned.`,
+      `But confidence is a hint, not proof. OCR lost the umlaut in ${OCR_SURE.truth}, ${OCR_SURE.conf} percent sure. ${OCR.misread.length} words have wrong letters.`,
+    ],
+    words: [{ word: "OCR", say: "oh-see-AR" }, { word: "confidence", say: "KON-fih-dence" }, { word: "umlaut", say: "OOM-lowt" },
+            { word: OCR_SURE.truth ?? "Händlers", say: "HEND-lers" }, { word: "multimodal", say: "mul-tee-MOH-dul" }],
+  },
+  {
+    id: "fixed-form", act: 7, kind: "content", title: "One model call per contract fills a fixed form.", steps: 2, seconds: 40, deep: true, Body: FixedForm,
+    notes: [
+      "The model fills a fixed form, a JSON schema: per clause found, not found or unclear, the section, a quote, a reason. Nothing outside the form.",
+      `This is ${FORM.doc}'s real answer. Liability cap: ${FORM_CAP.status === "ABSENT" ? "not found" : FORM_CAP.status === "PRESENT" ? "found" : "unclear"}, with a reason. ` +
+        `Checkout terms: found, with a quote from section ${FORM_SECTION_NO}.`,
+      `Then our code adds page and confidence, and a second model call checks each found clause. ${FORM.documents} contracts, ${FORM.extract_calls} extraction calls. ` +
+        `Very long contracts, over ${FORM.single_pass_chars.toLocaleString("en")} characters, are read in parts – none here.`,
+    ],
+    words: [{ word: "schema", say: "SKEE-muh" }, { word: "JSON", say: "JAY-sun" }, { word: "characters", say: "KAR-ik-terz" }],
+  },
+  {
+    id: "agent-patterns", act: 7, kind: "content", title: "Agent patterns, each with one job – but no free agent.", steps: 2, seconds: 50, deep: true, Body: AgentPatterns,
+    notes: [
+      "Where is the agent? Code fixes the order. One: plan first. The lawyer confirms it before anything runs. " +
+        `Two: maker and checker. A second call checks every “found” and overruled ${PAT.checker_rejected.length} of ${PAT.found_by_model}.`,
+      "Three: a tool behind a gate. The only action outside the system, the archive copy, needs approval and runs once. " +
+        `Four: a person decides. In ${PAT.q1.id} a lawyer opens ${TO_LAWYER} of ${PAT.q1.reported}, ${TRIAGE.FOUR_EYES === 1 ? "one" : TRIAGE.FOUR_EYES} with a second lawyer. ` +
+        `The ${TRIAGE.CONFIRM} sure ones are confirmed in one click, with a spot check.`,
+      "Honestly: the planner has no model yet. Agent framework and MCP tools: planned, not built.",
+    ],
+    words: [{ word: "patterns", say: "PAT-ernz" }, { word: "overruled", say: "oh-ver-ROOLD" }, { word: "MCP", say: "em-see-PEE" }],
+  },
+  {
+    id: "hybrid-search", act: 7, kind: "content", title: "Open questions: keywords and meaning, merged.", steps: 2, seconds: 40, deep: true, Body: HybridSearch,
+    notes: [
+      `For open questions we search. I ask: ${HY.query}. Keywords find ${HY.keywords.length} passages with the word ${HY_IN_ALL[0]} – none says ${HY_IN_NONE[0]}. ` +
+        `Embeddings find the meaning: also ${HY_EXTRA[0]?.doc}'s German cap, and caps called liability.`,
+      "We merge both lists by rank, not by score: what both found comes first. That is hybrid search – built.",
+      "Still open: a reranker and a test set for open questions. On Azure, AI Search would do this. Never for which contracts lack a clause.",
+    ],
+    words: [{ word: "hybrid", say: "HY-brid" }, { word: "reranker", say: "ree-RANK-er" }, { word: "damages", say: "DAM-ih-jiz" }],
   },
 ];

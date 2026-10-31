@@ -190,6 +190,17 @@ seed and store the model version per call, pin the model version in Azure.
 *Where:* decision 64, `eval/results/2026-10-30_extract-v2_consistency_summary.txt`, F7,
 `pipeline/llm.py` (`temperature=0`).
 
+**27. On the OCR card, M18 has "3 words with wrong letters". How do you know it is exactly 3?**
+
+We made M18 ourselves, so we have the text that was printed. A script puts the words OCR read next
+to the words of that text, in order (Python's difflib), and counts the words whose letters differ.
+Digits, punctuation and the printed footer are left out. All 3 are "Händler" read as "Handler" –
+one of them at 96 % confidence. So a high confidence is a hint, not proof.
+
+*Numbers:* M18 average 93 %, 3 words with wrong letters (38 %, 95 %, 96 %); H01 (handwritten)
+61 %, below 70 → a person. *Where:* `tools/deck_data.py` (`--measure-h01` writes
+`eval/results/2026-10-31_h01_ocr.json`), deep dive "ocr", decision 85.
+
 ## Testing
 
 **9. The test for M08 does not check "the model says X". It only checks "the register never
@@ -217,6 +228,19 @@ commit with code and blocks it. It is the same principle as in the pipeline: do 
 actor – check deterministically before and after.
 
 *Where:* `.githooks/pre-commit`.
+
+**26. On the results card, Q8 shows "1 of 1 → could be 5 %". All 8 questions are complete – why
+do we still show such a low number?**
+
+Q8 has only one right answer, M15. Finding 1 of 1 is not much evidence. The honest question is:
+how low could the true rate be, and we would still see 1 of 1 by luck? With 95 % confidence, as low
+as 5 % (Clopper–Pearson). All 8 questions together are 28 of 28 found, so at least 89 %. But those
+28 answers come from only 16 contracts, and we tuned the system on them. So the next step is a
+sealed test set that nobody looks at while building.
+
+*Numbers:* lower bounds 0.54, 0.54, 0.47, 0.47, 0.54, 0.22, 0.22, 0.05; pooled 28/28 ≥ 0.89; 7 stored
+runs, all complete. *Where:* `eval/results/2026-10-31_extract-v2_stats.json`, card "results",
+decisions 72, 83.
 
 ## Workflow and human review
 
@@ -260,8 +284,8 @@ numbers (the register matrix, M18's journey, the embedding ruler) come from a sc
 changes, I run the measurement and the script again, and every card shows the new numbers. So
 the talk cannot say something the data does not say.
 
-*Numbers:* 41 cards; the data file is about 51 KB; the script makes one model call (the query is
-embedded once, < $0.0001). *Where:* `tools/deck_data.py`, `web/src/deck/slides/deck-data.json`,
+*Numbers:* 50 cards; the data file is about 66 KB; the script embeds two queries ("limitation of
+liability" for the ruler, "cap on damages" for the hybrid search; < $0.0001 together). *Where:* `tools/deck_data.py`, `web/src/deck/slides/deck-data.json`,
 `web/src/deck/slides/act3.tsx`, dev-log entry "The talk built through to the close".
 
 ## How I worked

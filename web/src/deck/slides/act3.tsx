@@ -186,6 +186,7 @@ function TwoStores() {
 // ---------------------------------------------------------------- one contract: M18
 const J = Object.fromEntries(deck.m18.stations.map((s) => [s.station, s.facts])) as Record<string, Record<string, unknown>>;
 const num = (v: unknown) => Number(v ?? 0);
+const NB = "\u00a0";                     // no line break between a number and its unit
 
 function FollowM18() {
   const ingest = J.ingest;
@@ -195,11 +196,11 @@ function FollowM18() {
   const notFound = (J.register.required_not_found as string[]) ?? [];
   const families = J.families;
   const stations = [
-    { at: 0, kind: "code", tag: "code", name: "Arrives", fact: <>a new file · prototype: a folder, checked every 5 s · later: SharePoint</> },
-    { at: 1, kind: "code", tag: "code", name: "OCR", fact: <><b>{num(ingest.pages)} pages</b> read from the image · average confidence <b>{num(ingest.ocr_confidence).toFixed(0)} %</b> · below 70 %: a person</> },
+    { at: 0, kind: "code", tag: "code", name: "Arrives", fact: <>a new file · prototype: a folder, checked every 5{NB}s · later: SharePoint</> },
+    { at: 1, kind: "code", tag: "code", name: "OCR", fact: <><b>{num(ingest.pages)} pages</b> read from the image · average confidence <b>{num(ingest.ocr_confidence).toFixed(0)}{NB}%</b> · below 70{NB}%: a person</> },
     { at: 2, kind: "code", tag: "code", name: "Sections", fact: <>cut at the headings: <b>{num(J.chunking.sections)} sections</b> · a fixed size would cut a clause in half</> },
-    { at: 3, kind: "model", tag: "AI", name: "One model call", fact: <>fills a fixed form: status, quote, page per clause · <b>{num(extract.seconds)} s · ${num(extract.cost_usd).toFixed(4)}</b></> },
-    { at: 4, kind: "model", tag: "code + AI", name: "Checks", fact: <>quote, words, a second model call ({num(checker.seconds)} s) · <b>{found.PRESENT ?? 0} found, {found.ABSENT ?? 0} not found</b></> },
+    { at: 3, kind: "model", tag: "AI", name: "One model call", fact: <>fills a fixed form: status, section, quote per clause · <b>{num(extract.seconds)}{NB}s · ${num(extract.cost_usd).toFixed(4)}</b></> },
+    { at: 4, kind: "model", tag: "code + AI", name: "Checks", fact: <>quote, words, a second model call ({num(checker.seconds)}{NB}s) · <b>{found.PRESENT ?? 0}{NB}found, {found.ABSENT ?? 0}{NB}not{NB}found</b></> },
     { at: 5, kind: "store", tag: "result", name: "Register", fact: <><b>{notFound.length} required clauses not found</b> · former name: {num(families.former_names_open)} hits · all for <b>${deck.m18.model.cost_usd.toFixed(4)}</b></> },
   ];
   return (
@@ -285,7 +286,7 @@ function LawyerDecides() {
       </div>
       <Build at={1} className="x-flow2">
         <span className="x-box person">the passage on the page first</span><span className="x-arrow">→</span>
-        <span className="x-box person">decide, with a reason</span><span className="x-arrow">→</span>
+        <span className="x-box person">decide, with a reason<small className="x-box-sub">stored – reused next time</small></span><span className="x-arrow">→</span>
         <Build at={2} className="x-gate inline">archive copy – only after approval, only once</Build>
       </Build>
     </div>
@@ -351,7 +352,7 @@ export const ACT3: Slide[] = [
       "One contract, M18, a scan from 2018. It arrives in a folder; later, in SharePoint.",
       "OCR reads both pages, 93 percent average confidence. Below 70, a person looks.",
       "We cut at the headings: 12 sections. A fixed size would cut clauses in half.",
-      "One model call fills a fixed form: status, quote and page per clause. Six seconds, a tenth of a cent.",
+      "One model call fills a fixed form: status and quote per clause. Six seconds, a tenth of a cent.",
       "The checks, with a second model call: one found, four not found.",
       "Register: no liability cap, no data processing agreement, an old company name. Fixed steps in code, only two are AI. So every contract was read is a fact.",
     ],
@@ -379,7 +380,7 @@ export const ACT3: Slide[] = [
     id: "human", act: 3, kind: "content", title: "Observations, not verdicts: a lawyer decides.", steps: 2, seconds: 35, Body: LawyerDecides,
     notes: [
       "The system makes observations, not legal judgments. Triage sorts each finding: sure ones get a spot check, unclear ones a lawyer, risky ones two lawyers.",
-      "The lawyer sees the passage on the page first, then decides, with a reason.",
+      "The lawyer sees the passage on the page first, then decides, with a reason. It is stored, and later questions reuse it.",
       "Only after approval may we store a copy in the contract storage. Once. That is the only thing it may receive.",
     ],
     words: [{ word: "observations", say: "ob-zer-VAY-shunz" }, { word: "verdicts", say: "VUR-dikts" }, { word: "approval", say: "uh-PROO-vul" }],
