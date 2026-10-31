@@ -7,6 +7,25 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Follow one contract through the pipeline (GET /documents/{id}/journey)
+
+- **Problem:** Chapter 5 shows one contract travelling through the pipeline with time, tokens and
+  cost per station ("see what works while it runs"). The numbers existed, spread over six tables.
+- **Cause:** No endpoint put them together per contract.
+- **Technique and why:** `GET /documents/{id}/journey` reads pages and OCR, sections, the latest
+  extraction and checker call (tokens, seconds, cents), findings and how many the checks changed,
+  family and former names, search rows and embeddings, and what the register reports – no model
+  call, nothing estimated. Embeddings are batched across contracts, so only their number is shown,
+  not an invented share of the cost.
+- **Rejected alternative:** Recording timings with a new pipeline-event table (pipeline change
+  days before the interview, and the register already has every number); estimating the
+  embedding cost per contract.
+- **Metric before → after:** Numbers for the M18 journey: typed into the plan → read live
+  (OCR 93.4 %, 12 sections, 1,946 → 380 tokens, 5.9 s + 1.2 s, $0.0012). Tests 66 → 67.
+- **Links:** `api/register.py` (`get_journey`), `tests/test_api_register.py`, `docs/explorer.md`
+
+---
+
 ## 2026-10-31 · Building blocks of the presentation, and chapter 1 as the template
 
 - **Problem:** Nine of ten chapters were placeholders. Dima's rule – every diagram is created

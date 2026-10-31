@@ -14,6 +14,14 @@ Per station: **What** (plain words) · **In our system** (real numbers) · **Why
 In the talk, three stations are shown live (chunking, guardrail sandwich, search); the others
 are ready for questions.
 
+**Follow one contract.** `GET /documents/M18/journey` reads one contract's way through every
+station from the register – nothing estimated. M18, the old German scan: 2 pages read by OCR at
+93.4 %, 12 clause sections, one extraction call (1,946 → 380 tokens, 5.9 s, $0.0010), the checker
+(1.2 s, $0.0002), 4 clauses not found and 1 found, 2 former company names still open, 12 search
+rows and 12 embeddings; in the register it lacks the liability cap and the DPA reference. Model
+time 7.1 s, cost $0.0012. Embeddings are made in batches across contracts, so their cost is not
+assigned to one contract.
+
 ---
 
 ## 1. Sources and ingest (text layer or OCR)

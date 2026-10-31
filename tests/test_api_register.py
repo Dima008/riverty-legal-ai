@@ -181,3 +181,15 @@ def test_keyword_search_filters_before_it_cuts(doc_type, query):
     ranked = search.bm25_ranking(con, query, allowed, depth=50)
     assert len(ranked) == min(50, len(matching)) > 0
     assert set(ranked) <= set(matching)
+
+
+def test_journey_follows_one_contract_through_every_station():
+    """Chapter 5: one contract station by station, read from the register - every number checkable."""
+    j = client.get("/documents/M18/journey").json()
+    assert [s["station"] for s in j["stations"]] == ["ingest", "chunking", "extract", "checks", "families",
+                                                     "index", "register"]
+    facts = {s["station"]: s["facts"] for s in j["stations"]}
+    assert facts["chunking"]["sections"] == facts["index"]["search_rows"] == facts["index"]["embeddings"] > 0
+    assert sum(facts["checks"]["findings"].values()) == len(client.get("/documents/M18/findings").json())
+    assert j["model"]["calls"] == 2 and j["model"]["cost_usd"] > 0
+    assert client.get("/documents/NOPE/journey").status_code == 404

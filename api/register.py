@@ -197,6 +197,55 @@ def get_document(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> dic
     }
 
 
+@router.get("/documents/{doc_id}/journey")
+def get_journey(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> dict:
+    """One contract station by station through the pipeline, from what the register recorded:
+    pages and OCR, clause sections, the extraction and checker calls with tokens, seconds and
+    cents, the findings and how many the checks changed, the family, the search index. No model
+    call; nothing is estimated. Embeddings are made in batches across contracts, so their cost
+    cannot be assigned to one contract - only their number is shown."""
+    d = _document(con, doc_id)
+    m = con.execute("SELECT * FROM metadata WHERE doc_id=?", (doc_id,)).fetchone()
+
+    def last_call(purpose: str) -> dict | None:
+        r = con.execute("SELECT model, prompt_tokens, completion_tokens, cached_tokens, cost_usd, latency_ms "
+                        "FROM llm_calls WHERE doc_id=? AND purpose=? ORDER BY id DESC LIMIT 1", (doc_id, purpose)).fetchone()
+        return None if r is None else {**dict(r), "seconds": round(r["latency_ms"] / 1000, 1)}
+
+    count = lambda sql: con.execute(sql, (doc_id,)).fetchone()[0]
+    findings = [dict(r) for r in con.execute("SELECT clause_type, status, model_status FROM clauses WHERE doc_id=?", (doc_id,))]
+    required = {k for k, c in catalogue.CLAUSES.items() if m and m["doc_type"] in c["required_for"]}
+    extract, check = last_call("extract"), last_call("check")
+    stations = [
+        {"station": "ingest", "facts": {"format": d["format"], "pages": d["page_count"], "status": d["status"],
+                                        "ocr_confidence": d["ocr_mean_conf"] and round(d["ocr_mean_conf"], 1),
+                                        "language": d["language"]}},
+        {"station": "chunking", "facts": {"sections": count("SELECT COUNT(*) FROM chunks WHERE doc_id=?")}},
+        {"station": "extract", "facts": extract and {**extract, "prompt_version": m["prompt_version"] if m else None}},
+        {"station": "checks", "facts": {
+            "checker": check,
+            "findings": {s: sum(f["status"] == s for f in findings) for s in ("PRESENT", "ABSENT", "UNCLEAR")},
+            "changed_by_checks": sum(f["status"] != f["model_status"] for f in findings),
+            "flags": _json(d["flags"], [])}},
+        {"station": "families", "facts": {
+            "family_id": d["family_id"], "duplicate_of": d["duplicate_of"],
+            "former_names_open": count("SELECT COUNT(*) FROM name_hits WHERE doc_id=? AND resolved_by IS NULL"),
+            "former_names_resolved": count("SELECT COUNT(*) FROM name_hits WHERE doc_id=? AND resolved_by IS NOT NULL")}},
+        {"station": "index", "facts": {
+            "search_rows": count("SELECT COUNT(*) FROM chunks_fts WHERE doc_id=?"),
+            "embeddings": count("SELECT COUNT(*) FROM embeddings e JOIN chunks c ON c.chunk_id = e.chunk_id WHERE c.doc_id=?")}},
+        {"station": "register", "facts": {
+            "doc_type": m["doc_type"] if m else None,
+            "required_not_found": sorted(f["clause_type"] for f in findings
+                                         if f["clause_type"] in required and f["status"] != "PRESENT")}},
+    ]
+    calls = [c for c in (extract, check) if c]
+    return {"doc_id": doc_id, "title": m["title"] if m else None, "counterparty": m["counterparty_name"] if m else None,
+            "stations": stations,
+            "model": {"calls": len(calls), "cost_usd": round(sum(c["cost_usd"] for c in calls), 6),
+                      "seconds": round(sum(c["latency_ms"] for c in calls) / 1000, 1)}}
+
+
 @router.get("/documents/{doc_id}/findings")
 def get_findings(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> list[dict]:
     """Every clause finding with its evidence and the guardrail layers that produced its status."""
