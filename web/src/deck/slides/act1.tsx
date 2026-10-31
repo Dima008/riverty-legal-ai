@@ -167,10 +167,10 @@ export const ACT1: Slide[] = [
     words: [{ word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }, { word: "repetitive", say: "rih-PET-ih-tiv" }],
   },
   {
-    id: "contracts", act: 1, kind: "content", title: "Riverty cannot share contracts – so I built 47 with known answers.", steps: 3, seconds: 40, Body: TestSet,
+    id: "contracts", act: 1, kind: "content", title: "Riverty cannot share contracts – so I built 47 with known answers.", steps: 3, seconds: 45, Body: TestSet,
     notes: [
       "Riverty cannot share real contracts. So I built a test set where I know every answer.",
-      "Twenty merchant agreements, M01 to M20, and one amendment. I wrote them myself and hid traps in them: a missing clause, an old company name, a scan.",
+      "Twenty merchant agreements, M01 to M20, and one amendment, M05-A: a later change to a contract. I wrote them myself and hid traps in them: a missing clause, an old company name, a scan.",
       "Six data processing agreements, V01 to V06. That is the vendor side.",
       "And twenty real public contracts, C01 to C20, from the CUAD dataset. Legal experts labelled them. So when I say M14 later, you know: one of my test contracts.",
     ],

@@ -166,12 +166,12 @@ export const ACT2: Slide[] = [
     words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "clause", say: "KLAWZ" }, { word: "similar", say: "SIM-ih-ler" }],
   },
   {
-    id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 3, seconds: 55, Body: RagFails,
+    id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 3, seconds: 60, Body: RagFails,
     notes: [
-      "Legal asks: which merchant agreements lack a limitation of liability? Our test set has 19 of them.",
-      "I search for 'limitation of liability'. The 10 best passages come from 8 contracts.",
+      "Legal asks: which merchant agreements lack a limitation of liability? Our test set has 19 of them. Nineteen, not twenty: M15 is a copy of M01 under another name, one of my traps. It counts once.",
+      "I search for 'limitation of liability', now with k = 10. The 10 best passages come from 8 contracts.",
       "For the search, the other 11 'lack' it.",
-      "7 of the 11 are false alarms. They cap liability with different words. Like M02: 'neither side will have to pay more'. M14 is missed. It lacks the clause, but a hidden note mentions liability. So it ranks high. A larger k, 20 or 40, does not help. 11 contracts never match at all. Top-k ranks what is there. It cannot prove absence. Complete reading finds all 5, no false alarm.",
+      "7 of the 11 are false alarms. They cap liability with different words. Like M02: 'neither side will have to pay more'. M14 is missed. It lacks the clause, but a hidden note mentions liability. I planted that note; it is addressed to the AI. So it ranks high. A larger k, 20 or 40, does not help. 11 contracts never match at all. Top-k ranks what is there. It cannot prove absence. Complete reading finds all 5, no false alarm.",
     ],
     words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "merchant", say: "MUR-chunt" }, { word: "absence", say: "AB-sunss" }],
   },
