@@ -29,8 +29,8 @@ assigned to one contract.
 **What.** Turn every file into text with the position of every word on the page.
 
 **In our system.** 47 documents: 20 synthetic merchant agreements (M01–M20) plus one
-amendment (M05-A), 6 data processing agreements (V01–V06), 20 public CUAD contracts
-(C01–C20, plain text). PDFs with a text layer are read directly; scanned PDFs (M16, M18) and
+amendment (M05-A), 6 data processing agreements (V01–V06), 20 real public contracts from CUAD
+(Contract Understanding Atticus Dataset, labelled by legal experts; C01–C20, plain text). PDFs with a text layer are read directly; scanned PDFs (M16, M18) and
 JPEG scans (M20, two pages) are rendered at 200 dpi and read by Tesseract (German + English).
 Mean OCR confidence 93–95 %; below 70 % a document is marked LOW_QUALITY and the confidence of
 all its findings is capped. Unchanged files are skipped (file hash). In Azure: Content

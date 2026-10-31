@@ -55,7 +55,7 @@ export const NOTES: Note[] = [
     refs: "decisions 6, 32, 39" },
   { phrase: "over 100 vendors on the inbound side and over 1,000 merchants on the outbound side", kind: "hint",
     requirement: "Two document families: data processing agreements (inbound) and merchant agreements (outbound).",
-    built: "The test set is modelled on this: 20 merchant agreements, 6 data processing agreements, 20 public CUAD contracts.",
+    built: "The test set is modelled on this: 20 merchant agreements, 6 data processing agreements, and 20 real public contracts from CUAD (Contract Understanding Atticus Dataset), labelled by legal experts.",
     refs: "decision 20" },
 ];
 

@@ -175,10 +175,19 @@ become queries.
 **Message.** Every failure explains a check.
 
 **What the page shows.**
-- The trap map: 47 documents – 20 synthetic merchant agreements plus one amendment, 6 data
-  processing agreements, 20 public CUAD contracts with lawyers' labels – with the designed traps
-  (paraphrased caps, distractor clauses, a page break, an injection, a copy, scans, German text,
-  an amendment, foreign law) and 8 gold questions with known answers.
+- The trap map (card "test-set", 50 s): the 27 documents we wrote – 20 merchant agreements plus
+  one amendment, 6 data processing agreements – as tiles, and the answer key written before the
+  pipeline (8 questions). The traps light up in three builds, one question each, colour = the
+  question: *read* (scans, German, a cap split by a page break), *understand* (reworded caps,
+  decoy clauses, the hidden instruction in M14), *organise* (an old name fixed by an amendment,
+  a copy, foreign law). Then the 20 real contracts from CUAD (Contract Understanding Atticus
+  Dataset by The Atticus Project, CC BY 4.0), in two rows by the experts' label: 19 of 20 agree
+  on the liability cap, C03 is a question for Legal, and the real contracts showed three errors
+  our traps had missed (F3, F4, F10 – all fixed). Every number on the card is read from
+  `ground_truth.csv`, `labels.csv`, `failure-cases.md` and the stored evaluation run.
+- Said aloud about CUAD: "We wrote the contracts ourselves, so we also tested on real contract
+  language: CUAD is a public dataset of real contracts from SEC filings, labelled by legal
+  experts. Where our pipeline and their labels disagree, I show it."
 - Results: recall and precision 1.00 on Q1–Q8 in all seven full runs (five with gpt-4.1-mini,
   two with gpt-4.1); metadata 27 of 27; CUAD agreement 19 of 20 – C03 is a definition question
   for Legal (F8); about $0.12 per full run. Said precisely: "0 misses in 5" on Q1 – with five

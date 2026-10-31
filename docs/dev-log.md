@@ -49,7 +49,9 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
   with act 1's `.q2` grid in deck.css) → 0 after renaming to `a1`-`a4`. Three expected interview
   questions (training, confidence, reproducibility) added as check questions 18-20.
 - **Links:** decision 81, `web/src/deck/slides/act4.tsx`, `act4.css`, `testset-data.ts`,
-  `docs/approach.md` ch. 6, `docs/check-questions.md`, F3/F4/F10 (the errors CUAD found).
+  `docs/approach.md` ch. 6, `docs/check-questions.md`, F3/F4/F10 (the errors CUAD found). The
+  code was written in a parallel session and committed later in its own commit, so that the
+  next step (acts 3-6, whose `drafts.tsx` imports the card) builds on its own.
 
 ## 2026-10-31 · Driving the talk live: mouse, keys, clicker, two windows - tested by five agents
 
