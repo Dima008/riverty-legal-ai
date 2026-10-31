@@ -104,7 +104,7 @@ const GROUPS = [
   { at: 2, prefix: "V", ids: Array.from({ length: 6 }, (_, i) => `V${String(i + 1).padStart(2, "0")}`),
     title: "6 data processing agreements", sub: "the vendor side, Art. 28 GDPR" },
   { at: 3, prefix: "C", ids: Array.from({ length: 20 }, (_, i) => `C${String(i + 1).padStart(2, "0")}`),
-    title: "20 real public contracts", sub: "CUAD dataset, labelled by lawyers – real contract language" },
+    title: "20 real public contracts", sub: "CUAD dataset, labelled by legal experts – real contract language" },
 ];
 
 function TestSet() {
@@ -172,7 +172,7 @@ export const ACT1: Slide[] = [
       "Riverty cannot share real contracts. So I built a test set where I know every answer.",
       "Twenty merchant agreements, M01 to M20, and one amendment. I wrote them myself and hid traps in them: a missing clause, an old company name, a scan.",
       "Six data processing agreements, V01 to V06. That is the vendor side.",
-      "And twenty real public contracts, C01 to C20, from the CUAD dataset. Lawyers labelled them. So when I say M14 later, you know: one of my test contracts.",
+      "And twenty real public contracts, C01 to C20, from the CUAD dataset. Legal experts labelled them. So when I say M14 later, you know: one of my test contracts.",
     ],
     words: [{ word: "amendment", say: "uh-MEND-ment" }, { word: "labelled", say: "LAY-buld" }, { word: "synthetic", say: "sin-THET-ik" }],
   },
