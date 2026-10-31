@@ -4,6 +4,8 @@
 import measurement from "../../../../eval/results/2026-10-31_negative_search.json";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
+import "./acts.css";
+import deck from "./deck-data.json";
 
 function Rag() {
   return (
@@ -41,19 +43,50 @@ function Rag() {
   );
 }
 
-const M01_QUOTE = "In all other cases, each party's total liability arising out of or in connection with this Agreement shall be limited to the total fees paid by the Merchant to the Provider in the twelve (12) months preceding the event giving rise to the claim.";
+// Every passage of the register as one dot: its position is the cosine similarity of its embedding
+// to the embedding of the question (tools/deck_data.py). A 2-D map was tried and rejected: it sorted
+// the dots by contract group, not by meaning.
+const E = deck.embedding;
+const LANES = [{ g: "M", name: "M · merchant" }, { g: "V", name: "V · data processing" }, { g: "C", name: "C · CUAD" }];
+const MIN = 0.12;
+const MAX = 0.55;
+const xPos = (sim: number) => `${((sim - MIN) / (MAX - MIN)) * 100}%`;
+const yPos = (i: number) => `${16 + ((i * 37) % 68)}%`;          // spread the dots of a lane, the same every time
+const NEAR = new Set(E.near.map((n) => n.id));
+const SPOTS = new Map(E.spots.map((sp) => [sp.id, sp]));
+const TOPK_FROM = E.near[E.near.length - 1].sim - 0.004;
 
-function RagWorks() {
+function EmbeddingRuler() {
+  const step = useStep();
   return (
-    <div className="works">
-      <div className="node person"><span className="node-kind">You ask</span>“What does M01 say about liability?”</div>
-      <Build at={1} className="works-hit">
-        <span className="node-kind">The search finds · M01, clause 7.2</span>
-        <q>{M01_QUOTE}</q>
-      </Build>
-      <Build at={2} className="works-answer">
-        <span className="ok" aria-hidden>✓</span> Liability is capped at the fees of the last 12 months.
-      </Build>
+    <div className="x-ruler" role="img"
+         aria-label={`${E.passages} passages by similarity to the question; the ${E.k} closest, and M14 against M19`}>
+      {LANES.map((lane) => (
+        <div key={lane.g} className="x-lane">
+          <span className="x-lane-name">{lane.name}</span>
+          <div className="x-track">
+            {E.points.map((pt, i) => {
+              if (pt.g !== lane.g) return null;
+              const spot = SPOTS.get(pt.id);
+              const cls = ["x-dot", pt.lia && "lia", step >= 1 && NEAR.has(pt.id) && "near",
+                           step >= 2 && spot && "spot", spot?.has_cap && "cap"].filter(Boolean).join(" ");
+              return <span key={pt.id} className={cls} style={{ left: xPos(pt.s), top: yPos(i) }} />;
+            })}
+            {step >= 1 && <div className="x-topk" style={{ left: xPos(TOPK_FROM) }}>{lane.g === "M" && <span>top-{E.k}</span>}</div>}
+            {step >= 2 && lane.g === "M" && E.spots.map((sp) => (
+              <span key={sp.id} className={`x-spot-label${sp.has_cap ? " cap" : ""}`} style={{ left: xPos(sp.sim) }}>
+                {sp.id.split(":")[0]}: {sp.has_cap ? "real cap, in German" : "no cap, only my planted note"} · {sp.sim.toFixed(2)}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+      <div className="x-axis"><span /><div><span>less similar</span><span>similarity to “{E.query}” →</span><span>more similar</span></div></div>
+      <div className="x-legend">
+        <span><i style={{ background: "rgba(169,193,187,.5)" }} />one passage = {E.dims.toLocaleString("en")} numbers</span>
+        <span><i style={{ background: "var(--mint)" }} />a section about liability</span>
+        <Build at={1} className="inline"><i style={{ background: "var(--cyan)" }} />the {E.k} closest = top-{E.k}</Build>
+      </div>
     </div>
   );
 }
@@ -146,24 +179,24 @@ export const ACT2: Slide[] = [
     words: [{ word: "usually", say: "YOO-zhoo-uh-lee" }],
   },
   {
-    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 50, Body: Rag,
+    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 45, Body: Rag,
     notes: [
-      "Most document assistants work like this. You ask about liability in the Nordlicht contract, M01.",
-      "A search compares your question with every passage of every contract. It returns the most similar ones.",
-      "This is called top-k. k is a number you set. Here k is five: the five best passages, nothing else. The search can use keywords or embeddings. Embeddings are numbers that stand for meaning.",
-      "The model reads only these five passages. Then it writes the answer.",
-      "This is called RAG: retrieval-augmented generation. Remember one thing: the model only sees what the search returns.",
+      "Most document assistants work like this. You ask, for example, about liability in the Nordlicht contract, M01.",
+      "A search compares your question with every passage. It returns the most similar ones.",
+      "This is called top-k. Here k is five: the five best passages, nothing else.",
+      "The model reads only these five passages and writes the answer. For M01 this works well: the search finds clause 7.2.",
+      "This is called RAG: retrieval-augmented generation. The model only sees what the search returns.",
     ],
     words: [{ word: "retrieval", say: "rih-TREE-vul" }, { word: "augmented", say: "awg-MEN-tid" }, { word: "similar", say: "SIM-ih-ler" }],
   },
   {
-    id: "rag-works", act: 2, kind: "content", title: "That works when the answer is in the text.", steps: 2, seconds: 20, Body: RagWorks,
+    id: "embedding-map", act: 2, kind: "content", title: "Embeddings: every passage becomes numbers, near means similar.", steps: 2, seconds: 40, Body: EmbeddingRuler,
     notes: [
-      "We ask about liability in M01.",
-      "The search finds clause 7.2, very similar to the question.",
-      "The answer cites the passage: liability is capped at 12 months of fees. RAG works here. We use it too, later, for open questions.",
+      "How does a search know what is similar? With embeddings. Every passage becomes 1,536 numbers. Here every dot is one of our 938 passages. Further right means closer in meaning to the question.",
+      "Top-k takes the dots on the far right. Four of the five come from the public CUAD contracts.",
+      "And closer does not mean: has the clause. M14 has no cap, only my planted note. It scores higher than M19, which has a real cap in German.",
     ],
-    words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "clause", say: "KLAWZ" }, { word: "similar", say: "SIM-ih-ler" }],
+    words: [{ word: "embeddings", say: "em-BED-ingz" }, { word: "similar", say: "SIM-ih-ler" }, { word: "cap", say: "KAP" }],
   },
   {
     id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 3, seconds: 65, Body: RagFails,
@@ -176,11 +209,11 @@ export const ACT2: Slide[] = [
     words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "merchant", say: "MUR-chunt" }, { word: "absence", say: "AB-sunss" }],
   },
   {
-    id: "agent", act: 2, kind: "content", title: "And an AI agent that reads everything itself?", steps: 3, seconds: 50, Body: Agent,
+    id: "agent", act: 2, kind: "content", title: "And an AI agent that reads everything itself?", steps: 3, seconds: 45, Body: Agent,
     notes: [
-      "Second idea: an agent. It is a model that plans a step and calls a tool. Tools open files, search or take notes. It sees the result and repeats.",
+      "Second idea: an agent. A model plans a step and calls a tool: open a file, search, take notes. It sees the result and repeats.",
       "The weak point: it decides when it is done. Nobody checks that it opened every file.",
-      "In OverclaimBench, a 2026 study, agents had to review every file. In 68 percent of runs, they skipped files. Four of five of those reports claimed a complete review. Or they did not mention the gap.",
+      "In a 2026 study, OverclaimBench, agents had to review every file. In 68 percent of runs they skipped files. In four of five, the report hid the gap.",
       "Riverty's case study agrees: agents fail on the size of the environment. Over a thousand contracts is exactly that.",
     ],
     words: [{ word: "agent", say: "AY-junt" }, { word: "OverclaimBench", say: "OH-ver-klaym-bench" }, { word: "environment", say: "en-VY-run-ment" }],

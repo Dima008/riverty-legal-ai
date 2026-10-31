@@ -57,6 +57,53 @@ on the map marks it as missing. That is the picture of why a search cannot prove
 
 *Where:* card "What an embedding looks like" (act 2, planned), table `embeddings` in the register.
 
+**21. Is the register a vector store – a set of embeddings?**
+
+No. The register is an ordinary database, one record card per contract: metadata (type, parties,
+date, law) and, for every clause in Legal's playbook, a status (found, not found, unclear) with
+quote, page, confidence and the checks it passed. Example: M01, limitation of liability – found,
+page 2, "7.2 … total liability … shall be limited to the total fees paid …", confidence 0.95.
+The embeddings live next to it, in the search index, and serve only open questions. Register =
+the record cards; index = the keyword and meaning lookup.
+
+*Where:* tables `documents`, `metadata`, `clauses` vs `chunks`, `embeddings` in
+`var/register.sqlite`; `pipeline/store.py`.
+
+**22. Why does vector similarity not decide whether a contract has a liability cap?**
+
+Because "similar" is not "the same clause". Measured on our own vectors, compared with M01's
+"7. Liability": the reworded cap in M02 scores 0.89 – meaning beats words. But the decoy in M10,
+an indemnification without any cap, scores 0.81 – higher than the real German cap in M19 at
+0.75. And even the termination clause reaches 0.76, because all sections share a template and a
+context line. Vectors tell you roughly what a passage is about; whether it meets Legal's
+definition is decided by the model reading the whole contract, plus the checks.
+
+*Where:* Notion "Konzepte verständlich erklärt", section 3 (bar chart); chunks M01:008,
+M02:008, M10:008, M19:008, M01:005, M01:010.
+
+**23. Interview question: "Do you use agentic RAG?"**
+
+Not for the completeness questions, on purpose. In agentic RAG an agent decides what to retrieve,
+rephrases, retrieves again – and decides when it has seen enough. That last step is exactly what
+"which contracts lack X" cannot afford: an agent that stops early silently misses contracts.
+So every contract is read completely in a fixed workflow, and retrieval – hybrid search with BM25,
+vectors and rank fusion – is used for open questions like "where do we regulate data deletion?".
+Per-contract retrieval for clause types that are not yet in the playbook is planned, not built.
+
+*Where:* `pipeline/search.py`, card "agent" in act 2, Notion "Architektur" (comment thread).
+
+**24. Interview question: "Where do you use MCP, and why?"**
+
+Honest answer: it is designed, not built. The plan is one MCP server, "contract-register", with a
+few narrow tools – find contracts missing a clause, legacy-name report, get the evidence, search,
+and an archive tool that only writes, only after approval and only once. The logic behind them
+exists today and the Workbench uses it through the REST API. Why MCP on top: any AI client – our
+own agent, Copilot – discovers the same tools with their schemas, permissions and audit sit in
+one place, and the model gets narrow tools instead of free database access.
+
+*Where:* Notion "Konzepte verständlich erklärt", section 13; `pipeline/queries.py`,
+`api/review.py`.
+
 ## Coverage: nothing drops out silently
 
 **5. For Q1, 20 merchant agreements are in scope, but only 19 were checked. Why is the answer
@@ -96,6 +143,52 @@ questions: without it, C08 (audit clause) and C11 (sub-processor clause) change 
 "found", and nobody reviews them any more.
 
 *Where:* decision 67, `python -m eval.what_if checker`.
+
+**18. Interview question: "Did you train the model? There are enough contracts online – why not
+fine-tune it on 50 of them?"**
+
+No, and not yet on purpose. The guarantee comes from the checks, not from the model: with checks
+we have recall 1.0, the model alone swings between 0.6 and 1.0 on Q1. A fine-tuned model would
+still need the checks. And public contracts are the wrong data for Riverty: CUAD is US law,
+English, other contract types. If we train on them, we cannot test on them any more. Legal's
+playbook is a data file today (a change is a new prompt version); a fine-tune would need
+retraining for every playbook change and for every model change – gpt-4.1-mini is already
+announced as retiring. The right training data appears in the pilot: every lawyer decision in the
+review is stored and becomes a label. With a few hundred of them, a fine-tune (for example of a
+smaller, cheaper model) makes sense – and it has to pass the same evaluation gate as any other
+change.
+
+*Where:* decisions 39, 40, 42, 65, 72; `api/review.py` (decisions are stored).
+
+**19. Interview question: "How do you determine the confidence? Is it a vote between agents?"**
+
+No vote, and the model never reports its own confidence – models are badly calibrated about
+themselves. We compute it from checks: is the quote really in the contract, does it use the
+clause's vocabulary, does an independent checker call agree, is the OCR good, is there an
+injection. It is a routing score, not a probability: below 0.8 a lawyer reviews it, an injection
+flag means four eyes. The honest part: the levels (0.95, 0.8, 0.6 …) are set by hand today. In
+the pilot we calibrate them – lawyer decisions as labels, and per level we measure how often it is
+overturned; the 10 % spot-check sample in CONFIRM measures the error rate of the auto-confirmed
+bucket. A majority vote (3–5 runs) is an option for border cases only (0.6–0.8), not for every
+finding: our repeat runs show it would mark exactly M08 and M10, which the checks already catch.
+
+*Where:* `pipeline/extract.py` (confidence from signals), `pipeline/portfolio.py` (`triage`,
+`REVIEW_BELOW`, `SAMPLE_PERCENT`), decision 39, F7.
+
+**20. Interview question: "How reproducible is this, and how do you test that?"**
+
+Temperature zero is not deterministic – GPU batching changes results slightly, and a seed is only
+"best effort". So we do not rely on it. Reproducible is the register, not the model: we ask the
+model once per contract version, store the raw answer (`model_status`), and every question is a
+deterministic database query. The checks replay without any model call
+(`python -m pipeline.run --reassess`). And we measure the drift instead of assuming it:
+`eval.repeat` builds fresh registers and compares them – 233 of 235 findings stable over three
+runs, the two flips (M08, M10) were each turned from "found" into "unclear" by the checks. Tests
+check invariants ("M08 is never reported as having a cap"), not one model answer. Open: pass a
+seed and store the model version per call, pin the model version in Azure.
+
+*Where:* decision 64, `eval/results/2026-10-30_extract-v2_consistency_summary.txt`, F7,
+`pipeline/llm.py` (`temperature=0`).
 
 ## Testing
 

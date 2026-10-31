@@ -1,7 +1,11 @@
 // The order of the talk (decision 76). One place to change the storyline: acts, then screens.
 import { ACT1 } from "./slides/act1";
 import { ACT2 } from "./slides/act2";
-import { LATER } from "./slides/drafts";
+import { ACT3 } from "./slides/act3";
+import { ACT5 } from "./slides/act5";
+import { ACT6 } from "./slides/act6";
+import { DEEP } from "./slides/deep";
+import { ACT4 } from "./slides/drafts";
 import type { Act, Slide } from "./types";
 
 export const ACTS: Act[] = [
@@ -14,7 +18,7 @@ export const ACTS: Act[] = [
   { n: 7, title: "Deep dives" },
 ];
 
-export const SLIDES: Slide[] = [...ACT1, ...ACT2, ...LATER];
+export const SLIDES: Slide[] = [...ACT1, ...ACT2, ...ACT3, ...ACT4, ...ACT5, ...ACT6, ...DEEP];
 
 /** The timed track: deep dives after the close are opened only on a question (decision 78). */
 export const TOTAL_SECONDS = SLIDES.filter((s) => !s.deep).reduce((sum, s) => sum + s.seconds, 0);

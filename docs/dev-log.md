@@ -7,6 +7,40 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · The talk built through to the close: acts 3, 5, 6 and the deep dives, from real data
+
+- **Problem:** After acts 1 and 2, 17 of the planned cards were still grey drafts ("later"). Dima
+  wanted real diagrams (chunking, embeddings, register vs index, SharePoint, Microsoft services,
+  how I worked), sentence snippets from the case study for the identification part, a live
+  "add a contract" moment, and no term before its explanation.
+- **Cause:** The storyline (decision 76) and the time plan (decision 78) existed, the cards did
+  not; the numbers they need sat in the register, the probe results and the decisions.
+- **Technique and why:** A generator `tools/deck_data.py` reads the built register through the
+  API (TestClient, no model call except one embedding of the query) and writes
+  `deck-data.json`; every number on a card comes from there, so the cards cannot drift from
+  the data. Act 1 "task": six verbatim sentences of the task, each with what it means. Act 2
+  "embedding-map": a similarity ruler (cosine to the query per passage, lanes M / V / C, the
+  top-10 box) instead of a 2-D map. Act 3 (10 cards): how I worked, the as-is vs to-be process,
+  problem → technique → rejected alternative, the register matrix, register vs index, M18's
+  journey, the M08 guardrail sandwich, the M14 note with the Prompt Shields numbers, the human
+  lanes. Act 5: Azure roles (bought vs built, and a line "planned, not built: MCP, an agent
+  framework, CI, tracing"), SharePoint (decision 79), release gate. Act 6: "live-add" polls the
+  register every 3 s while visible and shows the new contract's findings; the Workbench; the
+  close. Deep dives (decision 78, outside the timed track): decoy similarities, chunking of M09,
+  Microsoft at the edges, Graph details. All new styles in `acts.css`, scoped under `.slide`
+  with the prefix `x-` (the lesson from the `.hl` / `.overview` collisions).
+- **Rejected alternative:** A PCA projection of the embeddings: tried first, it sorted the
+  passages by contract group (merchant / DPA / CUAD), not by meaning – a picture that tells the
+  wrong story. Typing the numbers into the cards (would drift, as the "47" draft did).
+- **Metric before → after:** draft cards 17 → 3 (act 4: results, what-if, cost); built cards
+  +23 (18 in the main track, 5 deep dives); main track 18:44 → 18:59, deep dives 2:46; speaking
+  budget (≤ 2 words per second of a card): every card within it; overflow check of all 41 cards at
+  their last build: 5 overflowing at first → 0; navigation walkthrough green; `npm run build`
+  green; `pytest` 81 passed.
+- **Links:** decisions 76, 78, 79, 80; `web/src/deck/slides/act1.tsx`, `act2.tsx`, `act3.tsx`,
+  `act5.tsx`, `act6.tsx`, `deep.tsx`, `acts.css`, `drafts.tsx`, `deck-data.json`,
+  `tools/deck_data.py`; check questions 21-24
+
 ## 2026-10-31 · Nothing before its introduction: the 47 contracts and top-k get their own place
 
 - **Problem:** Dima: "wir erklären nicht, was top-k ist, und erwähnen Verträge, die keiner kennt".

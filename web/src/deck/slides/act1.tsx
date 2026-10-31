@@ -1,8 +1,10 @@
-// Act 1 - the task: what Legal asks, what one question costs today, what makes it hard, and the
-// one insight everything else builds on: to prove that something is missing, you read everything.
+// Act 1 - the task: what Riverty wrote (six sentences, verbatim), what one question costs today,
+// the test set, what makes it hard, and the one insight everything else builds on: to prove that
+// something is missing, you read everything.
 import { useState } from "react";
 import { Build } from "../Build";
 import type { Slide } from "../types";
+import "./acts.css";
 
 // 47 documents in the register; the ones lacking a required clause glow (decorative)
 const GAPS = new Set([2, 7, 9, 13, 17, 22, 30, 36, 41]);
@@ -21,19 +23,28 @@ function TitleBody() {
   );
 }
 
-function TwoQuestions() {
+// Six sentences from docs/context/case-study.md, word for word, and what each one means for the
+// solution: the problem analysis starts from Riverty's words, not from a technology (decision 1).
+const SNIPPETS = [
+  { at: 0, quote: "contracts that do not contain a certain text passage", means: "Prove what is missing – in every contract" },
+  { at: 0, quote: "contracts in which a company name needs to be updated", means: "Find every former name, with its page" },
+  { at: 1, quote: "Some of them are scans of really old, handwritten contracts that exist only as JPEG files", means: "Read the images first" },
+  { at: 1, quote: "they often fail due to the sheer size and complexity of the environments", means: "Make the AI's world small" },
+  { at: 2, quote: "You may solely use it to store an additional copy of a contract", means: "Write only a copy – after approval" },
+  { at: 2, quote: "as long as we understand what is happening", means: "Evidence for every finding" },
+];
+const SNIPPET_GROUP = ["the two questions", "what makes it hard", "the rules"];
+
+function TaskSnippets() {
   return (
-    <div className="q2">
-      <Build at={1} className="card q2-card">
-        <div className="label">Clause check</div>
-        <div className="q2-q">Which contracts <em>lack</em> a clause?</div>
-        <div className="q2-eg">e.g. no limitation of liability</div>
-      </Build>
-      <Build at={2} className="card q2-card">
-        <div className="label">Company name</div>
-        <div className="q2-q">Which contracts still name a <em>former</em> company?</div>
-        <div className="q2-eg">e.g. “Arvato Financial Solutions” instead of Riverty</div>
-      </Build>
+    <div className="x-snips">
+      {SNIPPETS.map((s) => (
+        <Build key={s.quote} at={s.at} className="x-snip">
+          <span className="x-snip-label">{SNIPPET_GROUP[s.at]}</span>
+          <q>{s.quote}</q>
+          <b>→ {s.means}</b>
+        </Build>
+      ))}
     </div>
   );
 }
@@ -149,13 +160,13 @@ export const ACT1: Slide[] = [
     words: [],
   },
   {
-    id: "two-questions", act: 1, kind: "content", title: "Legal asks two kinds of questions.", steps: 2, seconds: 30, Body: TwoQuestions,
+    id: "task", act: 1, kind: "content", title: "I read Riverty's task sentence by sentence.", steps: 2, seconds: 45, Body: TaskSnippets,
     notes: [
-      "The task names two kinds of questions. Contracts without a certain text passage. And contracts with a company name to update.",
-      "One: which contracts lack a clause? For example, a limitation of liability.",
-      "Two: which contracts still name a former company? For example, Arvato Financial Solutions instead of Riverty. Both questions ask about every contract, not just one.",
+      "I started with Riverty's own words, sentence by sentence. Two sentences are Legal's questions: contracts without a certain passage, and contracts with an old company name. Both are about every contract.",
+      "Two sentences make it hard. Some contracts are old scans, only images. And agents often fail because the environment is too big. So I make the AI's world small.",
+      "Two sentences set the rules. The storage may only receive a copy. And Riverty wants to understand what happens. So every finding needs evidence.",
     ],
-    words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "passage", say: "PASS-ij" }, { word: "Financial", say: "fy-NAN-shul" }],
+    words: [{ word: "passage", say: "PASS-ij" }, { word: "environment", say: "en-VY-run-ment" }, { word: "evidence", say: "EV-ih-dence" }],
   },
   {
     id: "today", act: 1, kind: "content", title: "Today: open every contract, search, note it down.", steps: 2, seconds: 25, Body: Today,
@@ -167,22 +178,22 @@ export const ACT1: Slide[] = [
     words: [{ word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }, { word: "repetitive", say: "rih-PET-ih-tiv" }],
   },
   {
-    id: "contracts", act: 1, kind: "content", title: "Riverty cannot share contracts – so I built 47 with known answers.", steps: 3, seconds: 45, Body: TestSet,
+    id: "contracts", act: 1, kind: "content", title: "Riverty cannot share contracts – so I built 47 with known answers.", steps: 3, seconds: 40, Body: TestSet,
     notes: [
       "Riverty cannot share real contracts. So I built a test set where I know every answer.",
-      "Twenty merchant agreements, M01 to M20, and one amendment, M05-A: a later change to a contract. I wrote them myself and hid traps in them: a missing clause, an old company name, a scan.",
+      "Twenty merchant agreements, M01 to M20, and one amendment, M05-A, a later change. I wrote them myself, with traps: a missing clause, an old name, a scan.",
       "Six data processing agreements, V01 to V06, the vendor side.",
-      "And twenty real public contracts, C01 to C20, from the CUAD dataset. Legal experts labelled them. So when I say M14 later, you know: one of my test contracts.",
+      "And twenty real public contracts, C01 to C20, from CUAD, labelled by legal experts. So M14 later means: one of my test contracts.",
     ],
     words: [{ word: "amendment", say: "uh-MEND-ment" }, { word: "labelled", say: "LAY-buld" }, { word: "synthetic", say: "sin-THET-ik" }],
   },
   {
-    id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 40, Body: Hard,
+    id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 35, Body: Hard,
     notes: [
       "Why not search for a word?",
-      "First, scans. Some contracts are only images, like M18 here. Text recognition, called OCR, must read them first.",
-      "Second, amendments. M05 from 2020 still says Arvato Financial Solutions. The 2022 amendment says: read as Riverty GmbH. The answer depends on the family: the contract and every amendment.",
-      "Third, wording. All three sentences limit liability. The second never says liability. The third is German. A keyword search misses them. Remember the second one for later.",
+      "First, scans. Some contracts are only images, like M18. Text recognition, called OCR, reads them first.",
+      "Second, amendments. M05 from 2020 still names Arvato. The 2022 amendment says: read as Riverty. So the answer depends on the contract and every amendment.",
+      "Third, wording. All three limit liability. The second never says liability, the third is German. Keywords miss them. Remember the second one.",
     ],
     words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "amendment", say: "uh-MEND-ment" }, { word: "recognition", say: "rek-ug-NISH-un" }],
   },
