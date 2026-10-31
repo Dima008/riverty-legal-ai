@@ -1,5 +1,10 @@
 # Briefing – everything discussed so far (as of 2026-10-30)
 
+> **Frozen handover snapshot** from the start of development (morning of 2026-10-30). It is kept
+> as it was. Living sources: the story of the talk in `docs/approach.md`, decisions in
+> `docs/context/decisions.md`, the project status in `CLAUDE.md`, every step in `docs/dev-log.md`.
+> Where they differ (e.g. 1,100 instead of 2,000 contracts, 10 chapters instead of 6), they win.
+
 Handover from the planning sessions (claude.ai + Notion) to development in VS Code. Read this
 after `CLAUDE.md`. The full working notes are in Notion (German); this file condenses them.
 Source of truth for decisions: Notion database "Entscheidungen" (export in `decisions.md`).
