@@ -4,19 +4,21 @@ import { MessageBar, MessageBarBody, Spinner } from "@fluentui/react-components"
 import { DocumentSearch24Regular, PeopleTeam24Regular, ShieldCheckmark24Regular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { api, ApiError, type Plan, type Run, type RunRow } from "../api";
+import { useLang, useT } from "../i18n";
 import { AskPanel, type Meta } from "./AskPanel";
 import { Evidence } from "./Evidence";
 import { ResultList } from "./ResultList";
 import { RunOverview } from "./RunOverview";
 
 function Promises() {
+  const t = useT();
   const items = [
-    { icon: <ShieldCheckmark24Regular />, title: "Complete", text: "Every contract in scope is read in full – or listed as excluded, with the reason. Nothing drops out silently." },
-    { icon: <DocumentSearch24Regular />, title: "Evidence first", text: "Every finding points to the passage on the original page, and shows which checks it passed." },
-    { icon: <PeopleTeam24Regular />, title: "You decide", text: "The system reports observations. Critical cases need two people, and nothing leaves the system without approval." },
+    { icon: <ShieldCheckmark24Regular />, title: t("Complete"), text: t("Every contract in scope is read in full – or listed as excluded, with the reason. Nothing drops out silently.") },
+    { icon: <DocumentSearch24Regular />, title: t("Evidence first"), text: t("Every finding points to the passage on the original page, and shows which checks it passed.") },
+    { icon: <PeopleTeam24Regular />, title: t("You decide"), text: t("The system reports observations. Critical cases need two people, and nothing leaves the system without approval.") },
   ];
   return (
-    <section className="promises" aria-label="How it works">
+    <section className="promises" aria-label={t("How it works")}>
       {items.map((i) => (
         <div key={i.title} className="promise">
           <div className="promise-icon">{i.icon}</div>
@@ -31,6 +33,8 @@ function Promises() {
 }
 
 export function Workbench() {
+  const t = useT();
+  const lang = useLang();
   const [meta, setMeta] = useState<Meta | null>(null);
   const [question, setQuestion] = useState<string | null>(null);
   const [plan, setPlan] = useState<Plan>({ check: "missing_clause", params: {} });
@@ -42,7 +46,7 @@ export function Workbench() {
   useEffect(() => {
     Promise.all([api.examples(), api.checks(), api.catalogue()])
       .then(([examples, checks, cat]) => setMeta({ examples, checks, clauses: cat.clauses }))
-      .catch((e) => setError(`API not reachable – is the backend running on port 8010? (${e})`));
+      .catch((e) => setError(t("API not reachable – is the backend running on port 8010? ({error})", { error: String(e) })));
   }, []);
 
   async function guard(fn: () => Promise<void>) {
@@ -70,8 +74,10 @@ export function Workbench() {
       setRun(await api.run(run.run_id));
     });
 
-  if (!meta) return error ? <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar> : <Spinner label="Loading…" />;
+  if (!meta) return error ? <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar> : <Spinner label={t("Loading…")} />;
   const row = run?.rows.find((r) => r.doc_id === selected) ?? null;
+  // The run keeps the English question it was asked with; in German the example's German wording is shown.
+  const shownQuestion = (lang === "de" && meta.examples.find((e) => e.question === run?.question)?.question_de) || run?.question || null;
 
   return (
     <div className="workbench">
@@ -97,14 +103,14 @@ export function Workbench() {
 
       {run && (
         <>
-          <RunOverview run={run} />
+          <RunOverview run={run} question={shownQuestion} />
           <div className="master-detail">
             <ResultList run={run} selected={selected} busy={busy} onSelect={setSelected} onConfirmRoutine={confirmRoutine} />
-            <section aria-label="Evidence">
+            <section aria-label={t("Evidence")}>
               {row ? (
                 <Evidence run={run} row={row} onChanged={refresh} />
               ) : (
-                <div className="panel empty">Select a contract to see the evidence.</div>
+                <div className="panel empty">{t("Select a contract to see the evidence.")}</div>
               )}
             </section>
           </div>

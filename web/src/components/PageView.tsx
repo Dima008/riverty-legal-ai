@@ -4,16 +4,18 @@ import { Button } from "@fluentui/react-components";
 import { ChevronLeft16Regular, ChevronRight16Regular } from "@fluentui/react-icons";
 import { useCallback, useEffect, useRef } from "react";
 import { api, type DocumentInfo } from "../api";
+import { useT } from "../i18n";
 
 interface Props {
   doc: DocumentInfo;
   page: number;
   onPage: (page: number) => void;
   boxes: Record<number, number[][]>;
-  hint?: string | null;   // what is highlighted, e.g. "the model's quote"
+  hint?: string | null;   // what is highlighted, e.g. "the model's quote" (English, translated here)
 }
 
 export function PageView({ doc, page, onPage, boxes, hint }: Props) {
+  const t = useT();
   const info = doc.pages.find((p) => p.page_no === page);
   const scroller = useRef<HTMLDivElement>(null);
   const firstBox = useRef<HTMLDivElement>(null);
@@ -32,21 +34,21 @@ export function PageView({ doc, page, onPage, boxes, hint }: Props) {
   return (
     <div className="pageview">
       <div className="pageview-nav">
-        <Button size="small" icon={<ChevronLeft16Regular />} disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label="Previous page" />
+        <Button size="small" icon={<ChevronLeft16Regular />} disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label={t("Previous page")} />
         <span>
-          Page {page} of {doc.page_count}
-          {info?.source === "ocr" && info.ocr_conf != null ? ` · scanned, read by OCR (${Math.round(info.ocr_conf)} %)` : ""}
+          {t("Page {page} of {count}", { page, count: doc.page_count })}
+          {info?.source === "ocr" && info.ocr_conf != null ? ` · ${t("scanned, read by OCR ({conf} %)", { conf: Math.round(info.ocr_conf) })}` : ""}
         </span>
-        <Button size="small" icon={<ChevronRight16Regular />} disabled={page >= doc.page_count} onClick={() => onPage(page + 1)} aria-label="Next page" />
+        <Button size="small" icon={<ChevronRight16Regular />} disabled={page >= doc.page_count} onClick={() => onPage(page + 1)} aria-label={t("Next page")} />
         {pagesWithHits.length > 0 && (
           <span className="hl-hint">
-            <span className="hl-swatch" /> {hint ?? "highlighted"} · page {pagesWithHits.join(" and ")}
+            <span className="hl-swatch" /> {t(hint ?? "highlighted")} · {t("page {n}", { n: pagesWithHits.join(` ${t("and")} `) })}
           </span>
         )}
       </div>
       <div className="page-scroll" ref={scroller}>
         <div className="page-frame">
-          <img src={api.pageImageUrl(doc.doc_id, page)} alt={`${doc.doc_id}, page ${page}`} onLoad={scrollToHighlight} />
+          <img src={api.pageImageUrl(doc.doc_id, page)} alt={t("{doc}, page {page}", { doc: doc.doc_id, page })} onLoad={scrollToHighlight} />
           {info &&
             (boxes[page] ?? []).map((b, i) => (
               <div

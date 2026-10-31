@@ -7,6 +7,7 @@ import { api, type ClauseSpec, type DocText, type DocumentInfo, type Finding } f
 import { StatusBadge } from "../components/Badges";
 import { Checks, Quote, Verdict } from "../components/Finding";
 import { PageView, TextExcerpt } from "../components/PageView";
+import { useT } from "../i18n";
 import { DOC_TYPE_SINGULAR, STATUS_LABEL, warningLabels } from "../labels";
 import { findingBoxes } from "../workbench/Evidence";
 import { FindingReview } from "./FindingReview";
@@ -24,6 +25,7 @@ interface Highlight {
 }
 
 export function ContractFile({ open, clauses, onClose, onReviewed }: Props) {
+  const t = useT();
   const [doc, setDoc] = useState<DocumentInfo | null>(null);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [text, setText] = useState<DocText | null>(null);
@@ -79,31 +81,31 @@ export function ContractFile({ open, clauses, onClose, onReviewed }: Props) {
   return (
     <OverlayDrawer open={!!open} onOpenChange={(_, d) => !d.open && onClose()} position="end" size="full" className="contract-drawer">
       <DrawerHeader>
-        <DrawerHeaderTitle action={<Button appearance="subtle" icon={<Dismiss24Regular />} onClick={onClose} aria-label="Close" />}>
+        <DrawerHeaderTitle action={<Button appearance="subtle" icon={<Dismiss24Regular />} onClick={onClose} aria-label={t("Close")} />}>
           <span className="ev-id">{open?.docId}</span> {m?.counterparty_name ?? ""}
         </DrawerHeaderTitle>
       </DrawerHeader>
       <DrawerBody>
         {!doc ? (
-          <Spinner label="Loading the contract file…" />
+          <Spinner label={t("Loading the contract file…")} />
         ) : (
           <div className="contract-file">
             <div className="cf-meta">
               <span>{m?.title}</span>
-              <span>{DOC_TYPE_SINGULAR[m?.doc_type ?? "unknown"] ?? m?.doc_type}</span>
-              <span>{m?.effective_date ?? "no date"}</span>
-              <span>{m?.governing_law ? `${m.governing_law} law` : "law not found"}</span>
+              <span>{t(DOC_TYPE_SINGULAR[m?.doc_type ?? "unknown"] ?? m?.doc_type ?? "")}</span>
+              <span>{m?.effective_date ?? t("no date")}</span>
+              <span>{m?.governing_law ? t("{law} law", { law: m.governing_law }) : t("law not found")}</span>
               <span>{doc.source_files.join(", ")}</span>
-              {doc.family.length > 1 && <span>family: {doc.family.join(" · ")}</span>}
-              {m?.current_own_entity_name && <span>our entity today: {m.current_own_entity_name}</span>}
-              {warningLabels(doc.flags).map((w) => (
+              {doc.family.length > 1 && <span>{t("family: {ids}", { ids: doc.family.join(" · ") })}</span>}
+              {m?.current_own_entity_name && <span>{t("our entity today: {name}", { name: m.current_own_entity_name })}</span>}
+              {warningLabels(doc.flags, t).map((w) => (
                 <span key={w} className="warn-chip">{w}</span>
               ))}
             </div>
 
             <div className="cf-grid">
               <div className="panel ev-source">
-                <div className="section-title">Original document</div>
+                <div className="section-title">{t("Original document")}</div>
                 {text ? (
                   <TextExcerpt text={text.text} start={finding?.char_start ?? null} end={finding?.char_end ?? null} />
                 ) : (
@@ -113,7 +115,7 @@ export function ContractFile({ open, clauses, onClose, onReviewed }: Props) {
 
               <div className="cf-side">
                 <div className="panel">
-                  <div className="section-title">Compared with the playbook</div>
+                  <div className="section-title">{t("Compared with the playbook")}</div>
                   <ul className="cf-findings">
                     {findings.map((f) => (
                       <li key={f.clause_type}>
@@ -123,8 +125,8 @@ export function ContractFile({ open, clauses, onClose, onReviewed }: Props) {
                           onClick={() => setSelected(f.clause_type)}
                         >
                           <span className="cf-label">
-                            {f.label}
-                            <span className="cf-req">{f.required ? "required" : "not required here"}</span>
+                            {t(f.label)}
+                            <span className="cf-req">{f.required ? t("required") : t("not required here")}</span>
                           </span>
                           <StatusBadge status={f.status} short />
                         </button>
@@ -135,15 +137,15 @@ export function ContractFile({ open, clauses, onClose, onReviewed }: Props) {
 
                 {finding && (
                   <div className="panel">
-                    <div className="section-title">{finding.label}</div>
+                    <div className="section-title">{t(finding.label)}</div>
                     <Verdict finding={finding} />
                     <Quote finding={finding} />
-                    {finding.rationale && <p className="note">Model's reason: {finding.rationale}</p>}
-                    <div className="section-title small">How the register decided</div>
+                    {finding.rationale && <p className="note">{t("Model's reason: {reason}", { reason: finding.rationale })}</p>}
+                    <div className="section-title small">{t("How the register decided")}</div>
                     <Checks finding={finding} />
-                    <div className="section-title small">The playbook says</div>
+                    <div className="section-title small">{t("The playbook says")}</div>
                     <p className="note">{clauses[finding.clause_type]?.definition}</p>
-                    <p className="note">{STATUS_LABEL[finding.status]} is an observation about the text, not a legal assessment.</p>
+                    <p className="note">{t("{status} is an observation about the text, not a legal assessment.", { status: t(STATUS_LABEL[finding.status]) })}</p>
                     {open && (
                       <FindingReview key={`${open.docId}-${finding.clause_type}`} docId={open.docId}
                                      clause={finding.clause_type} onChanged={onReviewed} />
@@ -153,14 +155,14 @@ export function ContractFile({ open, clauses, onClose, onReviewed }: Props) {
 
                 {doc.legacy_names.length > 0 && (
                   <div className="panel">
-                    <div className="section-title">Former company names</div>
+                    <div className="section-title">{t("Former company names")}</div>
                     <ul className="hits">
                       {doc.legacy_names.map((h, i) => (
                         <li key={i}>
                           <button type="button" className="link-btn" onClick={() => showName(h.name, h.page)}>
-                            {h.name} · page {h.page}
+                            {h.name} · {t("page {n}", { n: h.page })}
                           </button>{" "}
-                          {h.resolved_by ? <span className="name-resolved">resolved by {h.resolved_by}</span> : <span className="name-open">open</span>}
+                          {h.resolved_by ? <span className="name-resolved">{t("resolved by {id}", { id: h.resolved_by })}</span> : <span className="name-open">{t("open")}</span>}
                           <div className="note">…{h.snippet}…</div>
                         </li>
                       ))}

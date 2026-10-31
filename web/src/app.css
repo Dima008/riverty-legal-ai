@@ -58,6 +58,8 @@ p { margin: 0; }
 .env-pill.off .dot { background: #ff7a7a; box-shadow: 0 0 0 3px rgba(255, 122, 122, 0.2); }
 .user { display: flex; align-items: center; gap: 10px; }
 .user .fui-Dropdown { min-width: 190px; }
+.lang-switch { display: flex; gap: 2px; }
+.lang-switch .fui-ToggleButton { min-width: 36px; }
 
 /* ---------------------------------------------------------------- layout */
 .content { padding: 24px 28px 32px; flex: 1; width: 100%; max-width: 1760px; margin: 0 auto; }
@@ -320,6 +322,7 @@ p { margin: 0; }
 .a-archive_refused .audit-icon { background: var(--red-tint); color: var(--red); }
 .a-archive_copy .audit-icon, .a-review_recorded .audit-icon, .a-batch_confirmed .audit-icon { background: var(--green-tint); color: var(--green); }
 .audit-line { font-size: 14px; text-transform: capitalize; }
+.audit-line:lang(de) { text-transform: none; } /* German capitalises nouns, not every word */
 .audit-target { text-transform: none; color: var(--ink-3); font-size: 12.5px; margin-left: 6px; }
 .audit-detail { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
 .audit-who { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }

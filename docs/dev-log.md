@@ -7,6 +7,29 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · The tool speaks German or English; the presentation stays English
+
+- **Problem:** Riverty's legal team works in German, but every screen of the Legal Workbench was
+  English – against the design principle "lawyers' language" (decision 74).
+- **Cause:** Texts were written directly into the components; there was no translation layer.
+- **Technique and why:** `web/src/i18n.tsx` without a library: the English text is the key,
+  `t("Clause missing")` returns the German entry or – if one is missing – the English text, never
+  an empty string; placeholders like `{done}` are filled after the lookup. A switch EN | DE sits in
+  the header of the tool layer only and is remembered in the browser (works without storage too).
+  Contract quotes, playbook definitions, model reasons and server messages are never translated:
+  they are evidence or come from the server as they are. Example questions use the German wording
+  the API already provides, while the run keeps the English question. Built by a subagent with a
+  glossary of legal terms; every entry reviewed before the commit ("{n} × alt" → "{n} frühere").
+- **Rejected alternative:** An i18n library (a dependency for one dictionary); translating the 10
+  chapters as well (two versions to keep in sync, the talk is in English); a German-only tool (the
+  panel reads English).
+- **Metric before → after:** Screens in German: 0 → all tool screens; 286 German entries, every
+  literal key covered (script check); 16 files. Edge: German walkthrough 14 of 14 checks; the three
+  English walkthroughs (story, reviews, what-if) unchanged and green; 0 console errors; build green.
+- **Links:** decision 74; `web/src/i18n.tsx`, `web/src/App.tsx`, `web/src/labels.ts`
+
+---
+
 ## 2026-10-31 · Top-k against the register, measured (chapter 2)
 
 - **Problem:** The central argument of the talk – top-k retrieval cannot prove that a clause is

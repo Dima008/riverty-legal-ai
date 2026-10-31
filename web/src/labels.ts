@@ -1,4 +1,6 @@
 // Lawyers' language instead of technical terms (design principle from the frontend plan).
+// The values are English; the tool translates them where they are shown: t(STATUS_LABEL[s]).
+import type { T } from "./i18n";
 
 export const STATUS_LABEL: Record<string, string> = {
   PRESENT: "Clause found",
@@ -84,5 +86,6 @@ export const FLAG_LABEL: Record<string, string> = {
 const NOT_A_WARNING = new Set(["checker_agreed"]);
 
 export const flagLabel = (flag: string) => FLAG_LABEL[flag.split(":")[0]] ?? flag.split(":")[0].replace(/_/g, " ");
-export const warningLabels = (flags: string[]) =>
-  [...new Set(flags.filter((f) => !NOT_A_WARNING.has(f.split(":")[0])).map(flagLabel))];
+// t translates the labels; the tool passes it in, without it they stay English
+export const warningLabels = (flags: string[], t: T = (text) => text) =>
+  [...new Set(flags.filter((f) => !NOT_A_WARNING.has(f.split(":")[0])).map((f) => t(flagLabel(f))))];

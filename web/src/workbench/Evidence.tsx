@@ -7,6 +7,7 @@ import { api, type DocText, type DocumentInfo, type Finding, type Run, type RunR
 import { StatusBadge, TriageBadge } from "../components/Badges";
 import { Checks, Quote, Verdict } from "../components/Finding";
 import { PageView, TextExcerpt } from "../components/PageView";
+import { useT } from "../i18n";
 import { STATUS_LABEL, warningLabels } from "../labels";
 import { ReviewBox } from "./ReviewBox";
 
@@ -19,7 +20,8 @@ interface Loaded {
   firstPage: number;
 }
 
-/** Highlight boxes for one finding: its quote, or the passage that hints at a missing clause. */
+/** Highlight boxes for one finding: its quote, or the passage that hints at a missing clause.
+ *  The hint stays English here; PageView translates it when it shows it. */
 export async function findingBoxes(docId: string, finding: Finding | null) {
   const boxes: Record<number, number[][]> = {};
   if (!finding || !(finding.quote || finding.flags.some((f) => f.startsWith("signal_despite_absent")))) {
@@ -53,6 +55,7 @@ async function load(run: Run, row: RunRow): Promise<Loaded> {
 }
 
 export function Evidence({ run, row, onChanged }: { run: Run; row: RunRow; onChanged: () => void }) {
+  const t = useT();
   const [data, setData] = useState<Loaded | null>(null);
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -75,11 +78,11 @@ export function Evidence({ run, row, onChanged }: { run: Run; row: RunRow; onCha
   }, [run.run_id, row.doc_id]);
 
   if (error) return <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>;
-  if (!data) return <div className="panel empty"><Spinner label={`Loading evidence for ${row.doc_id}…`} /></div>;
+  if (!data) return <div className="panel empty"><Spinner label={t("Loading evidence for {doc}…", { doc: row.doc_id })} /></div>;
 
   const { doc, finding, boxes, hint, text } = data;
   const m = doc.metadata;
-  const warnings = warningLabels(row.flags);
+  const warnings = warningLabels(row.flags, t);
 
   return (
     <div className="evidence">
@@ -87,12 +90,12 @@ export function Evidence({ run, row, onChanged }: { run: Run; row: RunRow; onCha
         <div className="ev-title">
           <span className="ev-id">{row.doc_id}</span>
           <div>
-            <h3>{m?.counterparty_name ?? "Unknown party"}</h3>
+            <h3>{m?.counterparty_name ?? t("Unknown party")}</h3>
             <div className="ev-meta">
               <span><DocumentText16Regular /> {m?.title ?? doc.source_files.join(", ")}</span>
-              <span><CalendarLtr16Regular /> {m?.effective_date ?? "no date"}</span>
-              <span><Scales24Regular className="i16" /> {m?.governing_law ? `${m.governing_law} law` : "law not found"}</span>
-              {doc.family.length > 1 && <span>family {doc.family.join(" · ")}</span>}
+              <span><CalendarLtr16Regular /> {m?.effective_date ?? t("no date")}</span>
+              <span><Scales24Regular className="i16" /> {m?.governing_law ? t("{law} law", { law: m.governing_law }) : t("law not found")}</span>
+              {doc.family.length > 1 && <span>{t("family {ids}", { ids: doc.family.join(" · ") })}</span>}
             </div>
           </div>
         </div>
@@ -107,7 +110,7 @@ export function Evidence({ run, row, onChanged }: { run: Run; row: RunRow; onCha
 
       <div className="ev-grid">
         <div className="panel ev-source">
-          <div className="section-title">Original document</div>
+          <div className="section-title">{t("Original document")}</div>
           {text ? (
             <TextExcerpt text={text.text} start={finding?.char_start ?? null} end={finding?.char_end ?? null} />
           ) : (
@@ -118,23 +121,23 @@ export function Evidence({ run, row, onChanged }: { run: Run; row: RunRow; onCha
         <div className="ev-side">
           {finding && (
             <div className="panel">
-              <div className="section-title">{finding.label}</div>
+              <div className="section-title">{t(finding.label)}</div>
               <Verdict finding={finding} />
               <Quote finding={finding} />
-              {finding.rationale && <p className="note">Model's reason: {finding.rationale}</p>}
-              <div className="section-title small">How the register decided</div>
+              {finding.rationale && <p className="note">{t("Model's reason: {reason}", { reason: finding.rationale })}</p>}
+              <div className="section-title small">{t("How the register decided")}</div>
               <Checks finding={finding} />
-              <p className="note">{STATUS_LABEL[finding.status]} is an observation about the text, not a legal assessment.</p>
+              <p className="note">{t("{status} is an observation about the text, not a legal assessment.", { status: t(STATUS_LABEL[finding.status]) })}</p>
             </div>
           )}
 
           {row.hits && (
             <div className="panel">
-              <div className="section-title">Former company name</div>
+              <div className="section-title">{t("Former company name")}</div>
               <ul className="hits">
                 {row.hits.map((h, i) => (
                   <li key={i}>
-                    <b>{h.name}</b> · page {h.page}
+                    <b>{h.name}</b> · {t("page {n}", { n: h.page })}
                     <div className="note">…{h.snippet}…</div>
                   </li>
                 ))}
@@ -144,8 +147,8 @@ export function Evidence({ run, row, onChanged }: { run: Run; row: RunRow; onCha
 
           {row.duplicate_of && (
             <div className="panel">
-              <div className="section-title">Duplicate</div>
-              <p className="note">Copy of {row.duplicate_of}. The original is checked; this copy is not counted twice.</p>
+              <div className="section-title">{t("Duplicate")}</div>
+              <p className="note">{t("Copy of {id}. The original is checked; this copy is not counted twice.", { id: row.duplicate_of })}</p>
             </div>
           )}
 

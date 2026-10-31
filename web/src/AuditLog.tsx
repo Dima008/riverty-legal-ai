@@ -10,6 +10,7 @@ import {
 } from "@fluentui/react-icons";
 import { useCallback, useEffect, useState, type ReactElement } from "react";
 import { api, type AuditEvent } from "./api";
+import { useT, type T } from "./i18n";
 
 const ICON: Record<string, ReactElement> = {
   run_created: <DataBarVertical20Regular />,
@@ -19,17 +20,21 @@ const ICON: Record<string, ReactElement> = {
   archive_refused: <LockClosed20Regular />,
 };
 
-function summary(e: AuditEvent): string {
+// IN_REVIEW -> "in review", translated: decisions, states and check names as readable words
+const word = (value: unknown, t: T) => t(String(value).toLowerCase().replace(/_/g, " "));
+
+function summary(e: AuditEvent, t: T): string {
   const d = e.details as Record<string, unknown>;
-  if (e.action === "review_recorded") return `${String(d.decision).toLowerCase()}${d.reason ? ` – “${d.reason}”` : ""} → ${String(d.state_after).toLowerCase().replace(/_/g, " ")}`;
-  if (e.action === "archive_refused") return `refused by the tool gate: finding is ${String(d.state).toLowerCase().replace(/_/g, " ")}`;
-  if (e.action === "archive_copy") return ((d.files as { file: string; status: string }[]) ?? []).map((f) => `${f.file} ${f.status.replace(/_/g, " ")}`).join(", ");
-  if (e.action === "run_created") return `${(d.plan as { check: string }).check.replace(/_/g, " ")} · ${d.reported} to look at`;
-  if (e.action === "batch_confirmed") return `routine rows ${(d.doc_ids as string[]).join(", ")}`;
+  if (e.action === "review_recorded") return `${word(d.decision, t)}${d.reason ? ` – “${d.reason}”` : ""} → ${word(d.state_after, t)}`;
+  if (e.action === "archive_refused") return t("refused by the tool gate: finding is {state}", { state: word(d.state, t) });
+  if (e.action === "archive_copy") return ((d.files as { file: string; status: string }[]) ?? []).map((f) => `${f.file} ${word(f.status, t)}`).join(", ");
+  if (e.action === "run_created") return `${word((d.plan as { check: string }).check, t)} · ${t("{n} to look at", { n: String(d.reported) })}`;
+  if (e.action === "batch_confirmed") return t("routine rows {ids}", { ids: (d.doc_ids as string[]).join(", ") });
   return "";
 }
 
 export function AuditLog() {
+  const t = useT();
   const [events, setEvents] = useState<AuditEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   // A failed request is shown as an error, never as "No actions yet." (F13: an empty audit log
@@ -45,27 +50,27 @@ export function AuditLog() {
     <section className="panel audit">
       <div className="panel-head">
         <div>
-          <div className="eyebrow">Traceability</div>
-          <h2>Audit log</h2>
-          <p className="lead">Every run, decision and archive attempt – kept apart from the register, so it survives every rebuild.</p>
+          <div className="eyebrow">{t("Traceability")}</div>
+          <h2>{t("Audit log")}</h2>
+          <p className="lead">{t("Every run, decision and archive attempt – kept apart from the register, so it survives every rebuild.")}</p>
         </div>
-        <Button icon={<ArrowSync16Regular />} onClick={reload}>Refresh</Button>
+        <Button icon={<ArrowSync16Regular />} onClick={reload}>{t("Refresh")}</Button>
       </div>
       {error && (
         <MessageBar intent="error">
-          <MessageBarBody>The audit log could not be loaded: {error}</MessageBarBody>
+          <MessageBarBody>{t("The audit log could not be loaded: {error}", { error })}</MessageBarBody>
         </MessageBar>
       )}
-      {!error && events?.length === 0 && <p className="lead">No actions yet.</p>}
+      {!error && events?.length === 0 && <p className="lead">{t("No actions yet.")}</p>}
       <ol className="audit-list">
         {(events ?? []).map((e, i) => (
           <li key={i} className={`audit-item a-${e.action}`}>
             <span className="audit-icon">{ICON[e.action] ?? <PersonCircle20Regular />}</span>
             <div className="audit-body">
               <div className="audit-line">
-                <b>{e.action.replace(/_/g, " ")}</b> <span className="audit-target">{e.target}</span>
+                <b>{word(e.action, t)}</b> <span className="audit-target">{e.target}</span>
               </div>
-              <div className="audit-detail">{summary(e)}</div>
+              <div className="audit-detail">{summary(e, t)}</div>
             </div>
             <div className="audit-who">
               <Avatar name={e.actor_name} size={24} color="colorful" />

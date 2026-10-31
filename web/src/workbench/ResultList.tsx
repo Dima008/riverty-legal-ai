@@ -3,6 +3,7 @@
 import { Button } from "@fluentui/react-components";
 import type { Run, RunRow } from "../api";
 import { ReviewBadge, StatusBadge, TriageBadge } from "../components/Badges";
+import { useT } from "../i18n";
 
 interface Props {
   run: Run;
@@ -13,23 +14,24 @@ interface Props {
 }
 
 export function ResultList({ run, selected, busy, onSelect, onConfirmRoutine }: Props) {
+  const t = useT();
   const routine = run.rows.filter((r) => r.triage === "CONFIRM" && !r.sample && r.review.state === "FOUND");
   const open = run.rows.filter((r) => !["CONFIRMED", "REJECTED", "CORRECTED"].includes(r.review.state)).length;
 
   return (
-    <section className="panel results" aria-label="Contracts to look at">
+    <section className="panel results" aria-label={t("Contracts to look at")}>
       <div className="results-head">
         <div>
-          <div className="eyebrow">Step 3 · Review</div>
-          <h3>{run.rows.length} contracts · {open} open</h3>
+          <div className="eyebrow">{t("Step 3 · Review")}</div>
+          <h3>{t("{n} contracts · {open} open", { n: run.rows.length, open })}</h3>
         </div>
         {routine.length > 0 && (
           <Button size="small" appearance="secondary" disabled={busy} onClick={() => onConfirmRoutine(routine)}>
-            Confirm {routine.length} routine
+            {t("Confirm {n} routine", { n: routine.length })}
           </Button>
         )}
       </div>
-      {run.rows.length === 0 && <p className="lead">No contract in scope has this issue.</p>}
+      {run.rows.length === 0 && <p className="lead">{t("No contract in scope has this issue.")}</p>}
       <ul className="result-list">
         {run.rows.map((r) => (
           <li key={r.doc_id}>
@@ -41,14 +43,14 @@ export function ResultList({ run, selected, busy, onSelect, onConfirmRoutine }: 
             >
               <div className="rc-top">
                 <span className="rc-id">{r.doc_id}</span>
-                <span className="rc-party">{r.counterparty_name ?? "unknown party"}</span>
-                {r.confidence != null && <span className="rc-conf" title="confidence from the checks">{r.confidence.toFixed(2)}</span>}
+                <span className="rc-party">{r.counterparty_name ?? t("unknown party")}</span>
+                {r.confidence != null && <span className="rc-conf" title={t("confidence from the checks")}>{r.confidence.toFixed(2)}</span>}
               </div>
               <div className="rc-badges">
                 <StatusBadge status={r.status} short />
                 <TriageBadge triage={r.triage} />
                 <ReviewBadge state={r.review.state} />
-                {r.sample && <span className="sample-chip" title="Random spot check: open the evidence before confirming">spot check</span>}
+                {r.sample && <span className="sample-chip" title={t("Random spot check: open the evidence before confirming")}>{t("spot check")}</span>}
               </div>
             </button>
           </li>

@@ -5,11 +5,13 @@ import { Checkmark16Regular, Dismiss16Regular, Edit16Regular, Flag16Regular } fr
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError, type Decision, type FindingReviewState } from "../api";
 import { ReviewBadge, TriageBadge } from "../components/Badges";
+import { useT } from "../i18n";
 import { USERS, useSwitchUser, useUser } from "../user";
 
 const FINAL = ["CONFIRMED", "REJECTED", "CORRECTED", "DISPUTED"];
 
 export function FindingReview({ docId, clause, onChanged }: { docId: string; clause: string; onChanged?: () => void }) {
+  const t = useT();
   const user = useUser();
   const switchUser = useSwitchUser();
   const otherUser = Object.keys(USERS).find((u) => u !== user) ?? user;
@@ -59,64 +61,63 @@ export function FindingReview({ docId, clause, onChanged }: { docId: string; cla
 
   return (
     <div className="finding-review">
-      <div className="section-title small">Review in the register</div>
+      <div className="section-title small">{t("Review in the register")}</div>
       <div className="actions">
         <ReviewBadge state={review.state} />
         <TriageBadge triage={review.escalated ? "FOUR_EYES" : review.triage} />
-        <Caption1>{review.required === 2 ? `${review.done} of 2 approvals` : `${review.done} of 1 decision`}</Caption1>
+        <Caption1>{review.required === 2 ? t("{done} of 2 approvals", { done: review.done }) : t("{done} of 1 decision", { done: review.done })}</Caption1>
       </div>
       {review.reviews.length > 0 && (
         <ul className="fr-list">
           {review.reviews.map((r) => (
             <li key={r.reviewer + r.ts + r.decision}>
-              <Text weight="semibold">{r.reviewer_name}</Text>: {r.decision.toLowerCase()}
-              {r.corrected_status && ` → ${r.corrected_status.toLowerCase()}`}
+              <Text weight="semibold">{r.reviewer_name}</Text>: {t(r.decision.toLowerCase())}
+              {r.corrected_status && ` → ${t(r.corrected_status.toLowerCase())}`}
               {r.reason && <span className="muted"> – “{r.reason}”</span>}
-              <span className="fr-source">{r.source === "register" ? "in the register" : `in run ${r.source}`}</span>
+              <span className="fr-source">{r.source === "register" ? t("in the register") : t("in run {id}", { id: String(r.source) })}</span>
             </li>
           ))}
         </ul>
       )}
       {review.earlier_reviews > 0 && (
         <p className="note">
-          {review.earlier_reviews} review(s) of an earlier version of this finding no longer apply: the text, the extraction
-          or the status has changed since.
+          {t("{n} review(s) of an earlier version of this finding no longer apply: the text, the extraction or the status has changed since.", { n: review.earlier_reviews })}
         </p>
       )}
       {!decided && voted && (
         <MessageBar intent="info">
           <MessageBarBody>
-            You ({USERS[user]}) already decided. The second approval must come from a different person.{" "}
+            {t("You ({user}) already decided. The second approval must come from a different person.", { user: USERS[user] })}{" "}
             <Button size="small" appearance="transparent" onClick={() => switchUser(otherUser)}>
-              Continue as {USERS[otherUser]}
+              {t("Continue as {user}", { user: USERS[otherUser] })}
             </Button>
           </MessageBarBody>
         </MessageBar>
       )}
       {!decided && !voted && (
         <>
-          <Field label={routine ? "Reason (optional for a routine finding)" : "Reason (required)"}>
-            <Textarea value={reason} onChange={(_, d) => setReason(d.value)} placeholder="What did you check in the evidence?" resize="vertical" />
+          <Field label={routine ? t("Reason (optional for a routine finding)") : t("Reason (required)")}>
+            <Textarea value={reason} onChange={(_, d) => setReason(d.value)} placeholder={t("What did you check in the evidence?")} resize="vertical" />
           </Field>
-          <Field label="If you correct it, the clause is actually …">
+          <Field label={t("If you correct it, the clause is actually …")}>
             <RadioGroup layout="horizontal" value={corrected} onChange={(_, d) => setCorrected(d.value)}>
-              <Radio value="PRESENT" label="present" />
-              <Radio value="ABSENT" label="missing" />
+              <Radio value="PRESENT" label={t("present")} />
+              <Radio value="ABSENT" label={t("missing")} />
             </RadioGroup>
           </Field>
           <div className="actions">
             <Button appearance="primary" icon={<Checkmark16Regular />} disabled={busy || (!routine && !reason.trim())} onClick={() => decide("CONFIRMED")}>
-              Confirm finding
+              {t("Confirm finding")}
             </Button>
             <Button icon={<Dismiss16Regular />} disabled={busy || !reason.trim()} onClick={() => decide("REJECTED")}>
-              Reject
+              {t("Reject")}
             </Button>
             <Button icon={<Edit16Regular />} disabled={busy || !reason.trim()} onClick={() => decide("CORRECTED")}>
-              Correct
+              {t("Correct")}
             </Button>
             {!review.escalated && (
               <Button icon={<Flag16Regular />} disabled={busy || !reason.trim()} onClick={() => decide("ESCALATED")}>
-                Escalate
+                {t("Escalate")}
               </Button>
             )}
           </div>

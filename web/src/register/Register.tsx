@@ -9,9 +9,11 @@ import {
 } from "@fluentui/react-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, type Matrix, type MatrixCell, type MatrixRow, type ReviewStateName } from "../api";
-import { DOC_TYPE_LABEL, REVIEW_LABEL, STATUS_LABEL, warningLabels } from "../labels";
+import { useT, type T } from "../i18n";
+import { DOC_TYPE_LABEL, REVIEW_LABEL, STATUS_LABEL, STATUS_SHORT, warningLabels } from "../labels";
 import { ContractFile } from "./ContractFile";
 
+// the filter labels and short type names are English; they are translated where they are shown
 const TYPES = [
   { key: "", label: "All documents" },
   { key: "merchant_agreement", label: "Merchant agreements" },
@@ -28,10 +30,10 @@ const SHORT_TYPE: Record<string, string> = {
   unknown: "Unknown",
 };
 
-function source(r: MatrixRow): string {
+function source(r: MatrixRow, t: T): string {
   if (r.format === "pdf_text") return "PDF";
-  if (r.format === "txt") return "Text";
-  const kind = r.format === "jpeg" ? "Photo scan" : "Scan";
+  if (r.format === "txt") return t("Text");
+  const kind = t(r.format === "jpeg" ? "Photo scan" : "Scan");
   return r.ocr_mean_conf != null ? `${kind} · OCR ${Math.round(r.ocr_mean_conf)} %` : kind;
 }
 
@@ -41,15 +43,16 @@ const REVIEW_MARK: Partial<Record<ReviewStateName, string>> = {
 };
 
 function Cell({ cell, label, review, onOpen }: { cell?: MatrixCell; label: string; review?: ReviewStateName; onOpen: () => void }) {
+  const t = useT();
   if (!cell) return <td className="mx-cell none">·</td>;
   const icon =
     cell.status === "PRESENT" ? <CheckmarkCircle16Filled /> : cell.status === "ABSENT" ? <DismissCircle16Filled /> : <QuestionCircle16Filled />;
   const changed = cell.model_status !== cell.status;
   const text =
-    `${label}: ${STATUS_LABEL[cell.status]}` +
-    (cell.required ? " – required for this type" : " – not required for this type") +
-    (changed ? `. The model said “${STATUS_LABEL[cell.model_status]}”, the checks changed it.` : "") +
-    (review ? `. Review: ${REVIEW_LABEL[review] ?? review}.` : "");
+    `${label}: ${t(STATUS_LABEL[cell.status])}` +
+    t(cell.required ? " – required for this type" : " – not required for this type") +
+    (changed ? t(". The model said “{status}”, the checks changed it.", { status: t(STATUS_LABEL[cell.model_status]) }) : "") +
+    (review ? t(". Review: {state}.", { state: t(REVIEW_LABEL[review] ?? review) }) : "");
   return (
     <td className={`mx-cell s-${cell.status.toLowerCase()} ${cell.required ? "req" : "opt"}`}>
       <button type="button" onClick={onOpen} aria-label={text} title={text}>
@@ -62,6 +65,7 @@ function Cell({ cell, label, review, onOpen }: { cell?: MatrixCell; label: strin
 }
 
 export function Register() {
+  const t = useT();
   const [matrix, setMatrix] = useState<Matrix | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [type, setType] = useState("merchant_agreement");
@@ -76,7 +80,7 @@ export function Register() {
   useEffect(loadReviews, [loadReviews]);
 
   useEffect(() => {
-    api.matrix().then(setMatrix).catch((e) => setError(`API not reachable (${e})`));
+    api.matrix().then(setMatrix).catch((e) => setError(t("API not reachable ({error})", { error: String(e) })));
   }, []);
 
   const counts = useMemo(() => {
@@ -86,7 +90,9 @@ export function Register() {
   }, [matrix]);
 
   if (error) return <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>;
-  if (!matrix) return <Spinner label="Loading the register…" />;
+  if (!matrix) return <Spinner label={t("Loading the register…")} />;
+  // the legend uses the words of the short status badges, in lower case: "found", "missing", "unclear"
+  const short = (status: string) => t(STATUS_SHORT[status]).toLowerCase();
 
   const clauseKeys = Object.keys(matrix.clauses);
   const q = query.trim().toLowerCase();
@@ -104,21 +110,20 @@ export function Register() {
       <section className="panel">
         <div className="panel-head">
           <div>
-            <div className="eyebrow">Contract register</div>
-            <h2>{matrix.rows.length} documents, each compared with Legal's playbook</h2>
+            <div className="eyebrow">{t("Contract register")}</div>
+            <h2>{t("{n} documents, each compared with Legal's playbook", { n: matrix.rows.length })}</h2>
             <p className="lead">
-              Every contract was read once, completely. Each column is a clause from the playbook – the standard we compare
-              against. Click a cell or a contract to open its file with the evidence.
+              {t("Every contract was read once, completely. Each column is a clause from the playbook – the standard we compare against. Click a cell or a contract to open its file with the evidence.")}
             </p>
           </div>
         </div>
 
         <div className="playbook">
           <div className="playbook-head">
-            <span className="plan-label">Playbook</span>
-            <span className="note">Legal's definitions as data (pipeline/catalogue.py) – changing one is a new prompt version.</span>
+            <span className="plan-label">{t("Playbook")}</span>
+            <span className="note">{t("Legal's definitions as data (pipeline/catalogue.py) – changing one is a new prompt version.")}</span>
             <button type="button" className="link-btn" onClick={() => setShowDefinitions((s) => !s)}>
-              {showDefinitions ? "Hide definitions" : "Show definitions"}
+              {showDefinitions ? t("Hide definitions") : t("Show definitions")}
             </button>
           </div>
           <div className={`playbook-grid${showDefinitions ? " open" : ""}`}>
@@ -126,8 +131,8 @@ export function Register() {
               const c = matrix.clauses[k];
               return (
                 <div key={k} className="pb-card">
-                  <div className="pb-label">{c.label}</div>
-                  <div className="pb-req">required for {c.required_for.map((t) => DOC_TYPE_LABEL[t] ?? t).join(", ")}</div>
+                  <div className="pb-label">{t(c.label)}</div>
+                  <div className="pb-req">{t("required for {types}", { types: c.required_for.map((type) => t(DOC_TYPE_LABEL[type] ?? type)).join(", ") })}</div>
                   <div className="pb-def">{c.definition}</div>
                 </div>
               );
@@ -138,25 +143,25 @@ export function Register() {
 
       <section className="panel">
         <div className="mx-toolbar">
-          <div className="type-filter" role="group" aria-label="Document type">
-            {TYPES.map((t) => (
-              <ToggleButton key={t.key} size="small" checked={type === t.key} appearance={type === t.key ? "primary" : "subtle"} onClick={() => setType(t.key)}>
-                {t.label} <span className="count">{counts[t.key] ?? 0}</span>
+          <div className="type-filter" role="group" aria-label={t("Document type")}>
+            {TYPES.map((f) => (
+              <ToggleButton key={f.key} size="small" checked={type === f.key} appearance={type === f.key ? "primary" : "subtle"} onClick={() => setType(f.key)}>
+                {t(f.label)} <span className="count">{counts[f.key] ?? 0}</span>
               </ToggleButton>
             ))}
           </div>
           <div className="spacer" />
-          <Switch checked={onlyGaps} onChange={(_, d) => setOnlyGaps(d.checked)} label="Only with gaps or former names" />
-          <SearchBox placeholder="Search ID or party" value={query} onChange={(_, d) => setQuery(d.value)} />
+          <Switch checked={onlyGaps} onChange={(_, d) => setOnlyGaps(d.checked)} label={t("Only with gaps or former names")} />
+          <SearchBox placeholder={t("Search ID or party")} value={query} onChange={(_, d) => setQuery(d.value)} />
         </div>
 
         <div className="mx-summary">
-          <span><b>{rows.length}</b> shown</span>
-          <span className="s-absent"><b>{withGaps}</b> with a required clause missing or unclear</span>
-          <span className="s-unclear"><b>{openNames}</b> still naming a former company</span>
+          <span><b>{rows.length}</b> {t("shown")}</span>
+          <span className="s-absent"><b>{withGaps}</b> {t("with a required clause missing or unclear")}</span>
+          <span className="s-unclear"><b>{openNames}</b> {t("still naming a former company")}</span>
           <span className="legend-inline">
-            <CheckmarkCircle16Filled className="c-ok" /> found <DismissCircle16Filled className="c-bad" /> missing{" "}
-            <QuestionCircle16Filled className="c-warn" /> unclear · faded = not required for this type · dot = checks overruled the model
+            <CheckmarkCircle16Filled className="c-ok" /> {short("PRESENT")} <DismissCircle16Filled className="c-bad" /> {short("ABSENT")}{" "}
+            <QuestionCircle16Filled className="c-warn" /> {short("UNCLEAR")} · {t("faded = not required for this type")} · {t("dot = checks overruled the model")}
           </span>
         </div>
 
@@ -164,52 +169,52 @@ export function Register() {
           <table className="matrix">
             <thead>
               <tr>
-                <th className="mx-doc">Contract</th>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Law</th>
-                <th>Source</th>
+                <th className="mx-doc">{t("Contract")}</th>
+                <th>{t("Type")}</th>
+                <th>{t("Date")}</th>
+                <th>{t("Law")}</th>
+                <th>{t("Source")}</th>
                 {clauseKeys.map((k) => (
-                  <th key={k} className="mx-clause" title={matrix.clauses[k].definition}>{matrix.clauses[k].label}</th>
+                  <th key={k} className="mx-clause" title={matrix.clauses[k].definition}>{t(matrix.clauses[k].label)}</th>
                 ))}
-                <th className="mx-clause">Company name</th>
+                <th className="mx-clause">{t("Company name")}</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => {
-                const warnings = warningLabels(r.flags);
+                const warnings = warningLabels(r.flags, t);
                 return (
                   <tr key={r.doc_id} className={r.duplicate_of ? "dup" : undefined}>
                     <td className="mx-doc">
                       <button type="button" className="mx-open" onClick={() => setOpen({ docId: r.doc_id, clause: r.gaps[0] ?? null })}>
                         <span className="mx-id">{r.doc_id}</span>
-                        <span className="mx-party">{r.counterparty_name ?? "unknown party"}</span>
+                        <span className="mx-party">{r.counterparty_name ?? t("unknown party")}</span>
                       </button>
                       {(r.duplicate_of || r.is_amendment || warnings.length > 0) && (
                         <div className="mx-notes">
-                          {r.duplicate_of && <span>copy of {r.duplicate_of}</span>}
-                          {r.is_amendment && <span>{r.family_id !== r.doc_id ? `amendment of ${r.family_id}` : "amendment, base not in register"}</span>}
+                          {r.duplicate_of && <span>{t("copy of {id}", { id: r.duplicate_of })}</span>}
+                          {r.is_amendment && <span>{r.family_id !== r.doc_id ? t("amendment of {id}", { id: r.family_id }) : t("amendment, base not in register")}</span>}
                           {warnings.map((w) => (
                             <span key={w} className="warn"><Warning16Filled /> {w}</span>
                           ))}
                         </div>
                       )}
                     </td>
-                    <td>{SHORT_TYPE[r.doc_type ?? "unknown"]}</td>
+                    <td>{t(SHORT_TYPE[r.doc_type ?? "unknown"])}</td>
                     <td className="num">{r.effective_date ?? "–"}</td>
                     <td>{r.governing_law ?? "–"}</td>
-                    <td className="src">{source(r)}</td>
+                    <td className="src">{source(r, t)}</td>
                     {clauseKeys.map((k) => (
-                      <Cell key={k} cell={r.cells[k]} label={matrix.clauses[k].label} review={reviews[r.doc_id]?.[k]}
+                      <Cell key={k} cell={r.cells[k]} label={t(matrix.clauses[k].label)} review={reviews[r.doc_id]?.[k]}
                             onOpen={() => setOpen({ docId: r.doc_id, clause: k })} />
                     ))}
                     <td className="mx-name">
                       {r.former_names.open > 0 ? (
-                        <span className="name-open">{r.former_names.open} former</span>
+                        <span className="name-open">{t("{n} former", { n: r.former_names.open })}</span>
                       ) : r.former_names.resolved > 0 ? (
-                        <span className="name-resolved">resolved</span>
+                        <span className="name-resolved">{t("resolved")}</span>
                       ) : (
-                        <span className="name-ok">current</span>
+                        <span className="name-ok">{t("current")}</span>
                       )}
                     </td>
                   </tr>

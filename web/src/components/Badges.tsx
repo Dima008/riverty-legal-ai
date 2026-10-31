@@ -16,6 +16,7 @@ import {
   Warning16Filled,
 } from "@fluentui/react-icons";
 import type { ReactElement } from "react";
+import { useT } from "../i18n";
 import { REVIEW_LABEL, STATUS_LABEL, STATUS_SHORT, TRIAGE_LABEL } from "../labels";
 
 type Look = { color: BadgeProps["color"]; icon: ReactElement };
@@ -46,10 +47,12 @@ const REVIEW: Record<string, Look> = {
   ESCALATED: { color: "warning", icon: <Flag16Regular /> },
 };
 
+// the label is English (labels.ts); it is translated here, where it is shown
 function Tag({ look, text }: { look?: Look; text: string }) {
+  const t = useT();
   return (
     <Badge appearance="tint" color={look?.color ?? "subtle"} icon={look?.icon} size="medium">
-      {text}
+      {t(text)}
     </Badge>
   );
 }
