@@ -22,3 +22,7 @@ var/
 # OS
 .DS_Store
 Thumbs.db
+
+# Editor and build leftovers
+.vscode/
+*.tsbuildinfo
