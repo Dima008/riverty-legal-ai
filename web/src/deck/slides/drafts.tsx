@@ -7,10 +7,10 @@ function Planned({ visual }: { visual: string }) {
 }
 
 const draft = (id: string, act: number, title: string, seconds: number, visual: string, notes: string): Slide => ({
-  id, act, kind: "content", title, steps: 0, seconds, notes, draft: true, Body: () => <Planned visual={visual} />,
+  id, act, kind: "content", title, steps: 0, seconds, notes: [notes], draft: true, Body: () => <Planned visual={visual} />,
 });
 const opener = (id: string, act: number, title: string, notes: string): Slide => ({
-  id, act, kind: "opener", title, steps: 0, seconds: 4, notes,
+  id, act, kind: "opener", title, steps: 0, seconds: 4, notes: [notes],
 });
 
 export const LATER: Slide[] = [

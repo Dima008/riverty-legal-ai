@@ -11,7 +11,8 @@ export interface Slide {
   title: string;            // the headline - one sentence the audience can read in two seconds
   steps: number;            // how many builds → reveals after the first view (0 = none)
   seconds: number;          // planned speaking time
-  notes: string;            // what to say - only in the presenter view, never on the screen
+  notes: string[];          // what to say, one entry per build (B2 English) - only in the presenter view
+  words?: { word: string; say: string }[];   // pronunciation help for hard words on this card
   draft?: boolean;          // planned in the new structure, not rebuilt yet
   Body?: ComponentType;     // the visual; reads the revealed step with useStep()
 }

@@ -272,18 +272,30 @@
 .thumb-title { display: block; font-size: 12.5px; margin-top: 8px; line-height: 1.35; }
 
 /* ------------------------------------------------------------------ presenter view */
-.presenter { min-height: 100vh; display: grid; grid-template-rows: auto auto 1fr; gap: 14px; padding: 16px 20px; background: #050c0b; }
+/* made for reading aloud: the notes are the largest thing on the screen */
+.presenter { height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; padding: 14px 20px 18px; background: #050c0b; overflow: hidden; }
 .pv-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 20px; font-size: 14px; color: var(--ink-2); }
 .pv-clock { font-size: 32px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 .pv-plan.late { color: var(--amber); }
+.pv-size { margin-left: auto; display: inline-flex; gap: 4px; }
 .pv-head button, .pv-buttons button { border-radius: 999px; padding: 7px 14px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
-.pv-head button { margin-left: auto; }
-.pv-main { display: grid; grid-template-columns: 1.65fr 1fr; gap: 18px; align-items: start; }
-.pv-side { display: flex; flex-direction: column; gap: 8px; }
-.pv-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-3); }
-.pv-next { opacity: 0.85; }
+.pv-head button:hover, .pv-buttons button:hover { background: rgba(255, 255, 255, 0.1); }
+.pv-body { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: 20px; min-height: 0; }
+.pv-notes {
+  overflow: auto; min-height: 0; padding: 18px 26px 40vh; border: 1px solid var(--line); border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03); line-height: 1.5; color: #7f9690; scrollbar-width: thin;
+}
+.pv-card-title { font-size: 0.62em; color: var(--mint); font-weight: 650; letter-spacing: 0.02em; margin-bottom: 0.6em; }
+.pv-notes p { margin: 0 0 0.75em; padding: 0.35em 0.5em 0.35em 2.6em; border-radius: 10px; position: relative; transition: color 0.3s, background 0.3s; }
+.pv-mark { position: absolute; left: 0.6em; top: 0.55em; font-size: 0.55em; color: var(--ink-3); font-weight: 700; }
+.pv-notes p.done { color: #4f665f; }
+.pv-notes p.now { color: var(--ink); background: rgba(68, 226, 176, 0.08); }
+.pv-notes p.now .pv-mark { color: var(--mint); }
+.pv-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: auto; }
+.pv-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-3); margin-top: 4px; }
+.pv-next { opacity: 0.8; }
 .pv-end { color: var(--ink-3); padding: 20px 0; }
+.pv-words { display: flex; flex-direction: column; gap: 4px; font-size: 16px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.03); }
+.pv-words b { color: var(--ink); font-weight: 600; }
+.pv-words span { color: var(--amber); }
 .pv-buttons { display: flex; gap: 8px; margin-top: 6px; }
-.pv-notes { font-size: 21px; line-height: 1.55; color: #7f9690; padding: 16px 20px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.03); overflow: auto; }
-.pv-notes .done { color: #58706a; }
-.pv-notes .now { color: var(--ink); }

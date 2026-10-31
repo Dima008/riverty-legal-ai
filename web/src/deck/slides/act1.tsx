@@ -103,26 +103,51 @@ function Insight() {
 export const ACT1: Slide[] = [
   {
     id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 15, Body: TitleBody,
-    notes: "Hello, I'm Dima. In the next eighteen minutes I'll show how I would help Riverty's legal team answer one kind of question reliably – and a working prototype that does it.",
+    notes: [
+      "Hello, I'm Dima. In the next eighteen minutes, I show how I'd help Riverty's legal team. The goal: answer one kind of question reliably. And a working prototype does it.",
+    ],
+    words: [{ word: "reliably", say: "rih-LIE-uh-blee" }, { word: "prototype", say: "PROH-tuh-type" }],
   },
   {
     id: "act-1", act: 1, kind: "opener", title: "The task", steps: 0, seconds: 4,
-    notes: "First: what Legal actually asks.",
+    notes: [
+      "First: what Legal actually asks.",
+    ],
+    words: [],
   },
   {
     id: "two-questions", act: 1, kind: "content", title: "Legal asks two kinds of questions.", steps: 2, seconds: 30, Body: TwoQuestions,
-    notes: "The task names two: contracts that do not contain a certain text passage, and contracts in which a company name needs to be updated. → One: which contracts lack a clause – for example a limitation of liability. → Two: which contracts still name a former company – Arvato Financial Solutions instead of Riverty. Both ask about every contract, not about one.",
+    notes: [
+      "The task names two kinds of questions. Contracts without a certain text passage. And contracts with a company name to update.",
+      "One: which contracts lack a clause? For example, a limitation of liability.",
+      "Two: which contracts still name a former company? For example, Arvato Financial Solutions instead of Riverty. Both questions ask about every contract, not just one.",
+    ],
+    words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "passage", say: "PASS-ij" }, { word: "Financial", say: "fy-NAN-shul" }],
   },
   {
     id: "today", act: 1, kind: "content", title: "Today: open every contract, search, note it down.", steps: 2, seconds: 25, Body: Today,
-    notes: "Riverty has over 100 vendor and over 1,000 merchant agreements. → If one contract takes five minutes to open, search and note – that is my assumption, to be measured with Legal in the pilot – → one question costs about ninety hours. And the next question costs the same again. The task calls it repetitive work nobody enjoys.",
+    notes: [
+      "Riverty has over 1,100 contracts. Over 100 vendors, over 1,000 merchants.",
+      "I assume five minutes per contract: open, search, note. We measure it with Legal in the pilot.",
+      "That's about ninety hours for one question. And again for the next one. The task calls it repetitive work nobody enjoys.",
+    ],
+    words: [{ word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }, { word: "repetitive", say: "rih-PET-ih-tiv" }],
   },
   {
     id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 40, Body: Hard,
-    notes: "Why not just search for a word? → Scans: some contracts are only images, like M18 here – the text has to be read by OCR first. → Amendments: M05 from 2020 still says Arvato Financial Solutions; the 2022 amendment says read it as Riverty. So the answer depends on the family, not on one file. → Wording: these three sentences all cap liability. The second one never uses the word liability, the third is German. A keyword search misses them – keep the second one in mind, we will meet it again.",
+    notes: [
+      "Why not search for a word?",
+      "First, scans. Some contracts are only images, like M18 here. Text recognition, called OCR, must read them first.",
+      "Second, amendments. M05 from 2020 still says Arvato Financial Solutions. The 2022 amendment says: read as Riverty GmbH. The answer depends on the family: the contract and every amendment.",
+      "Third, wording. All three sentences limit liability. The second never says liability. The third is German. A keyword search misses them. Remember the second one for later.",
+    ],
+    words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "amendment", say: "uh-MEND-ment" }, { word: "recognition", say: "rek-ug-NISH-un" }],
   },
   {
     id: "insight", act: 1, kind: "statement", title: "To prove that something is missing, you have to read everything.", steps: 0, seconds: 15, Body: Insight,
-    notes: "This is the sentence the whole solution is built on. Finding something is easy – you stop at the first hit. Proving that something is NOT there means you have looked at every contract and every page. Keep that in mind for the next part.",
+    notes: [
+      "My solution builds on this sentence. Finding is easy: you stop at the first hit. To prove it's NOT there, you read every contract, every page. Keep that in mind.",
+    ],
+    words: [{ word: "prove", say: "PROOV" }, { word: "every", say: "EV-ree" }],
   },
 ];

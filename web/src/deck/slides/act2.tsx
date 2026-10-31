@@ -137,26 +137,58 @@ function Needs() {
 export const ACT2: Slide[] = [
   {
     id: "act-2", act: 2, kind: "opener", title: "Why the usual AI approach fails", steps: 0, seconds: 4,
-    notes: "So how would one usually solve this with AI?",
+    notes: [
+      "How do we usually solve this with AI?",
+    ],
+    words: [{ word: "usually", say: "YOO-zhoo-uh-lee" }],
   },
   {
     id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 3, seconds: 45, Body: Rag,
-    notes: "Most document assistants work like this. You ask a question. → A search compares the question with every passage and returns the most similar ones – the top k, here five. The search can work with keywords or with embeddings, number vectors for meaning; the principle is the same. → The model reads only those five passages and writes the answer. → This is called RAG, retrieval-augmented generation. The important part: the model only sees what the search returns.",
+    notes: [
+      "Most document assistants work like this. You ask a question. For example, about liability in the Nordlicht contract.",
+      "A search compares your question with every passage. It returns the most similar ones: the top k. Here k is five. The search can use keywords or embeddings. Embeddings are number vectors for meaning. The principle is the same.",
+      "The model reads only these five passages. Then it writes the answer.",
+      "This is called RAG: retrieval-augmented generation. The important part: the model only sees what the search returns.",
+    ],
+    words: [{ word: "retrieval", say: "rih-TREE-vul" }, { word: "augmented", say: "awg-MEN-tid" }, { word: "liability", say: "lie-uh-BIL-ih-tee" }],
   },
   {
     id: "rag-works", act: 2, kind: "content", title: "That works when the answer is in the text.", steps: 2, seconds: 20, Body: RagWorks,
-    notes: "Ask what one contract says about liability. → The search finds clause 7.2 of M01, because it is very similar to the question. → The model answers from it, with the passage as source. For questions like this, RAG is a good tool – and we use it too, later, for open questions.",
+    notes: [
+      "We ask about liability in M01.",
+      "The search finds clause 7.2, very similar to the question.",
+      "The answer cites the passage: liability is capped at 12 months of fees. RAG works here. We use it too, later, for open questions.",
+    ],
+    words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "clause", say: "KLAWZ" }, { word: "similar", say: "SIM-ih-ler" }],
   },
   {
     id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 3, seconds: 55, Body: RagFails,
-    notes: "Now Legal's question: which contracts lack a limitation of liability? These are the 19 merchant agreements of our test set. → I searched for 'limitation of liability' and took the 10 best passages: they come from 8 contracts. → The only conclusion a search allows: the other 11 'lack' it. → Here is the truth. 7 of the 11 are false alarms: they do cap liability, in other words – remember M02, 'neither side will have to pay more'. And M14 is missed: it lacks the clause, but it mentions liability in a hidden note, so the search ranks it high. A larger k does not help: at k = 20 or 40 it is the same result, because 11 contracts never match at all. Top-k ranks what is there; it cannot prove what is not there. Reading every contract completely finds all 5, without a false alarm. Measured in eval/negative_search.py.",
+    notes: [
+      "Legal asks: which merchant agreements lack a limitation of liability? Our test set has 19 of them.",
+      "I search for 'limitation of liability'. The 10 best passages come from 8 contracts.",
+      "For the search, the other 11 'lack' it.",
+      "7 of the 11 are false alarms. They cap liability with different words. Like M02: 'neither side will have to pay more'. M14 is missed. It lacks the clause, but a hidden note mentions liability. So it ranks high. A larger k, 20 or 40, does not help. 11 contracts never match at all. Top-k ranks what is there. It cannot prove absence. Complete reading finds all 5, no false alarm.",
+    ],
+    words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "merchant", say: "MUR-chunt" }, { word: "absence", say: "AB-sunss" }],
   },
   {
     id: "agent", act: 2, kind: "content", title: "And an AI agent that reads everything itself?", steps: 3, seconds: 50, Body: Agent,
-    notes: "The other idea: an agent. An agent is a model that plans a step, calls a tool – open a file, search, take a note – looks at the result and repeats. → The weak point: it decides itself when it is done. Nobody checks that it really opened every file. → That is measured: in OverclaimBench, a 2026 study, agents asked to review every file skipped files in 68 percent of runs – and in four of five of those runs the final report claimed a complete review or did not mention the gap. → Riverty's own case study says the same: agents fail on the size of the environment. Over a thousand contracts is exactly such an environment.",
+    notes: [
+      "Second idea: an agent. It is a model that plans a step and calls a tool. Tools open files, search or take notes. It sees the result and repeats.",
+      "The weak point: it decides when it is done. Nobody checks that it opened every file.",
+      "In OverclaimBench, a 2026 study, agents had to review every file. In 68 percent of runs, they skipped files. Four of five of those reports claimed a complete review. Or they did not mention the gap.",
+      "Riverty's case study agrees: agents fail on the size of the environment. Over a thousand contracts is exactly that.",
+    ],
+    words: [{ word: "agent", say: "AY-junt" }, { word: "OverclaimBench", say: "OH-ver-klaym-bench" }, { word: "environment", say: "en-VY-run-ment" }],
   },
   {
     id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 25, Body: Needs,
-    notes: "From this, three requirements. → Every contract is read, and we can prove it – not just claim it. → Every finding points to the passage on the page, so a lawyer can check it in seconds. → And a lawyer decides – the system makes observations, not legal judgments. Next: how the solution delivers these three.",
+    notes: [
+      "So we need three guarantees.",
+      "One: every contract is read. We prove it, not just claim it.",
+      "Two: every finding shows the passage on the page. A lawyer can check it in seconds.",
+      "Three: a lawyer decides. The system makes observations, not legal judgments. Next: how we deliver them.",
+    ],
+    words: [{ word: "guarantees", say: "gair-un-TEEZ" }, { word: "judgments", say: "JUJ-ments" }, { word: "lawyer", say: "LOY-er" }],
   },
 ];

@@ -11,8 +11,10 @@ Deliverables: 15–20 min presentation (as a website, English) plus a working im
 
 The person you work with is Dima, the candidate. He must be able to explain every line in
 the interview. Work as a mentor: explain what you do and why, keep steps small, and end a
-larger step with one short check question. **Talk to Dima in German; code, comments, docs
-and the presentation are in English.**
+larger step with one short check question, and add it with a short answer in simple English to
+`docs/check-questions.md` (interview practice). **Talk to Dima in German; code, comments, docs
+and the presentation are in English.** He presents in English at B2 level, reading the speaker
+notes in the presenter view: write them in short, simple spoken sentences.
 
 ## Context – read first
 
@@ -56,7 +58,7 @@ ask Dima to run `claude mcp add --transport http notion https://mcp.notion.com/m
 | `pipeline/catalogue.py` | Legal's playbook as data: clause definitions, required per doc type, keywords. Changing it = bump `PROMPT_VERSION` in `config.py` |
 | `eval/check_register.py` | Gold questions Q1–Q8, metadata, CUAD agreement; results in `eval/results/` |
 | `data/` | Synthetic gold set (every page watermarked "SYNTHETIC TEST DOCUMENT"), CUAD subset (CC BY 4.0), `ground_truth.csv`, `gold_queries.json` |
-| `docs/` | `pipeline.md`, `failure-cases.md`, **`explorer.md` (frontend explanations per step)**, `setup-windows.md`, `context/` (task, briefing, decisions); ADRs later in `docs/adr/` |
+| `docs/` | `pipeline.md`, `failure-cases.md`, **`explorer.md` (frontend explanations per step)**, `check-questions.md` (check questions with answers, interview practice), `setup-windows.md`, `context/` (task, briefing, decisions); ADRs later in `docs/adr/` |
 | `pipeline/evidence.py` | Maps a verified quote back onto the page's word boxes (highlight, also across page breaks) |
 | `pipeline/portfolio.py` | Portfolio checks: fixed check types, coverage (never drop a contract silently), triage |
 | `api/` | FastAPI: `register.py` read-only register + explorer; `workflow.py` runs, audit; `review.py` reviews + archive; `findings.py` review and escalation directly in the register, reused by runs (decision 73); `storage_mock.py` write-only storage stand-in; `workbench.py` workflow DB |

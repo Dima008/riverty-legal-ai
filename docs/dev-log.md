@@ -7,6 +7,29 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Speaker notes Dima can read aloud: B2 English, one paragraph per build
+
+- **Problem:** Dima presents in English at B2 level and reads from the presenter view. The notes
+  had long sentences and rare words, ran as one block per card, and marked builds only with "→".
+  The check questions of the sessions were lost in the chat – most were never answered.
+- **Cause:** The notes were written as a script for a native speaker; the presenter view was built
+  for glancing, not for reading.
+- **Technique and why:** A workflow rewrote the notes of acts 1–2 (one writer per act, an
+  independent checker per act for facts, builds, sentence length, timing and pronunciation). Notes
+  are now a list, one entry per build, plus up to three pronunciation hints per card. The
+  presenter view puts the notes first: large type (A− / A+, + / −, remembered), the paragraph of the
+  current build bright and scrolled into view, then the card on screen, the hints and the next
+  card. The check questions and their answers are collected in `docs/check-questions.md`, and
+  CLAUDE.md now says to add every new one there.
+- **Rejected alternative:** A teleprompter that scrolls by time (Dima's pace varies); notes
+  written in German (the talk is English, he reads what he says).
+- **Metric before → after:** Longest sentence in the notes of acts 1–2: 43 words → 13; every card
+  within its time at 2 words per second; 15 check questions answered in one file (0 before).
+  Walkthrough 8/8, no console errors.
+- **Links:** `web/src/deck/Presenter.tsx`, `web/src/deck/slides/act1.tsx`, `act2.tsx`, `docs/check-questions.md`
+
+---
+
 ## 2026-10-31 · The talk rebuilt as a Gamma-style page of cards (acts 1 and 2)
 
 - **Problem:** Dima: too much to read, not intuitive, not modern, not building up – "we talk about
