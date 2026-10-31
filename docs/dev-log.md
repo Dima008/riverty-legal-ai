@@ -7,6 +7,33 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Card "test-set": the trap map, and CUAD by its full name
+
+- **Problem:** Dima noticed that CUAD was never spelled out in the talk, and the planned card
+  "test-set" (a draft) only said "47 documents, each trap marked". The designed traps - the
+  strongest evidence that the test set was built to break the system - had no visual.
+- **Cause:** Act 4 was still a draft; the test-set text in act 1, `approach.md` and
+  `explorer.md` used "CUAD" as a bare acronym and "lawyers" where the README says "experts".
+- **Technique and why:** Four design concepts (trap map, rogues' gallery, trap-to-check ledger,
+  minimal hazard tape) judged by three lenses (panel, design/timing, truth); the trap map won
+  (23 of 30) and took the judges' fixes. One card, four builds: the 27 documents we wrote as
+  tiles, each trap lit by the question it asks (read / understand / organise - colour = the
+  question, never right or wrong), then the 20 CUAD contracts in two rows by the experts'
+  label with 19 ticks and one "?" (C03, a question for Legal). Every number is read from
+  `ground_truth.csv`, `labels.csv`, `failure-cases.md` and the stored evaluation JSON
+  (`testset-data.ts`), with dev-only guards (27 + 20 = 47, no unclear CUAD finding). Verified
+  with headless-Edge screenshots of all five build states, the presenter view and 1280×720.
+- **Rejected alternative:** Real page images of the trickiest contracts (needs the API during
+  the talk, five images do not show the whole set); a trap-to-failure ledger (too much text for
+  30-50 s); typing the counts by hand (would drift from the data, as the "47" draft already had).
+- **Metric before → after:** card "test-set" draft → built, 4 builds, 50 s (results 40 → 30 s,
+  talk 18:34 → 18:44); CUAD spelled out in 0 → 4 places (talk card, act-1 card, approach.md,
+  explorer.md); `npm run build` green; red overflow frame 1 (first version: class `q2` collided
+  with act 1's `.q2` grid in deck.css) → 0 after renaming to `a1`-`a4`. Three expected interview
+  questions (training, confidence, reproducibility) added as check questions 18-20.
+- **Links:** decision 81, `web/src/deck/slides/act4.tsx`, `act4.css`, `testset-data.ts`,
+  `docs/approach.md` ch. 6, `docs/check-questions.md`, F3/F4/F10 (the errors CUAD found).
+
 ## 2026-10-31 · Driving the talk live: mouse, keys, clicker, two windows - tested by five agents
 
 - **Problem:** Dima asked how to move forward with the mouse: the control bar was invisible until

@@ -184,6 +184,23 @@
   .hard-title { font-size: 1.9cqw; font-weight: 650; letter-spacing: -0.01em; }
   .hard-text { font-size: 1.32cqw; color: var(--ink-2); margin-top: 0.5cqw; }
 
+  .tset { display: flex; flex-direction: column; gap: 1.5cqw; }
+  .tset-group { display: grid; grid-template-columns: 30cqw 1fr; gap: 2cqw; align-items: center; padding: 1.2cqw 1.6cqw; border-radius: 1.2cqw; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); }
+  .tset-head { display: flex; align-items: center; gap: 1.2cqw; }
+  .tset-prefix { flex: none; width: 4.6cqw; height: 4.6cqw; border-radius: 1cqw; display: grid; place-items: center; font-size: 2.6cqw; font-weight: 800; color: #03110d; }
+  .g-m .tset-prefix { background: var(--mint); }
+  .g-v .tset-prefix { background: var(--cyan); }
+  .g-c .tset-prefix { background: var(--violet); }
+  .tset-title { font-size: 1.7cqw; font-weight: 650; line-height: 1.2; }
+  .tset-sub { font-size: 1.15cqw; color: var(--ink-2); margin-top: 0.3cqw; }
+  .tset-tiles { display: flex; flex-wrap: wrap; gap: 0.5cqw; }
+  .tset-tiles span { font-size: 1cqw; font-weight: 650; padding: 0.35cqw 0.7cqw; border-radius: 0.5cqw; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--ink-2); }
+  .g-m .tset-tiles span { border-color: rgba(68, 226, 176, 0.4); }
+  .g-v .tset-tiles span { border-color: rgba(92, 200, 255, 0.4); }
+  .g-c .tset-tiles span { border-color: rgba(181, 157, 255, 0.45); }
+  .tset-total { font-size: 1.35cqw; color: var(--ink-2); text-align: center; }
+  .term + .term { border-top: none; padding-top: 0.4cqw; }
+
   /* ------------------------------------------------------------------ act 2 */
   .node { width: 15cqw; padding: 1.3cqw 1.5cqw; border-radius: 1.2cqw; font-size: 1.32cqw; line-height: 1.3; border: 1px solid; }
   .node-kind { display: block; font-size: 0.92cqw; text-transform: uppercase; letter-spacing: 0.13em; margin-bottom: 0.5cqw; font-weight: 700; }

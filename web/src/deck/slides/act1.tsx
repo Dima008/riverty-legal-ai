@@ -96,6 +96,39 @@ function Hard() {
   );
 }
 
+// The 47 documents of the test set, as tiles in three groups: the ids (M, V, C) are used on every
+// later card, so the audience must meet them here first.
+const GROUPS = [
+  { at: 1, prefix: "M", ids: [...Array.from({ length: 20 }, (_, i) => `M${String(i + 1).padStart(2, "0")}`), "M05-A"],
+    title: "20 merchant agreements + 1 amendment", sub: "written for this case study – every trap is on purpose" },
+  { at: 2, prefix: "V", ids: Array.from({ length: 6 }, (_, i) => `V${String(i + 1).padStart(2, "0")}`),
+    title: "6 data processing agreements", sub: "the vendor side, Art. 28 GDPR" },
+  { at: 3, prefix: "C", ids: Array.from({ length: 20 }, (_, i) => `C${String(i + 1).padStart(2, "0")}`),
+    title: "20 real public contracts", sub: "CUAD dataset, labelled by lawyers – real contract language" },
+];
+
+function TestSet() {
+  return (
+    <div className="tset">
+      {GROUPS.map((g) => (
+        <Build key={g.prefix} at={g.at} className={`tset-group g-${g.prefix.toLowerCase()}`}>
+          <div className="tset-head">
+            <span className="tset-prefix">{g.prefix}</span>
+            <div>
+              <div className="tset-title">{g.title}</div>
+              <div className="tset-sub">{g.sub}</div>
+            </div>
+          </div>
+          <div className="tset-tiles">
+            {g.ids.map((id) => <span key={id}>{id}</span>)}
+          </div>
+        </Build>
+      ))}
+      <Build at={3} className="tset-total">47 documents · every correct answer is known · all synthetic or public, nothing from Riverty</Build>
+    </div>
+  );
+}
+
 function Insight() {
   return <p className="s-support">Every contract. Every page.</p>;
 }
@@ -132,6 +165,16 @@ export const ACT1: Slide[] = [
       "That's about ninety hours for one question. And again for the next one. The task calls it repetitive work nobody enjoys.",
     ],
     words: [{ word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }, { word: "repetitive", say: "rih-PET-ih-tiv" }],
+  },
+  {
+    id: "test-set", act: 1, kind: "content", title: "Riverty cannot share contracts – so I built 47 with known answers.", steps: 3, seconds: 40, Body: TestSet,
+    notes: [
+      "Riverty cannot share real contracts. So I built a test set where I know every answer.",
+      "Twenty merchant agreements, M01 to M20, and one amendment. I wrote them myself and hid traps in them: a missing clause, an old company name, a scan.",
+      "Six data processing agreements, V01 to V06. That is the vendor side.",
+      "And twenty real public contracts, C01 to C20, from the CUAD dataset. Lawyers labelled them. So when I say M14 later, you know: one of my test contracts.",
+    ],
+    words: [{ word: "amendment", say: "uh-MEND-ment" }, { word: "labelled", say: "LAY-buld" }, { word: "synthetic", say: "sin-THET-ik" }],
   },
   {
     id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 40, Body: Hard,

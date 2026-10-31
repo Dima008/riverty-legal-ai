@@ -21,18 +21,21 @@ function Rag() {
         <span className="arrow" aria-hidden>→</span>
         <div className="passages">
           {Array.from({ length: 5 }, (_, i) => <span key={i} />)}
-          <div className="passages-label">the 5 best passages<b>= top-k, here k = 5</b></div>
+          <div className="passages-label">the 5 most similar passages<b>top 5</b></div>
         </div>
       </Build>
-      <Build at={2} className="flow-step">
+      <Build at={3} className="flow-step">
         <span className="arrow" aria-hidden>→</span>
         <div className="node model">
           <span className="node-kind">Model</span>
           reads only these 5 and writes the answer
         </div>
       </Build>
-      <Build at={3} className="term">
-        This is <b>RAG</b> – retrieval-augmented generation. The model only sees what the search returns.
+      <Build at={2} className="term">
+        <b>top-k</b>: the search returns only the <b>k</b> most similar passages – here k = 5. Everything else the model never sees.
+      </Build>
+      <Build at={4} className="term">
+        <b>RAG</b> – retrieval-augmented generation: search first, then the model answers from what was found.
       </Build>
     </div>
   );
@@ -88,7 +91,7 @@ function RagFails() {
         })}
       </div>
       <div className="fails-legend">
-        <Build at={1}><span className="sw found" /> in the {K} best passages: “mentions liability”</Build>
+        <Build at={1}><span className="sw found" /> in the top {K} passages (k = {K}): “mentions liability”</Build>
         <Build at={2}><span className="sw flagged" /> not found – so it “lacks the clause”?</Build>
         <Build at={3} className="fails-result">
           <b>{AT_K.false_alarms.length} false alarms</b> · <b>{AT_K.missed.join(", ")} missed</b> – it mentions liability only in a hidden note.
@@ -143,14 +146,15 @@ export const ACT2: Slide[] = [
     words: [{ word: "usually", say: "YOO-zhoo-uh-lee" }],
   },
   {
-    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 3, seconds: 45, Body: Rag,
+    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 50, Body: Rag,
     notes: [
-      "Most document assistants work like this. You ask a question. For example, about liability in the Nordlicht contract.",
-      "A search compares your question with every passage. It returns the most similar ones: the top k. Here k is five. The search can use keywords or embeddings. Embeddings are number vectors for meaning. The principle is the same.",
+      "Most document assistants work like this. You ask about liability in the Nordlicht contract, M01.",
+      "A search compares your question with every passage of every contract. It returns the most similar ones.",
+      "This is called top-k. k is a number you set. Here k is five: the five best passages, nothing else. The search can use keywords or embeddings. Embeddings are numbers that stand for meaning.",
       "The model reads only these five passages. Then it writes the answer.",
-      "This is called RAG: retrieval-augmented generation. The important part: the model only sees what the search returns.",
+      "This is called RAG: retrieval-augmented generation. Remember one thing: the model only sees what the search returns.",
     ],
-    words: [{ word: "retrieval", say: "rih-TREE-vul" }, { word: "augmented", say: "awg-MEN-tid" }, { word: "liability", say: "lie-uh-BIL-ih-tee" }],
+    words: [{ word: "retrieval", say: "rih-TREE-vul" }, { word: "augmented", say: "awg-MEN-tid" }, { word: "similar", say: "SIM-ih-ler" }],
   },
   {
     id: "rag-works", act: 2, kind: "content", title: "That works when the answer is in the text.", steps: 2, seconds: 20, Body: RagWorks,
