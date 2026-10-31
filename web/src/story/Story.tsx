@@ -1,19 +1,14 @@
-// The presentation: one chapter at a time, a chapter rail grouped by act, next / back buttons and
-// keyboard navigation (← → and PageUp / PageDown, which presenter clickers send).
-// Chapter bodies follow once the storyline is approved; the Legal Workbench is the last stop.
+// The presentation: one chapter at a time, a chapter rail grouped by act and coloured by
+// Double Diamond phase, steps revealed with → like builds on a slide, keyboard navigation
+// (← → and PageUp / PageDown, which presenter clickers send). The step is part of the address
+// (#/story/task/1), so a reload during the talk lands on the same step.
 import { Button } from "@fluentui/react-components";
-import {
-  ArrowLeft20Regular,
-  ArrowRight20Regular,
-  History20Regular,
-  Keyboard20Regular,
-  Play20Regular,
-  Table20Regular,
-} from "@fluentui/react-icons";
-import { useEffect, useRef, type ReactNode } from "react";
+import { ArrowLeft20Regular, ArrowRight20Regular, Keyboard20Regular, Play20Regular } from "@fluentui/react-icons";
+import { useEffect, useRef } from "react";
 import { navigate } from "../routing";
 import { ACTS, CHAPTERS, TOTAL_MINUTES, type Chapter } from "./chapters";
-import { WhatIf } from "./WhatIf";
+import { BODIES } from "./chapters/index";
+import "./story.css";
 
 /** 1.25 minutes -> "1:15" (speaking time as on a stopwatch). */
 const mmss = (minutes: number) =>
@@ -27,28 +22,34 @@ function keysBelongToControl(target: EventTarget | null): boolean {
   return el.closest("[role=tablist], [role=listbox], [role=combobox], [role=slider], [role=menu]") !== null;
 }
 
-export function Story({ chapterId }: { chapterId: string }) {
+export function Story({ chapterId, step }: { chapterId: string; step: number }) {
   const index = Math.max(0, CHAPTERS.findIndex((c) => c.id === chapterId));
   const chapter = CHAPTERS[index];
   const prev: Chapter | undefined = CHAPTERS[index - 1];
   const next: Chapter | undefined = CHAPTERS[index + 1];
+  const last = chapter.steps.length - 1;
+  const current = step < 0 ? last : Math.min(step, last);      // -1 means "its last step"
   const page = useRef<HTMLElement>(null);
   const minutesBefore = CHAPTERS.slice(0, index).reduce((sum, c) => sum + c.minutes, 0);
+  const Body = BODIES[chapter.id];
+
+  // → reveals the next step, then opens the next chapter; ← goes back to the last step before
+  const forward = () => current < last ? navigate(`/story/${chapter.id}/${current + 1}`)
+    : next && navigate(`/story/${next.id}`);
+  const back = () => current > 0 ? navigate(`/story/${chapter.id}/${current - 1}`)
+    : prev && navigate(`/story/${prev.id}/last`);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || keysBelongToControl(e.target)) return;
-      const target =
-        e.key === "ArrowRight" || e.key === "PageDown" ? next
-        : e.key === "ArrowLeft" || e.key === "PageUp" ? prev
-        : undefined;
-      if (!target) return;
+      if (e.key === "ArrowRight" || e.key === "PageDown") forward();
+      else if (e.key === "ArrowLeft" || e.key === "PageUp") back();
+      else return;
       e.preventDefault();
-      navigate(`/story/${target.id}`);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [prev, next]);
+  });
 
   // A new chapter starts at the top, and screen readers announce it.
   useEffect(() => {
@@ -74,8 +75,9 @@ export function Story({ chapterId }: { chapterId: string }) {
                   <li key={c.id}>
                     <a
                       href={`#/story/${c.id}`}
-                      className={i === index ? "on" : i < index ? "done" : undefined}
+                      className={[`ph-${c.phase.toLowerCase()}`, i === index ? "on" : i < index ? "done" : ""].join(" ")}
                       aria-current={i === index ? "step" : undefined}
+                      title={`Double Diamond: ${c.phase === "All" ? "all four phases" : c.phase}`}
                     >
                       <span className="rail-num">{i + 1}</span>
                       <span>{c.title}</span>
@@ -88,18 +90,33 @@ export function Story({ chapterId }: { chapterId: string }) {
           </div>
         ))}
         <div className="rail-keys">
-          <Keyboard20Regular /> ← → or PageUp / PageDown
+          <Keyboard20Regular /> ← → step by step · PageUp / PageDown
         </div>
       </nav>
 
       <article className="story-page" ref={page} tabIndex={-1} aria-labelledby="chapter-title">
-        <div className="eyebrow">
-          {chapter.act} · Chapter {index + 1}
+        <div className="story-head">
+          <div className="eyebrow">
+            {chapter.act} · Chapter {index + 1}
+          </div>
+          {chapter.steps.length > 1 && (
+            <ol className="step-dots" aria-label="Steps of this chapter">
+              {chapter.steps.map((name, i) => (
+                <li key={name}>
+                  <a href={`#/story/${chapter.id}/${i}`} className={i === current ? "on" : i < current ? "done" : undefined}
+                     aria-current={i === current ? "step" : undefined} title={name}>
+                    {name}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
         <h1 id="chapter-title" className="story-title">{chapter.title}</h1>
         <p className="story-lead">{chapter.lead}</p>
         <div className="story-body">
-          <ChapterBody chapter={chapter} />
+          {Body ? <Body step={current} />
+            : <div className="story-draft">The content of this chapter is being built – the text is in docs/approach.md.</div>}
         </div>
         <footer className="story-nav">
           {prev ? (
@@ -110,12 +127,7 @@ export function Story({ chapterId }: { chapterId: string }) {
             <span />
           )}
           {next ? (
-            <Button
-              appearance="primary"
-              icon={<ArrowRight20Regular />}
-              iconPosition="after"
-              onClick={() => navigate(`/story/${next.id}`)}
-            >
+            <Button appearance="primary" icon={<ArrowRight20Regular />} iconPosition="after" onClick={() => navigate(`/story/${next.id}`)}>
               {next.title}
             </Button>
           ) : (
@@ -125,47 +137,6 @@ export function Story({ chapterId }: { chapterId: string }) {
           )}
         </footer>
       </article>
-    </div>
-  );
-}
-
-function ChapterBody({ chapter }: { chapter: Chapter }) {
-  if (chapter.id === "live") return <ToolLaunch />;
-  if (chapter.id === "proof") return <WhatIf />;
-  return <div className="story-draft">The content of this chapter follows once the storyline is approved.</div>;
-}
-
-const TOOL_STOPS: { area: string; icon: ReactNode; title: string; text: string }[] = [
-  {
-    area: "workbench",
-    icon: <Play20Regular />,
-    title: "Ask a question",
-    text: "From a question to a plan, results with evidence on the page, review and an approved archive copy.",
-  },
-  {
-    area: "register",
-    icon: <Table20Regular />,
-    title: "Contract register",
-    text: "Every contract against Legal's playbook – the compiled register at a glance.",
-  },
-  {
-    area: "audit",
-    icon: <History20Regular />,
-    title: "Audit log",
-    text: "Every run, review and archive copy: who did what, when and why.",
-  },
-];
-
-function ToolLaunch() {
-  return (
-    <div className="launch-grid">
-      {TOOL_STOPS.map((s) => (
-        <a key={s.area} className="launch-card" href={`#/tool/${s.area}`}>
-          <span className="launch-icon" aria-hidden>{s.icon}</span>
-          <h3>{s.title}</h3>
-          <p>{s.text}</p>
-        </a>
-      ))}
     </div>
   );
 }

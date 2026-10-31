@@ -129,7 +129,7 @@ export function App() {
           </nav>
         )}
         <main className={route.layer === "story" ? "content story-content" : "content"}>
-          {route.layer === "story" && <Story chapterId={route.page} />}
+          {route.layer === "story" && <Story chapterId={route.page} step={route.step} />}
           {route.layer === "tool" && area === "workbench" && <Workbench />}
           {route.layer === "tool" && area === "register" && <Register />}
           {route.layer === "tool" && area === "audit" && <AuditLog />}

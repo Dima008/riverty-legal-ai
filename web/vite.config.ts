@@ -9,6 +9,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    // the presentation imports texts from docs/ (e.g. the task, verbatim), one level above web/
+    fs: { allow: [".."] },
     proxy: {
       "/api": {
         target: apiUrl,

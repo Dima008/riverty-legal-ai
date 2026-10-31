@@ -1,0 +1,78 @@
+/* Shared building blocks of the presentation: steps, figures with their justification, flow
+   diagrams, the Double Diamond colours of the chapter rail. Chapter-specific styles live next to
+   each chapter (story/chapters/*.css). */
+
+/* ---- Double Diamond phase of a chapter (decision 19) */
+:root { --ph-discover: #6b4fbb; --ph-define: #1f6fb2; --ph-develop: var(--brand); --ph-deliver: #b86e00; }
+.rail-act a.ph-discover .rail-num { border-color: var(--ph-discover); color: var(--ph-discover); }
+.rail-act a.ph-define .rail-num { border-color: var(--ph-define); color: var(--ph-define); }
+.rail-act a.ph-develop .rail-num { border-color: var(--ph-develop); color: var(--ph-develop); }
+.rail-act a.ph-deliver .rail-num { border-color: var(--ph-deliver); color: var(--ph-deliver); }
+.rail-act a.ph-all .rail-num { border-image: none; border-color: var(--ink-3); color: var(--ink-2); }
+.rail-act a.done.ph-discover .rail-num { background: var(--ph-discover); color: #fff; }
+.rail-act a.done.ph-define .rail-num { background: var(--ph-define); color: #fff; }
+.rail-act a.done.ph-develop .rail-num { background: var(--ph-develop); color: #fff; }
+.rail-act a.done.ph-deliver .rail-num { background: var(--ph-deliver); color: #fff; }
+.rail-act a.done.ph-all .rail-num { background: var(--ink-3); color: #fff; }
+
+/* ---- chapter head: steps */
+.story-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.step-dots { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
+.step-dots a {
+  display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; text-decoration: none;
+  color: var(--ink-3); border: 1px solid var(--line);
+}
+.step-dots a.done { color: var(--brand); border-color: var(--brand-tint-2); }
+.step-dots a.on { color: #fff; background: var(--brand); border-color: var(--brand); }
+.reveal { visibility: hidden; opacity: 0; transition: opacity 0.25s ease; }
+.reveal.on { visibility: visible; opacity: 1; }
+.reveal + .reveal { margin-top: 26px; }
+.anchor-line {
+  margin: 18px 0 0; padding: 12px 18px; border-left: 4px solid var(--brand); background: var(--brand-tint);
+  font-size: 17px; font-weight: 600; color: var(--brand-dark);
+}
+
+/* ---- figure with its justification */
+.fig { margin: 0; }
+.fig-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); margin-bottom: 12px; }
+.fig-why-toggle {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; padding: 2px 0; border: 0; background: none;
+  font-size: 12px; color: var(--ink-3); cursor: pointer;
+}
+.fig-why-toggle:hover { color: var(--brand); }
+.fig-why { margin: 6px 0 0; padding: 12px 16px; display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 6px 14px;
+  background: #f8faf9; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; line-height: 1.45; }
+.fig-why dt { font-weight: 600; color: var(--ink-2); }
+.fig-why dd { margin: 0; color: var(--ink-2); }
+
+/* ---- flow diagrams (story/Flow.tsx) */
+.flow svg { width: 100%; height: auto; display: block; }
+.flow-lane { fill: #f8faf9; }
+.flow-lane.alt { fill: #f1f5f4; }
+.flow-lane-label { font-size: 12px; font-weight: 600; fill: var(--ink-3); }
+.flow-node rect { stroke-width: 1.5; fill: #fff; stroke: var(--line-strong); }
+.flow-node.k-person rect { fill: #eef4fb; stroke: #1f6fb2; }
+.flow-node.k-code rect { fill: #fff; stroke: var(--ink-3); }
+.flow-node.k-model rect { fill: var(--amber-tint); stroke: var(--amber); }
+.flow-node.k-data rect { fill: var(--brand-tint); stroke: var(--brand); }
+.flow-node.k-external rect { fill: #f3f0fa; stroke: #6b4fbb; }
+.flow-node.k-gate rect { fill: var(--red-tint); stroke: var(--red); }
+.flow-node.dashed rect { stroke-dasharray: 5 4; }
+.flow-node.muted { opacity: 0.35; }
+.flow-node.hl rect { stroke-width: 3; }
+.flow-label { font-size: 13px; font-weight: 600; fill: var(--ink); }
+.flow-sub { font-size: 11px; fill: var(--ink-3); }
+.flow-edge { fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
+.flow-edge.dashed { stroke-dasharray: 5 4; }
+.flow-arrowhead { fill: var(--ink-3); }
+.flow-edge-label { font-size: 11px; fill: var(--ink-3); }
+.flow-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 10px 0 0; padding: 0; font-size: 12px; color: var(--ink-3); }
+.flow-swatch { display: inline-block; width: 14px; height: 10px; margin-right: 4px; border-radius: 3px; border: 1.5px solid var(--ink-3); vertical-align: -1px; }
+.flow-swatch.k-person { background: #eef4fb; border-color: #1f6fb2; }
+.flow-swatch.k-model { background: var(--amber-tint); border-color: var(--amber); }
+.flow-swatch.k-data { background: var(--brand-tint); border-color: var(--brand); }
+.flow-swatch.k-external { background: #f3f0fa; border-color: #6b4fbb; }
+.flow-swatch.k-gate { background: var(--red-tint); border-color: var(--red); }
+.flow-swatch.dashed { border-style: dashed; background: #fff; }
+
+@media (max-width: 760px) { .fig-why { grid-template-columns: minmax(0, 1fr); } }

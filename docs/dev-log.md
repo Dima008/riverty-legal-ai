@@ -7,6 +7,31 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Building blocks of the presentation, and chapter 1 as the template
+
+- **Problem:** Nine of ten chapters were placeholders. Dima's rule – every diagram is created
+  *and* justified – needs one consistent form for figures, and a talk needs builds (reveal step by
+  step) that survive a reload.
+- **Cause:** The frame had chapters but no figure, diagram or step mechanism.
+- **Technique and why:** `story/Figure.tsx`: every figure carries "shows · why it exists · why it
+  looks like this · behind it", one click under the figure. `story/Flow.tsx`: boxes, arrows and
+  swimlanes from plain data as SVG, coloured by who acts (person, code, model, data, outside
+  system, gate) – decision 9 visible at a glance, no diagram library. Steps per chapter in
+  `chapters.ts` and in the address (`#/story/task/1`): → reveals the next step, then the next
+  chapter; ← goes back to the previous chapter's last step. The rail is coloured by Double Diamond
+  phase. Chapter 1 imports Riverty's task text from `docs/context/case-study.md` (one source) and
+  marks the nine sentences every requirement comes from, each with requirement, what was built
+  and the decisions; then the cost calculator (assumption, sliders). Found while testing: my class
+  `.step` collided with the check timeline's `.step` (a 20-px grid column) – renamed `.reveal`.
+- **Rejected alternative:** A slide library (reveal.js) or a diagram library (two more things to
+  explain, and the tool would not be part of the same page); copying the task text into the
+  component (a second source that drifts).
+- **Metric before → after:** Chapters with content 2 → 3 of 10; figures with a justification 0 →
+  2. Story walkthrough 12 of 12 (updated for steps), 0 console errors; build green.
+- **Links:** decisions 19, 66, 68; `web/src/story/Figure.tsx`, `Flow.tsx`, `chapters/Task.tsx`
+
+---
+
 ## 2026-10-31 · The tool speaks German or English; the presentation stays English
 
 - **Problem:** Riverty's legal team works in German, but every screen of the Legal Workbench was
