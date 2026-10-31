@@ -63,8 +63,20 @@ def stored_runs() -> list[dict]:
 
 
 def repeated_runs() -> list[dict]:
-    """Summaries of repeated runs and model comparisons written by eval/repeat.py."""
-    return [d for p in sorted(RESULTS.glob("*_summary.json")) if (d := _load(p)) and "stable_status" in d]
+    """Summaries of repeated runs and model comparisons written by eval/repeat.py, with the two
+    reliability numbers under their names in the literature (docs/research.md): pass^k - a question
+    counts only if it was answered correctly in every one of the k runs - and run-to-run agreement
+    of the findings, which says nothing about correctness."""
+    out = []
+    for p in sorted(RESULTS.glob("*_summary.json")):
+        d = _load(p)
+        if not d or "stable_status" not in d:
+            continue
+        d["pass_k"] = {qid: all(r == 1.0 for r in q["recall"]) and all(x == 1.0 for x in q["precision"])
+                       for qid, q in d["questions"].items()}
+        d["agreement"] = round(d["stable_status"] / d["findings"], 3) if d.get("findings") else None
+        out.append(d)
+    return out
 
 
 @router.get("/evaluation")

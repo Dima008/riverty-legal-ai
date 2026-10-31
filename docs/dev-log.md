@@ -7,6 +7,26 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Honest statistics: how low could the true recall still be?
+
+- **Problem:** The evaluation reported "recall 1.00" per question. On 5, 2 or even 1 expected
+  contract that sounds like proof and is not – the fact-checker of the research flagged it.
+- **Cause:** Point estimates without uncertainty; the gold set is small and the system was tuned
+  on it.
+- **Technique and why:** `recall_lower_bound()` – the exact one-sided 95 % Clopper-Pearson bound,
+  computed by bisection on the binomial tail with `math.comb` (no new dependency), rounded down so
+  it never overstates. Reported per question, pooled with an explicit caveat (shared documents,
+  tuned on the set). The repeated runs get their names from the literature: pass^k (correct in
+  every run) and run-to-run agreement of the findings (says nothing about correctness).
+- **Rejected alternative:** The normal approximation (wrong at n = 5 and at 100 %); scipy for one
+  formula; the "rule of three" (an approximation of the same bound).
+- **Metric before → after:** Q1 "recall 1.00" → "1.00, true recall ≥ 0.54"; Q6/Q7 (2 contracts)
+  ≥ 0.22; Q8 (1 contract) ≥ 0.05; all 28 together ≥ 0.89 with the caveat. Tests 67 → 70. New report
+  `eval/results/2026-10-31_extract-v2_stats.txt` (numbers unchanged, one column more).
+- **Links:** `eval/check_register.py`, `api/quality.py`, `tests/test_eval_stats.py`, `docs/research.md`
+
+---
+
 ## 2026-10-31 · "Not found" instead of "Missing"
 
 - **Problem:** "Missing" reads like a verdict on the contract ("the contract is deficient"),

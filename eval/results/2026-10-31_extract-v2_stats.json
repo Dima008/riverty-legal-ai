@@ -1,0 +1,294 @@
+{
+  "generated_at": "2026-10-31T09:45:30+00:00",
+  "config": {
+    "extraction": [
+      {
+        "model": "gpt-4.1-mini",
+        "prompt_version": "extract-v2"
+      }
+    ],
+    "documents": 47
+  },
+  "questions": [
+    {
+      "id": "Q1",
+      "question": "Which merchant agreements do not contain a limitation of liability?",
+      "precision": 1.0,
+      "recall": 1.0,
+      "misses": 0,
+      "recall_lower_95": 0.54,
+      "found": [
+        "M03",
+        "M08",
+        "M10",
+        "M14",
+        "M18"
+      ],
+      "expected": [
+        "M03",
+        "M08",
+        "M10",
+        "M14",
+        "M18"
+      ],
+      "to_review": [
+        "M08",
+        "M10",
+        "M14"
+      ],
+      "resolved_by_amendment": null
+    },
+    {
+      "id": "Q2",
+      "question": "Which contracts still name a legacy provider (Arvato Financial Solutions, AfterPay) and need an update?",
+      "precision": 1.0,
+      "recall": 1.0,
+      "misses": 0,
+      "recall_lower_95": 0.54,
+      "found": [
+        "M04",
+        "M06",
+        "M10",
+        "M13",
+        "M18"
+      ],
+      "expected": [
+        "M04",
+        "M06",
+        "M10",
+        "M13",
+        "M18"
+      ],
+      "to_review": [],
+      "resolved_by_amendment": [
+        "M05"
+      ]
+    },
+    {
+      "id": "Q3",
+      "question": "Which merchant agreements lack the obligation to display the provider's consumer terms in checkout?",
+      "precision": 1.0,
+      "recall": 1.0,
+      "misses": 0,
+      "recall_lower_95": 0.47,
+      "found": [
+        "M04",
+        "M08",
+        "M12",
+        "M19"
+      ],
+      "expected": [
+        "M04",
+        "M08",
+        "M12",
+        "M19"
+      ],
+      "to_review": [],
+      "resolved_by_amendment": null
+    },
+    {
+      "id": "Q4",
+      "question": "Which merchant agreements do not reference a data processing agreement under Art. 28 GDPR?",
+      "precision": 1.0,
+      "recall": 1.0,
+      "misses": 0,
+      "recall_lower_95": 0.47,
+      "found": [
+        "M03",
+        "M07",
+        "M12",
+        "M18"
+      ],
+      "expected": [
+        "M03",
+        "M07",
+        "M12",
+        "M18"
+      ],
+      "to_review": [],
+      "resolved_by_amendment": null
+    },
+    {
+      "id": "Q5",
+      "question": "Which merchant agreements are not governed by German law?",
+      "precision": 1.0,
+      "recall": 1.0,
+      "misses": 0,
+      "recall_lower_95": 0.54,
+      "found": [
+        "M06",
+        "M07",
+        "M08",
+        "M11",
+        "M13"
+      ],
+      "expected": [
+        "M06",
+        "M07",
+        "M08",
+        "M11",
+        "M13"
+      ],
+      "to_review": [],
+      "resolved_by_amendment": null
+    },
+    {
+      "id": "Q6",
+      "question": "Which data processing agreements lack an audit clause?",
+      "precision": 1.0,
+      "recall": 1.0,
+      "misses": 0,
+      "recall_lower_95": 0.22,
+      "found": [
+        "V02",
+        "V05"
+      ],
+      "expected": [
+        "V02",
+        "V05"
+      ],
+      "to_review": [],
+      "resolved_by_amendment": null
+    },
+    {
+      "id": "Q7",
+      "question": "Which data processing agreements lack a sub-processor clause?",
+      "precision": 1.0,
+      "recall": 1.0,
+      "misses": 0,
+      "recall_lower_95": 0.22,
+      "found": [
+        "V03",
+        "V05"
+      ],
+      "expected": [
+        "V03",
+        "V05"
+      ],
+      "to_review": [],
+      "resolved_by_amendment": null
+    },
+    {
+      "id": "Q8",
+      "question": "Are there duplicate documents in the register?",
+      "precision": 1.0,
+      "recall": 1.0,
+      "misses": 0,
+      "recall_lower_95": 0.05,
+      "found": [
+        "M15"
+      ],
+      "expected": [
+        "M15"
+      ],
+      "to_review": [],
+      "resolved_by_amendment": null
+    }
+  ],
+  "pooled": {
+    "found": 28,
+    "expected": 28,
+    "recall_lower_95": 0.89,
+    "caveat": "the questions share documents and the system was tuned on them - the pooled bound overstates certainty"
+  },
+  "ablation": [
+    {
+      "id": "Q1",
+      "recall_model": 0.6,
+      "recall_checked": 1.0,
+      "missed_by_model": [
+        "M08",
+        "M10"
+      ]
+    },
+    {
+      "id": "Q3",
+      "recall_model": 1.0,
+      "recall_checked": 1.0,
+      "missed_by_model": []
+    },
+    {
+      "id": "Q4",
+      "recall_model": 1.0,
+      "recall_checked": 1.0,
+      "missed_by_model": []
+    },
+    {
+      "id": "Q6",
+      "recall_model": 1.0,
+      "recall_checked": 1.0,
+      "missed_by_model": []
+    },
+    {
+      "id": "Q7",
+      "recall_model": 1.0,
+      "recall_checked": 1.0,
+      "missed_by_model": []
+    }
+  ],
+  "metadata": {
+    "n": 27,
+    "correct": {
+      "governing_law": 27,
+      "effective_date": 27,
+      "doc_type": 27
+    },
+    "notes": []
+  },
+  "cuad": {
+    "n": 20,
+    "tp": 9,
+    "fp": 0,
+    "fn": 1,
+    "tn": 10,
+    "unclear": 0,
+    "disagreements": [
+      {
+        "doc_id": "C03",
+        "register": "ABSENT",
+        "label": "cap"
+      }
+    ]
+  },
+  "cost": {
+    "calls": 146,
+    "prompt_tokens": 447848,
+    "completion_tokens": 24001,
+    "cost_usd": 0.1191,
+    "by_purpose": [
+      {
+        "purpose": "check",
+        "model": "gpt-4.1-mini",
+        "calls": 39,
+        "prompt_tokens": 15950,
+        "completion_tokens": 4012,
+        "cost_usd": 0.0128
+      },
+      {
+        "purpose": "embed",
+        "model": "text-embedding-3-small",
+        "calls": 59,
+        "prompt_tokens": 226842,
+        "completion_tokens": 0,
+        "cost_usd": 0.0045
+      },
+      {
+        "purpose": "extract",
+        "model": "gpt-4.1-mini",
+        "calls": 47,
+        "prompt_tokens": 205042,
+        "completion_tokens": 19989,
+        "cost_usd": 0.1017
+      },
+      {
+        "purpose": "search",
+        "model": "text-embedding-3-small",
+        "calls": 1,
+        "prompt_tokens": 14,
+        "completion_tokens": 0,
+        "cost_usd": 0.0
+      }
+    ]
+  },
+  "all_found": true
+}

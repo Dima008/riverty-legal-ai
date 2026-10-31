@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 from pathlib import Path
 
 from pipeline import config, queries
@@ -32,6 +33,25 @@ CLAUSE_QUESTIONS = {
     "Q6": ("audit_clause", "data_processing_agreement"),
     "Q7": ("subprocessor_clause", "data_processing_agreement"),
 }
+
+
+def recall_lower_bound(found: int, expected: int, confidence: float = 0.95) -> float:
+    """How low the true recall could still be: the exact one-sided lower confidence bound
+    (Clopper-Pearson) for `found` of `expected` contracts. With 5 of 5 it is 0.54 - a perfect score
+    on a small set is weak evidence (docs/research.md). Rounded down, so it never overstates."""
+    if expected == 0:
+        return 1.0
+    if found == 0:
+        return 0.0
+
+    def at_least_found(p: float) -> float:          # P(X >= found) for X ~ Binomial(expected, p)
+        return sum(math.comb(expected, k) * p ** k * (1 - p) ** (expected - k) for k in range(found, expected + 1))
+
+    low, high = 0.0, 1.0
+    for _ in range(60):                               # bisection: the p where that probability is 5 %
+        mid = (low + high) / 2
+        low, high = (mid, high) if at_least_found(mid) < 1 - confidence else (low, mid)
+    return math.floor(low * 100) / 100
 
 
 def pr(found: set, expected: set) -> tuple[float, float]:
@@ -70,6 +90,8 @@ def gold_questions(con, gold: dict) -> list[dict]:
             "question": gold[qid]["question_en"],
             "precision": precision,
             "recall": recall,
+            "misses": len(expected - found),
+            "recall_lower_95": recall_lower_bound(len(found & expected), len(expected)),
             "found": sorted(found),
             "expected": sorted(expected),
             "to_review": sorted({x["doc_id"] for x in rows
@@ -158,11 +180,16 @@ def evaluate(con) -> dict:
     with open(config.DATA / "cuad_subset" / "labels.csv", encoding="utf-8") as f:
         cuad = {r["doc_id"]: r for r in csv.DictReader(f)}
     questions = gold_questions(con, gold)
+    hits = sum(len(q["expected"]) - q["misses"] for q in questions)
+    expected = sum(len(q["expected"]) for q in questions)
     models = con.execute("SELECT DISTINCT model, prompt_version FROM metadata").fetchall()
     return {
         "config": {"extraction": [{"model": m[0], "prompt_version": m[1]} for m in models],
                    "documents": con.execute("SELECT COUNT(*) FROM documents").fetchone()[0]},
         "questions": questions,
+        "pooled": {"found": hits, "expected": expected, "recall_lower_95": recall_lower_bound(hits, expected),
+                   "caveat": "the questions share documents and the system was tuned on them - "
+                             "the pooled bound overstates certainty"},
         "ablation": _ablation(con, gold),
         "metadata": _metadata(con, truth),
         "cuad": _cuad(con, cuad),
@@ -175,11 +202,14 @@ def evaluate(con) -> dict:
 def render(result: dict) -> str:
     """The text report (stored in eval/results/*.txt and compared between runs)."""
     lines = ["Gold questions (answered from the register, no model call)",
-             f"{'id':4} {'precision':>9} {'recall':>7}  found / expected / to review"]
+             f"{'id':4} {'precision':>9} {'recall':>7} {'recall >=':>9}  found / expected / to review"]
     for q in result["questions"]:
         extra = f"  resolved by amendment: {q['resolved_by_amendment']}" if q["id"] == "Q2" else ""
-        lines.append(f"{q['id']:4} {q['precision']:9.2f} {q['recall']:7.2f}  "
+        lines.append(f"{q['id']:4} {q['precision']:9.2f} {q['recall']:7.2f} {q['recall_lower_95']:9.2f}  "
                      f"{q['found']} / {q['expected']} / {q['to_review']}{extra}")
+    pooled = result["pooled"]
+    lines.append(f"recall >= : one-sided 95 % lower bound (Clopper-Pearson); all questions together "
+                 f"{pooled['found']} of {pooled['expected']}, >= {pooled['recall_lower_95']:.2f} - {pooled['caveat']}")
 
     lines += ["", "Ablation: model alone (model_status) vs. model + checks (status)",
               f"{'id':4} {'recall model':>12} {'recall checked':>15}  missed by the model alone"]
