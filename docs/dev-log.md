@@ -7,6 +7,23 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Nothing before its introduction: the 47 contracts and top-k get their own place
+
+- **Problem:** Dima: "wir erklären nicht, was top-k ist, und erwähnen Verträge, die keiner kennt".
+  Cards said M14, M18, M02 before anyone knew these are our test contracts; top-k was a small
+  sub-label on the RAG card.
+- **Cause:** The test set was introduced only in act 4; the term appeared where it was first needed.
+- **Technique and why:** A new card "contracts" in act 1, before the first id is used: "Riverty
+  cannot share contracts – so I built 47 with known answers", the three groups M / V / C as tiles,
+  so every later id reads as "one of ours". The RAG card gets a fourth build: a term line that
+  defines top-k before "It fails …" uses it. The act-4 card "test-set" (trap map, other session)
+  then shows what is hidden in those 47, not what they are.
+- **Rejected alternative:** Explaining ids in the speaker notes only (the audience reads the cards).
+- **Metric before → after:** Contract ids used before introduction: 3 cards → 0; top-k defined on
+  screen: no → yes. Planned time +0:45.
+- **Links:** `web/src/deck/slides/act1.tsx`, `act2.tsx`, `deck.css`; commit 743ef3f (the entry was
+  missing there because two sessions edited this file at the same time)
+
 ## 2026-10-31 · Card "test-set": the trap map, and CUAD by its full name
 
 - **Problem:** Dima noticed that CUAD was never spelled out in the talk, and the planned card
