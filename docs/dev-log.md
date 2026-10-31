@@ -7,6 +7,35 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Legal chooses the contracts: filters, ticks, a run over a selection
+
+- **Problem:** Dima: "we cannot filter contracts ourselves and choose which ones to work on – why?"
+  The register filtered only by type, gaps and search; a run always covered every contract of a type.
+  Lawyers work on subsets (one law, one period, a renegotiation batch) and would go back to Excel.
+- **Cause:** MVP cut. The guarantee "nothing drops out silently" was built on a scope defined by a
+  rule (the type), and a hand-picked scope had no way to say what it covers.
+- **Technique and why:** Decision 75. The register gets filters for law, date range, clause status
+  per playbook column and review state, check boxes, and "check these N / the N shown in the
+  Workbench". The selection travels in the address (`?scope=…`, survives a reload) and becomes
+  `plan.scope` (`doc_ids` decide; `filters` record how, never re-applied). `run_check` takes the
+  selection as the scope: every chosen contract lands in checked or excluded – one of another type
+  is excluded by name, an unknown id is refused (422). The coverage carries `selection` (chosen,
+  of, filters); the answer shows "a selection: 3 of 47, chosen by … – not the whole portfolio";
+  the audit keeps the list. Filters that cannot judge a contract (no date, no law) name the
+  contracts they hide, and ticked contracts hidden by a filter are named too.
+- **Rejected alternative:** Only more register filters (no runs over a subset); a server-side
+  saved filter that is re-applied later (would need the review states of the workflow database
+  inside the register query – later, if Legal wants recurring checks); dropping a selected contract
+  of another type quietly.
+- **Metric before → after:** Filters 3 → 7; runs over a chosen subset: no → yes. Tests 71 → 81
+  (9 portfolio, 1 API: Q1 over M01, M03, M08, M15, V01 → M03, M08 reported, M15 and V01 excluded
+  with reason, audit holds the list). Browser walkthrough 18/18 checks, English and German, no
+  errors.
+- **Links:** `pipeline/portfolio.py`, `api/workflow.py`, `web/src/register/Register.tsx`,
+  `web/src/workbench/`, `docs/explorer.md` station 7, decision 75
+
+---
+
 ## 2026-10-31 · A duplicate can be opened, not only named
 
 - **Problem:** The register marked M15 as "copy of M01", but only as text. To look at the original,

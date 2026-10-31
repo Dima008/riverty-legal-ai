@@ -1,9 +1,14 @@
 // Contract register: every document compared with Legal's playbook. Rows are documents, columns are
 // the clauses of the playbook - the comparison standard - and cells say found / not found / unclear.
-import { MessageBar, MessageBarBody, SearchBox, Spinner, Switch, ToggleButton } from "@fluentui/react-components";
+// Legal filters and ticks contracts and checks exactly those in the Workbench (decision 75); a
+// filter never hides a contract silently - contracts it cannot judge (no date, no law) are counted.
+import {
+  Button, Checkbox, Dropdown, Input, MessageBar, MessageBarBody, Option, SearchBox, Spinner, Switch, ToggleButton,
+} from "@fluentui/react-components";
 import {
   CheckmarkCircle16Filled,
   DismissCircle16Filled,
+  Play16Filled,
   QuestionCircle16Filled,
   Warning16Filled,
 } from "@fluentui/react-icons";
@@ -37,6 +42,31 @@ function source(r: MatrixRow, t: T): string {
   const kind = t(r.format === "jpeg" ? "Photo scan" : "Scan");
   return r.ocr_mean_conf != null ? `${kind} · OCR ${Math.round(r.ocr_mean_conf)} %` : kind;
 }
+
+// filters beyond type and search (decision 75); the labels are English keys, translated where shown
+const CLAUSE_STATUS = [
+  { key: "GAP", label: "not found or unclear" },
+  { key: "ABSENT", label: "not found" },
+  { key: "UNCLEAR", label: "unclear" },
+  { key: "PRESENT", label: "clause found" },
+];
+type ReviewFilter = "" | "open" | "reviewed" | "flagged";
+const REVIEW_FILTER: { key: ReviewFilter; label: string }[] = [
+  { key: "", label: "any" },
+  { key: "open", label: "Gaps not yet reviewed" },
+  { key: "reviewed", label: "Gaps reviewed" },
+  { key: "flagged", label: "Escalated or disputed" },
+];
+const FINAL: ReviewStateName[] = ["CONFIRMED", "CORRECTED", "REJECTED"];
+
+function reviewMatches(r: MatrixRow, states: Record<string, ReviewStateName> | undefined, f: ReviewFilter): boolean {
+  if (!f) return true;
+  if (f === "flagged") return Object.values(states ?? {}).some((s) => s === "ESCALATED" || s === "DISPUTED");
+  const open = r.gaps.filter((k) => !states?.[k] || !FINAL.includes(states[k]));
+  return f === "open" ? open.length > 0 : r.gaps.length > 0 && open.length === 0;
+}
+
+const country = (r: MatrixRow) => r.governing_law?.split("-")[0] ?? null;
 
 // review state of a finding in the register (decision 73): a small mark in the corner of the cell
 const REVIEW_MARK: Partial<Record<ReviewStateName, string>> = {
@@ -72,6 +102,13 @@ export function Register() {
   const [type, setType] = useState("merchant_agreement");
   const [onlyGaps, setOnlyGaps] = useState(false);
   const [query, setQuery] = useState("");
+  const [law, setLaw] = useState("");                 // "" any, "none" = no governing law found, else a country
+  const [from, setFrom] = useState("");               // effective date, ISO
+  const [to, setTo] = useState("");
+  const [clause, setClause] = useState("");
+  const [clauseStatus, setClauseStatus] = useState("GAP");
+  const [review, setReview] = useState<ReviewFilter>("");
+  const [picked, setPicked] = useState<Set<string>>(new Set());
   const [showDefinitions, setShowDefinitions] = useState(false);
   const [open, setOpen] = useState<{ docId: string; clause: string | null } | null>(null);
   // #/tool/register?doc=M01 opens a contract file directly (links from the Workbench and the talk)
@@ -108,13 +145,64 @@ export function Register() {
   const short = (status: string) => t(STATUS_SHORT[status]).toLowerCase();
 
   const clauseKeys = Object.keys(matrix.clauses);
+  const laws = [...new Set(matrix.rows.map(country).filter((c): c is string => !!c))].sort();
   const q = query.trim().toLowerCase();
-  const rows = matrix.rows.filter(
+  const clauseOk = (r: MatrixRow) => {
+    if (!clause) return true;
+    const c = r.cells[clause];
+    return clauseStatus === "GAP" ? !c || c.status !== "PRESENT" : c?.status === clauseStatus;  // no finding = a gap
+  };
+  const lawOk = (r: MatrixRow) => !law || (law === "none" ? r.governing_law == null : country(r) === law);
+  const dateOk = (r: MatrixRow) =>
+    (!from && !to) || (r.effective_date != null && (!from || r.effective_date >= from) && (!to || r.effective_date <= to));
+  const base = matrix.rows.filter(
     (r) =>
       (!type || r.doc_type === type) &&
       (!onlyGaps || r.gaps.length > 0 || r.former_names.open > 0) &&
-      (!q || r.doc_id.toLowerCase().includes(q) || (r.counterparty_name ?? "").toLowerCase().includes(q)),
+      (!q || r.doc_id.toLowerCase().includes(q) || (r.counterparty_name ?? "").toLowerCase().includes(q)) &&
+      clauseOk(r) && reviewMatches(r, reviews[r.doc_id], review),
   );
+  const rows = base.filter((r) => lawOk(r) && dateOk(r));
+  // contracts a filter cannot judge are not dropped silently: they are counted and named
+  const noLaw = law && law !== "none" ? base.filter((r) => r.governing_law == null && dateOk(r)) : [];
+  const noDate = from || to ? base.filter((r) => r.effective_date == null && lawOk(r)) : [];
+  const shownIds = rows.map((r) => r.doc_id);
+  const pickedHidden = [...picked].filter((id) => !shownIds.includes(id));
+  const allShown = shownIds.length > 0 && shownIds.every((id) => picked.has(id));
+  const someShown = shownIds.some((id) => picked.has(id));
+  const toggle = (id: string) => setPicked((s) => {
+    const next = new Set(s);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
+  const toggleShown = () => setPicked((s) => {
+    const next = new Set(s);
+    shownIds.forEach((id) => (allShown ? next.delete(id) : next.add(id)));
+    return next;
+  });
+  const extraFilters = !!(law || from || to || clause || review);
+  const resetFilters = () => {
+    setLaw(""); setFrom(""); setTo(""); setClause(""); setReview("");
+  };
+  // how the list was made, stored with the run and in the audit (never re-applied)
+  const describeFilters = (): Record<string, string> => {
+    const f: Record<string, string> = {};
+    if (type) f.type = type;
+    if (onlyGaps) f.only = "with gaps or former names";
+    if (law) f.law = law === "none" ? "not found" : law;
+    if (from) f.from = from;
+    if (to) f.to = to;
+    if (clause) {
+      f.clause = matrix.clauses[clause].label;
+      f.clause_status = CLAUSE_STATUS.find((s) => s.key === clauseStatus)?.label ?? clauseStatus;
+    }
+    if (review) f.review = REVIEW_FILTER.find((x) => x.key === review)?.label ?? review;
+    if (q) f.search = query.trim();
+    return f;
+  };
+  const checkInWorkbench = (docIds: string[], filters: Record<string, string>) =>
+    navigate(`/tool/workbench?scope=${encodeURIComponent(JSON.stringify({ doc_ids: docIds, filters }))}`);
   const withGaps = rows.filter((r) => r.gaps.length > 0 && !r.duplicate_of).length;
   const openNames = rows.filter((r) => r.former_names.open > 0 && !r.duplicate_of && !r.is_amendment).length;
 
@@ -168,20 +256,97 @@ export function Register() {
           <SearchBox placeholder={t("Search ID or party")} value={query} onChange={(_, d) => setQuery(d.value)} />
         </div>
 
+        <div className="mx-filters" role="group" aria-label={t("More filters")}>
+          <label>
+            <span>{t("Law")}</span>
+            <Dropdown size="small" className="mx-f-law" value={law === "none" ? t("not found") : law || t("any")}
+                      selectedOptions={[law]} onOptionSelect={(_, d) => setLaw(d.optionValue ?? "")}>
+              <Option value="">{t("any")}</Option>
+              {laws.map((l) => <Option key={l} value={l}>{l}</Option>)}
+              <Option value="none">{t("not found")}</Option>
+            </Dropdown>
+          </label>
+          <label>
+            <span>{t("Dated from")}</span>
+            <Input size="small" type="date" value={from} onChange={(_, d) => setFrom(d.value)} />
+          </label>
+          <label>
+            <span>{t("to")}</span>
+            <Input size="small" type="date" value={to} onChange={(_, d) => setTo(d.value)} />
+          </label>
+          <label>
+            <span>{t("Clause")}</span>
+            <Dropdown size="small" className="mx-f-clause" value={clause ? t(matrix.clauses[clause].label) : t("any")}
+                      selectedOptions={[clause]} onOptionSelect={(_, d) => setClause(d.optionValue ?? "")}>
+              <Option value="">{t("any")}</Option>
+              {clauseKeys.map((k) => <Option key={k} value={k}>{t(matrix.clauses[k].label)}</Option>)}
+            </Dropdown>
+            {clause && (
+              <Dropdown size="small" className="mx-f-status" aria-label={t("Clause status")}
+                        value={t(CLAUSE_STATUS.find((s) => s.key === clauseStatus)?.label ?? "")}
+                        selectedOptions={[clauseStatus]} onOptionSelect={(_, d) => setClauseStatus(d.optionValue ?? "GAP")}>
+                {CLAUSE_STATUS.map((s) => <Option key={s.key} value={s.key}>{t(s.label)}</Option>)}
+              </Dropdown>
+            )}
+          </label>
+          <label>
+            <span>{t("Review state")}</span>
+            <Dropdown size="small" className="mx-f-review" value={t(REVIEW_FILTER.find((x) => x.key === review)?.label ?? "")}
+                      selectedOptions={[review]} onOptionSelect={(_, d) => setReview((d.optionValue ?? "") as ReviewFilter)}>
+              {REVIEW_FILTER.map((x) => <Option key={x.key} value={x.key}>{t(x.label)}</Option>)}
+            </Dropdown>
+          </label>
+          {extraFilters && <button type="button" className="link-btn" onClick={resetFilters}>{t("Reset filters")}</button>}
+        </div>
+
         <div className="mx-summary">
           <span><b>{rows.length}</b> {t("shown")}</span>
           <span className="s-absent"><b>{withGaps}</b> {t("with a required clause missing or unclear")}</span>
           <span className="s-unclear"><b>{openNames}</b> {t("still naming a former company")}</span>
+          {noLaw.length > 0 && (
+            <span className="mx-unjudged"><Warning16Filled /> {t("not shown, no governing law found: {ids}", { ids: noLaw.map((r) => r.doc_id).join(", ") })}</span>
+          )}
+          {noDate.length > 0 && (
+            <span className="mx-unjudged"><Warning16Filled /> {t("not shown, no date found: {ids}", { ids: noDate.map((r) => r.doc_id).join(", ") })}</span>
+          )}
           <span className="legend-inline">
             <CheckmarkCircle16Filled className="c-ok" /> {short("PRESENT")} <DismissCircle16Filled className="c-bad" /> {short("ABSENT")}{" "}
             <QuestionCircle16Filled className="c-warn" /> {short("UNCLEAR")} · {t("faded = not required for this type")} · {t("dot = checks overruled the model")}
           </span>
         </div>
 
+        <div className="mx-select" aria-live="polite">
+          {picked.size > 0 ? (
+            <>
+              <span>
+                <b>{picked.size}</b> {t("selected")}
+                {pickedHidden.length > 0 && <span className="note"> · {t("{ids} hidden by the filters", { ids: pickedHidden.join(", ") })}</span>}
+              </span>
+              <Button appearance="primary" size="small" icon={<Play16Filled />}
+                      onClick={() => checkInWorkbench([...picked].sort(), { picked: "by hand" })}>
+                {t("Check these {n} in the Workbench", { n: picked.size })}
+              </Button>
+              <button type="button" className="link-btn" onClick={() => setPicked(new Set())}>{t("Clear selection")}</button>
+            </>
+          ) : (
+            <>
+              <span className="note">{t("Tick contracts to check only those – or check everything shown.")}</span>
+              <Button appearance="secondary" size="small" icon={<Play16Filled />} disabled={rows.length === 0}
+                      onClick={() => checkInWorkbench(shownIds, describeFilters())}>
+                {t("Check the {n} shown in the Workbench", { n: rows.length })}
+              </Button>
+            </>
+          )}
+        </div>
+
         <div className="mx-scroll">
           <table className="matrix">
             <thead>
               <tr>
+                <th className="mx-pick">
+                  <Checkbox checked={allShown ? true : someShown ? "mixed" : false} onChange={toggleShown}
+                            aria-label={t("Select all shown")} disabled={rows.length === 0} />
+                </th>
                 <th className="mx-doc">{t("Contract")}</th>
                 <th>{t("Type")}</th>
                 <th>{t("Date")}</th>
@@ -197,7 +362,10 @@ export function Register() {
               {rows.map((r) => {
                 const warnings = warningLabels(r.flags, t);
                 return (
-                  <tr key={r.doc_id} className={r.duplicate_of ? "dup" : undefined}>
+                  <tr key={r.doc_id} className={[r.duplicate_of && "dup", picked.has(r.doc_id) && "picked"].filter(Boolean).join(" ") || undefined}>
+                    <td className="mx-pick">
+                      <Checkbox checked={picked.has(r.doc_id)} onChange={() => toggle(r.doc_id)} aria-label={t("Select {id}", { id: r.doc_id })} />
+                    </td>
                     <td className="mx-doc">
                       <button type="button" className="mx-open" onClick={() => setOpen({ docId: r.doc_id, clause: r.gaps[0] ?? null })}>
                         <span className="mx-id">{r.doc_id}</span>

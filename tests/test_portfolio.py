@@ -86,3 +86,43 @@ def test_law_check_compares_the_country_not_the_state(con):
     statuses = {r["doc_id"]: r["status"] for r in run["rows"]}
     assert "A1" not in statuses and statuses["I1"] == "OTHER_LAW"
     assert "A1" not in {r["doc_id"] for r in queries.by_law(con, "US")}
+
+
+# ---------------------------------------------------------------------------- selection (decision 75)
+def test_a_selection_is_the_scope_and_nothing_in_it_drops_out(con):
+    plan = {"check": "missing_clause", "params": {"clause_type": "liability_limitation", "doc_type": "merchant_agreement"},
+            "scope": {"doc_ids": ["I1", "A2", "U1"], "filters": {"law": "DE"}}}
+    cov = portfolio.run_check(con, plan)["coverage"]
+    assert cov["in_scope"] == 3 and cov["checked"] + len(cov["excluded"]) == 3
+    assert cov["selection"] == {"chosen": 3, "of": 6, "filters": {"law": "DE"}}
+    assert {e["doc_id"] for e in cov["excluded"]} == {"A2", "U1"}      # duplicate and unknown type, with reason
+
+
+def test_a_selected_contract_of_another_type_is_excluded_by_name(con):
+    plan = {"check": "missing_clause", "params": {"clause_type": "liability_limitation", "doc_type": "data_processing_agreement"},
+            "scope": {"doc_ids": ["A1"]}}
+    cov = portfolio.run_check(con, plan)["coverage"]
+    assert cov["checked"] == 0 and cov["excluded"][0]["doc_id"] == "A1"
+    assert "merchant agreement" in cov["excluded"][0]["reason"]
+
+
+def test_without_a_selection_the_coverage_says_so(con):
+    plan = {"check": "missing_clause", "params": {"clause_type": "liability_limitation"}}
+    assert portfolio.run_check(con, plan)["coverage"]["selection"] is None
+
+
+@pytest.mark.parametrize("scope", [
+    {"doc_ids": []},                                   # nothing chosen
+    {"doc_ids": "A1"},                                 # not a list
+    {"doc_ids": ["A1; DROP TABLE"]},                   # not an id
+    {"doc_ids": ["A1"], "filters": {"law": 1}},        # filters are short texts
+    {"doc_ids": ["A1"], "extra": True},                # nothing else
+])
+def test_malformed_selections_are_rejected(con, scope):
+    with pytest.raises(ValueError):
+        portfolio.run_check(con, {"check": "duplicates", "params": {}, "scope": scope})
+
+
+def test_a_contract_that_is_not_in_the_register_is_refused(con):
+    with pytest.raises(ValueError, match="not in the register"):
+        portfolio.run_check(con, {"check": "duplicates", "params": {}, "scope": {"doc_ids": ["A1", "ZZ9"]}})

@@ -10,6 +10,13 @@ export type Decision = "CONFIRMED" | "REJECTED" | "CORRECTED";
 export interface Plan {
   check: string;
   params: Record<string, string>;
+  scope?: Scope;
+}
+
+/** Contracts Legal chose in the register (decision 75); the filters only record how. */
+export interface Scope {
+  doc_ids: string[];
+  filters: Record<string, string>;
 }
 
 export interface Example {
@@ -84,6 +91,7 @@ export interface Coverage {
   checked: number;
   excluded: { doc_id: string; reason: string }[];
   reported: number;
+  selection: { chosen: number; of: number; filters: Record<string, string> } | null;
 }
 
 export interface Run {

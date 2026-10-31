@@ -7,6 +7,11 @@ unknown type is always in scope; and every contract in scope lands in exactly on
 checked (with status and evidence) or excluded with a stated reason (duplicate, amendment, type
 unknown, not extracted). The tests count scope = checked + excluded against the register.
 
+Legal may choose the scope (decision 75): a selection of contracts from the register. Then the
+selection is the scope - every chosen contract is checked or excluded with a reason (also one of
+another type), an id that is not in the register is refused, and the coverage says "N of 47,
+selected", so a subset never reads like an answer about the whole portfolio.
+
 The same fixed list of check types is what the planner may choose from later (decision 55).
 """
 
@@ -14,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections import Counter
 
 from . import catalogue
@@ -21,6 +27,10 @@ from .extract import EXTRACTION_SCHEMA
 
 DOC_TYPES = EXTRACTION_SCHEMA["properties"]["doc_type"]["enum"]
 UNKNOWN_TYPES = (None, "unknown")    # could be anything: always in scope, shown as excluded
+
+MAX_SELECTION = 1000
+DOC_ID = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
+MAX_FILTERS, MAX_FILTER_TEXT = 12, 100
 
 # Triage (decision 53): deterministic signals only, never the model's self-assessment
 REVIEW_BELOW = 0.8
@@ -75,7 +85,28 @@ def validate_plan(plan: dict) -> dict:
         if len(law) != 2 or not law.isalpha():
             raise ValueError("law must be a two-letter country code, e.g. DE")
         params["law"] = law
-    return {"check": check, "params": {k: v for k, v in params.items() if v}}
+    clean = {"check": check, "params": {k: v for k, v in params.items() if v}}
+    if plan.get("scope") is not None:
+        clean["scope"] = validate_scope(plan["scope"])
+    return clean
+
+
+def validate_scope(scope) -> dict:
+    """A selection chosen in the register: the contract ids (they decide) and, for the record,
+    the filters that produced them (shown in the run and the audit, never re-applied)."""
+    if not isinstance(scope, dict) or set(scope) - {"doc_ids", "filters"}:
+        raise ValueError("scope must be {doc_ids: [...], filters: {...}}")
+    ids = scope.get("doc_ids")
+    if not isinstance(ids, list) or not ids or len(ids) > MAX_SELECTION:
+        raise ValueError(f"scope.doc_ids must list 1 to {MAX_SELECTION} contracts")
+    if not all(isinstance(i, str) and DOC_ID.match(i) for i in ids):
+        raise ValueError("scope.doc_ids: every id must be a contract id like M08")
+    filters = scope.get("filters") or {}
+    if (not isinstance(filters, dict) or len(filters) > MAX_FILTERS
+            or not all(isinstance(k, str) and isinstance(v, str) and len(k) <= 40 and len(v) <= MAX_FILTER_TEXT
+                       for k, v in filters.items())):
+        raise ValueError(f"scope.filters: at most {MAX_FILTERS} short texts")
+    return {"doc_ids": sorted(set(ids)), "filters": filters}
 
 
 # ---------------------------------------------------------------------------- triage
@@ -107,12 +138,15 @@ def _documents(con) -> list[dict]:
     return docs
 
 
-def _exclusion(doc: dict, check: str) -> str | None:
-    """Why a contract in scope is not checked, or None if it is checked."""
+def _exclusion(doc: dict, check: str, doc_type: str | None = None) -> str | None:
+    """Why a contract in scope is not checked, or None if it is checked. `doc_type` is set only
+    for a selection: a chosen contract of another type stays in the scope, excluded by name."""
     if doc["doc_type"] is None:
         return f"not extracted (status {doc['status']})"
     if doc["doc_type"] == "unknown":
         return "document type unknown - check manually"
+    if doc_type and doc["doc_type"] != doc_type:
+        return f"selected, but a {doc['doc_type'].replace('_', ' ')} - the question is about {doc_type.replace('_', ' ')}s"
     if check == "duplicates":
         return None
     if doc["duplicate_of"]:
@@ -202,14 +236,25 @@ RUNNERS = {"missing_clause": _missing_clause, "legacy_names": _legacy_names,
 
 
 def run_check(con, plan: dict, run_id: str = "") -> dict:
-    """Answer one question over the whole portfolio, with coverage. No model call."""
+    """Answer one question over the whole portfolio - or over the selection Legal chose - with
+    coverage. No model call."""
     plan = validate_plan(plan)
     check, params = plan["check"], plan["params"]
     doc_type = params.get("doc_type")
-    in_scope = [d for d in _documents(con) if not doc_type or d["doc_type"] in (doc_type, *UNKNOWN_TYPES)]
+    docs = _documents(con)
+    selection = plan.get("scope")
+    if selection:
+        known = {d["doc_id"] for d in docs}
+        unknown = [i for i in selection["doc_ids"] if i not in known]
+        if unknown:      # never answer for a contract we do not have - and never drop it silently
+            raise ValueError(f"not in the register: {unknown}")
+        chosen = set(selection["doc_ids"])
+        in_scope = [d for d in docs if d["doc_id"] in chosen]
+    else:
+        in_scope = [d for d in docs if not doc_type or d["doc_type"] in (doc_type, *UNKNOWN_TYPES)]
     checked, excluded = [], []
     for d in in_scope:   # each contract in scope lands in exactly one of the two lists
-        reason = _exclusion(d, check)
+        reason = _exclusion(d, check, doc_type if selection else None)
         if reason:
             excluded.append({"doc_id": d["doc_id"], "reason": reason})
         else:
@@ -223,6 +268,8 @@ def run_check(con, plan: dict, run_id: str = "") -> dict:
         "counts": counts,
         "info": info,
         "coverage": {"scope": doc_type or "all documents", "in_scope": len(in_scope), "checked": len(checked),
-                     "excluded": excluded, "reported": len(rows)},
+                     "excluded": excluded, "reported": len(rows),
+                     "selection": {"chosen": len(in_scope), "of": len(docs), "filters": selection["filters"]}
+                     if selection else None},
         "triage": dict(Counter(r["triage"] for r in rows)),
     }

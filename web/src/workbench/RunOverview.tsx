@@ -1,7 +1,10 @@
-// Step 2: the answer at a glance. Coverage first: what was checked, what was excluded and why.
+// Step 2: the answer at a glance. Coverage first: what was checked, what was excluded and why -
+// and, for a selection, that the answer covers only the chosen contracts (decision 75).
+import { MessageBar, MessageBarBody } from "@fluentui/react-components";
 import type { Run } from "../api";
 import { useT } from "../i18n";
-import { DOC_TYPE_LABEL, TRIAGE_LABEL } from "../labels";
+import { DOC_TYPE_LABEL, scopeText, TRIAGE_LABEL } from "../labels";
+import { USERS } from "../user";
 
 function Kpi({ value, label, sub, tone }: { value: string | number; label: string; sub?: string; tone?: string }) {
   return (
@@ -17,7 +20,8 @@ function Kpi({ value, label, sub, tone }: { value: string | number; label: strin
 export function RunOverview({ run, question }: { run: Run; question: string | null }) {
   const t = useT();
   const c = run.coverage;
-  const scope = t(DOC_TYPE_LABEL[c.scope] ?? c.scope);
+  const sel = c.selection;
+  const scope = sel ? t("selected from {of}", { of: sel.of }) : t(DOC_TYPE_LABEL[c.scope] ?? c.scope);
   const pct = (n: number) => `${(n / Math.max(c.in_scope, 1)) * 100}%`;
   const triage = (["FOUR_EYES", "REVIEW", "CONFIRM"] as const)
     .filter((k) => run.triage[k])
@@ -32,6 +36,16 @@ export function RunOverview({ run, question }: { run: Run; question: string | nu
           <h2>{question ?? t("Your check")}</h2>
         </div>
       </div>
+
+      {sel && (
+        <MessageBar intent="warning" className="scope-note">
+          <MessageBarBody>
+            {t("A selection: {n} of {of} contracts, chosen by {user}. This answer covers only these – not the whole portfolio.",
+               { n: sel.chosen, of: sel.of, user: t(USERS[run.created_by] ?? run.created_by) })}
+            {Object.keys(sel.filters).length > 0 && <> {t("How they were chosen: {filters}", { filters: scopeText(sel.filters, t) })}</>}
+          </MessageBarBody>
+        </MessageBar>
+      )}
 
       <div className="kpis">
         <Kpi value={c.in_scope} label={t("in scope")} sub={scope} />

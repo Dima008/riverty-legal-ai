@@ -41,6 +41,9 @@ class Plan(BaseModel):
     check: str = Field(..., examples=["missing_clause"])
     params: dict = Field(default_factory=dict,
                          examples=[{"clause_type": "liability_limitation", "doc_type": "merchant_agreement"}])
+    # optional: the contracts Legal selected in the register (decision 75); without it, every
+    # contract of the type is in scope
+    scope: dict | None = Field(None, examples=[{"doc_ids": ["M01", "M03", "M08"], "filters": {"law": "DE"}}])
 
 
 class RunRequest(BaseModel):
@@ -72,7 +75,8 @@ def list_examples() -> list[dict]:
 @router.post("/runs", status_code=201)
 def create_run(req: RunRequest, user: str = Depends(current_user), con: sqlite3.Connection = Depends(get_con),
                wb: sqlite3.Connection = Depends(get_wb)) -> dict:
-    """Run a confirmed plan over every contract in scope. Register query only: no model call."""
+    """Run a confirmed plan over every contract in scope - the whole type, or the selection in
+    `plan.scope`. Register query only: no model call. The audit records the plan with the selection."""
     run_id = f"run-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}-{uuid.uuid4().hex[:6]}"
     try:
         result = portfolio.run_check(con, req.plan.model_dump(), run_id)

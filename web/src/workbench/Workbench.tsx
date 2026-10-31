@@ -3,13 +3,26 @@
 import { MessageBar, MessageBarBody, Spinner } from "@fluentui/react-components";
 import { DocumentSearch24Regular, PeopleTeam24Regular, ShieldCheckmark24Regular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
-import { api, ApiError, type Plan, type Run, type RunRow } from "../api";
+import { api, ApiError, type Plan, type Run, type RunRow, type Scope } from "../api";
 import { ContractFile } from "../register/ContractFile";
 import { useLang, useT } from "../i18n";
+import { navigate, useHashRoute } from "../routing";
 import { AskPanel, type Meta } from "./AskPanel";
 import { Evidence } from "./Evidence";
 import { ResultList } from "./ResultList";
 import { RunOverview } from "./RunOverview";
+
+/** #/tool/workbench?scope={"doc_ids":[...],"filters":{...}} - the selection made in the register. */
+function parseScope(raw: string | null): Scope | null {
+  if (!raw) return null;
+  try {
+    const s = JSON.parse(raw);
+    if (!Array.isArray(s?.doc_ids) || s.doc_ids.length === 0) return null;
+    return { doc_ids: s.doc_ids.map(String), filters: s.filters && typeof s.filters === "object" ? s.filters : {} };
+  } catch {
+    return null;       // a broken link falls back to every contract - and the panel shows no selection
+  }
+}
 
 function Promises() {
   const t = useT();
@@ -41,6 +54,11 @@ export function Workbench() {
   const [plan, setPlan] = useState<Plan>({ check: "missing_clause", params: {} });
   const [run, setRun] = useState<Run | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  // the selection from the register (decision 75): in the address, so a reload keeps it
+  const scopeParam = useHashRoute().params.get("scope");
+  const [scope, setScope] = useState<Scope | null>(() => parseScope(scopeParam));
+  useEffect(() => setScope(parseScope(scopeParam)), [scopeParam]);
+  const clearScope = () => navigate("/tool/workbench");
   // a contract file opened from the evidence (e.g. the original of a copy); the run stays as it is
   const [file, setFile] = useState<{ docId: string; clause: string | null } | null>(null);
   const openDoc = (docId: string) => setFile({ docId, clause: null });
@@ -67,7 +85,7 @@ export function Workbench() {
 
   const start = () =>
     guard(async () => {
-      const r = await api.createRun(plan, question);
+      const r = await api.createRun(scope ? { ...plan, scope } : plan, question);
       setRun(r);
       setSelected(r.rows[0]?.doc_id ?? null);
     });
@@ -89,6 +107,8 @@ export function Workbench() {
         meta={meta}
         question={question}
         plan={plan}
+        scope={scope}
+        onClearScope={clearScope}
         busy={busy}
         onExample={(ex) => {
           setQuestion(ex.question);

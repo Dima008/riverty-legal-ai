@@ -14,9 +14,9 @@ import {
   Spinner,
 } from "@fluentui/react-components";
 import { CheckmarkCircle20Filled, Play16Filled } from "@fluentui/react-icons";
-import type { CheckSpec, Example, Plan } from "../api";
+import type { CheckSpec, Example, Plan, Scope } from "../api";
 import { useLang, useT } from "../i18n";
-import { DOC_TYPE_LABEL } from "../labels";
+import { DOC_TYPE_LABEL, scopeText } from "../labels";
 
 export interface Meta {
   examples: Example[];
@@ -81,7 +81,7 @@ function PlanBuilder({ meta, plan, onChange }: { meta: Meta; plan: Plan; onChang
   );
 }
 
-function PlanSummary({ plan, meta }: { plan: Plan; meta: Meta }) {
+function PlanSummary({ plan, meta, scope }: { plan: Plan; meta: Meta; scope: Scope | null }) {
   const t = useT();
   const p = plan.params;
   const check = meta.checks[plan.check]?.label;
@@ -92,6 +92,7 @@ function PlanSummary({ plan, meta }: { plan: Plan; meta: Meta }) {
     p.law && t("law is not {law}", { law: p.law }),
     // the whole phrase is the key: German needs another case after "in" ("in Händlerverträgen")
     t(`in ${DOC_TYPE_LABEL[p.doc_type || "all documents"] ?? p.doc_type}`),
+    scope && t("{n} selected contracts", { n: scope.doc_ids.length }),
   ].filter(Boolean);
   return (
     <ol className="plan-steps" aria-label={t("Plan")}>
@@ -113,13 +114,15 @@ interface Props {
   meta: Meta;
   question: string | null;
   plan: Plan;
+  scope: Scope | null;          // contracts chosen in the register, or null = every contract of the type
+  onClearScope: () => void;
   busy: boolean;
   onExample: (ex: Example) => void;
   onPlan: (p: Plan) => void;
   onRun: () => void;
 }
 
-export function AskPanel({ meta, question, plan, busy, onExample, onPlan, onRun }: Props) {
+export function AskPanel({ meta, question, plan, scope, onClearScope, busy, onExample, onPlan, onRun }: Props) {
   const t = useT();
   const lang = useLang();
   const missing = missingParams(plan, meta);
@@ -156,9 +159,25 @@ export function AskPanel({ meta, question, plan, busy, onExample, onPlan, onRun 
         </AccordionItem>
       </Accordion>
 
+      {scope && (
+        <div className="scope-box" role="status">
+          <div className="plan-label">{t("Selection")}</div>
+          <div>
+            <b>{t("{n} contracts chosen in the register", { n: scope.doc_ids.length })}</b>
+            <span className="note"> · {scope.doc_ids.join(", ")}</span>
+            {Object.keys(scope.filters).length > 0 && (
+              <div className="note">{t("How they were chosen: {filters}", { filters: scopeText(scope.filters, t) })}</div>
+            )}
+            <div className="note">{t("Only these are checked. The run says so, and the audit records the list.")}</div>
+          </div>
+          <div className="spacer" />
+          <button type="button" className="link-btn" onClick={onClearScope}>{t("Check all contracts instead")}</button>
+        </div>
+      )}
+
       <div className="plan-bar">
         <div className="plan-label">{t("Plan")}</div>
-        <PlanSummary plan={plan} meta={meta} />
+        <PlanSummary plan={plan} meta={meta} scope={scope} />
         <div className="spacer" />
         <span className="plan-note">
           {missing.length
@@ -166,7 +185,7 @@ export function AskPanel({ meta, question, plan, busy, onExample, onPlan, onRun 
             : t("Register query · no model call · $0")}
         </span>
         <Button appearance="primary" size="large" icon={busy ? <Spinner size="tiny" /> : <Play16Filled />} disabled={busy || missing.length > 0} onClick={onRun}>
-          {t("Check all contracts")}
+          {scope ? t("Check the {n} selected contracts", { n: scope.doc_ids.length }) : t("Check all contracts")}
         </Button>
       </div>
     </section>

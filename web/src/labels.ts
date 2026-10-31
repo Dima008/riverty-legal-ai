@@ -89,3 +89,13 @@ export const flagLabel = (flag: string) => FLAG_LABEL[flag.split(":")[0]] ?? fla
 // t translates the labels; the tool passes it in, without it they stay English
 export const warningLabels = (flags: string[], t: T = (text) => text) =>
   [...new Set(flags.filter((f) => !NOT_A_WARNING.has(f.split(":")[0])).map((f) => t(flagLabel(f))))];
+
+// How a selection was made in the register (decision 75), e.g. "law: DE · dated from: 2020-01-01"
+const SCOPE_FILTER: Record<string, string> = {
+  type: "type", only: "only", law: "law", from: "dated from", to: "dated to", clause: "clause",
+  clause_status: "clause status", review: "review state", search: "search", picked: "picked",
+};
+export const scopeText = (filters: Record<string, string>, t: T = (text) => text) =>
+  Object.entries(filters)
+    .map(([k, v]) => `${t(SCOPE_FILTER[k] ?? k)}: ${k === "type" ? t(DOC_TYPE_LABEL[v] ?? v) : t(v)}`)
+    .join(" · ");

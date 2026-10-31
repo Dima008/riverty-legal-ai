@@ -230,6 +230,14 @@ unknown, not extracted): the scope is read from all documents, also those never 
 each contract lands in exactly one of the two lists; the tests count it against the register. No model
 call: a question costs $0 – reading the contracts was paid once ($0.12 for 47).
 
+Legal can also choose the contracts (decision 75): filter the register (law, date, clause status,
+review state) or tick contracts, then "check these in the Workbench". The selection is then the
+scope: every chosen contract is checked or excluded by name – also one of another type ("selected,
+but a data processing agreement"). An id that is not in the register is refused. The answer says
+"a selection: 3 of 47, chosen by Legal Reviewer A – not the whole portfolio", and the audit keeps
+the list and how it was made. A filter never hides a contract it cannot judge: "law DE" names the
+contracts without a governing law instead of dropping them.
+
 **Why this way.** Compile, don't search (4); negative search checks every contract, with
 coverage (5); filters, not vector search, select contracts (17).
 
@@ -241,7 +249,9 @@ guarantees are named instead.
 
 **Live.** `POST /runs` with the plan of Q1 (`GET /examples`):
 "20 merchant agreements in scope · 19 checked · excluded: M15 (duplicate of M01, the original
-is checked) · reported: M03, M08, M10, M14, M18".
+is checked) · reported: M03, M08, M10, M14, M18". The same plan with
+`"scope": {"doc_ids": ["M01", "M03", "M08", "M15", "V01"]}`: 5 in scope, M03 and M08 reported,
+M15 (duplicate) and V01 (another type) excluded with reason.
 
 **Diagram.** A bar of all contracts in scope: checked (with result), excluded (with reason),
 nothing in between.

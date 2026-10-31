@@ -68,3 +68,18 @@ def test_run_is_stored_and_audited():
     event = client.get("/audit").json()[0]
     assert (event["actor"], event["action"], event["target"]) == ("reviewer_b", "run_created", run["run_id"])
     assert client.get("/runs/run-does-not-exist").status_code == 404
+
+
+def test_a_run_over_a_selection_says_so_and_audits_it():
+    """Decision 75: Legal chooses the contracts; the run covers exactly those and records the choice."""
+    q1 = {"clause_type": "liability_limitation", "doc_type": "merchant_agreement"}
+    run = _run({"check": "missing_clause", "params": q1,
+                "scope": {"doc_ids": ["M01", "M03", "M08", "M15", "V01"], "filters": {"picked": "by hand"}}}).json()
+    cov = run["coverage"]
+    assert {r["doc_id"] for r in run["rows"]} == {"M03", "M08"} <= GOLD["Q1"]
+    assert cov["in_scope"] == cov["checked"] + len(cov["excluded"]) == 5
+    assert {e["doc_id"] for e in cov["excluded"]} == {"M15", "V01"}            # duplicate, other type - by name
+    assert cov["selection"]["chosen"] == 5 and cov["selection"]["of"] == client.get("/summary").json()["documents"]
+    event = client.get("/audit").json()[0]
+    assert event["action"] == "run_created" and event["details"]["plan"]["scope"]["doc_ids"] == ["M01", "M03", "M08", "M15", "V01"]
+    assert _run({"check": "duplicates", "scope": {"doc_ids": ["M01", "NOPE"]}}).status_code == 422
