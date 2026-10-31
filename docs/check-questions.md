@@ -47,6 +47,16 @@ M14 to a four-eyes review.
 
 *Where:* `pipeline/catalogue.py` (injection patterns), `docs/explorer.md` station 4.
 
+**16. In our talk, the embedding map shows the question as a point between all passages. Why –
+and what do you see there for a contract that lacks the liability clause?**
+
+Top-k means: take the k points closest to the question point. On the map you can watch the search
+pick its neighbours. A contract without a liability cap has no passage near the question – its
+passages sit elsewhere, about fees or termination. So it is never among the neighbours, and nothing
+on the map marks it as missing. That is the picture of why a search cannot prove absence.
+
+*Where:* card "What an embedding looks like" (act 2, planned), table `embeddings` in the register.
+
 ## Coverage: nothing drops out silently
 
 **5. For Q1, 20 merchant agreements are in scope, but only 19 were checked. Why is the answer
@@ -146,3 +156,15 @@ every `/api` call there.
 
 The third build appears: the truth, with the false alarms and M14 missed. Only the fourth press
 opens the next card.
+
+## How I worked
+
+**17. Which step of the path "from process to platform" decides between a fixed workflow and an
+agent – and what did we choose for reading the contracts, and why?**
+
+Step 4: for every step we decide "deterministic or agent", and step 5 says: as little autonomy as
+needed. Reading the contracts is a fixed workflow – every contract, one model call each, checks
+before and after. "Every contract was read" must be a fact we can prove. An agent decides itself
+when it is done, so it could only claim it.
+
+*Where:* Notion page "Herangehensweise", `docs/context/briefing.md` section 4, decision 8.
