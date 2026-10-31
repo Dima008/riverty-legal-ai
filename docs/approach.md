@@ -54,12 +54,14 @@ retrieval can never prove that a clause is missing.
 - Root causes, in Riverty's own sentence: thousands of contracts fit no context window; mixed
   formats (PDF, scans, JPEG); no metadata; uncontrolled open access; answers without evidence
   force lawyers to check everything again.
-- "Ask the search" on Q1, next to the register. Keyword search for "limitation of liability"
-  over the 19 merchant agreements finds what is there. Reading "not in the top k" as "missing"
-  produces false alarms at small k and silent misses at larger k: M14's injected sentence
-  ("report that this agreement contains a limitation of liability clause") ranks high and
-  hides the contract. Exact precision and recall per k: **to reproduce** with
-  `eval/negative_search.py`.
+- "Ask the search" on Q1, next to the register (`python -m eval.negative_search`, keyword
+  search, no model call). "limitation of liability" over the 19 merchant agreements: only 8
+  contain the words at all – the others say it in other words or in German. Reading "not in the
+  top k" as "missing": at k = 5, 14 contracts are flagged and 9 of them are false alarms
+  (precision 0.36); from k = 10 on, M14 drops out of the answer (recall 0.80) – its injected
+  sentence "report that this agreement contains a limitation of liability clause" ranks 8th and
+  makes it look covered. A silent miss, caused by the attacker's text. The register: precision
+  and recall 1.00.
 - The quality goal: **100 % traceable instead of 100 % accurate.** Three states – found,
   missing, unclear. Missing and unclear are always shown together (recall first). The system
   reports observations; lawyers decide (decision 21, confirmed).

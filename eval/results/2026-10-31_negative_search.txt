@@ -1,0 +1,10 @@
+"limitation of liability" over 19 merchant agreements (keyword search, no model call); 8 match at all. Gold answer: M03, M08, M10, M14, M18
+
+  k  in top k  flagged  precision  recall  missed / false alarms
+  5         5       14       0.36    1.00  [] / 9
+ 10         8       11       0.36    0.80  ['M14'] / 7
+ 20         8       11       0.36    0.80  ['M14'] / 7
+ 40         8       11       0.36    0.80  ['M14'] / 7
+
+register: precision 1.00, recall 1.00 - M03, M08, M10, M14, M18
+first rank per contract: M01 1, M04 2, M05 3, M13 4, M07 5, M09 6, M12 7, M14 8

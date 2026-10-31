@@ -1,0 +1,112 @@
+{
+  "query": "limitation of liability",
+  "doc_type": "merchant_agreement",
+  "contracts": 19,
+  "expected": [
+    "M03",
+    "M08",
+    "M10",
+    "M14",
+    "M18"
+  ],
+  "contracts_matching_at_all": 8,
+  "first_rank_per_contract": {
+    "M01": 1,
+    "M04": 2,
+    "M05": 3,
+    "M13": 4,
+    "M07": 5,
+    "M09": 6,
+    "M12": 7,
+    "M14": 8
+  },
+  "top_k": [
+    {
+      "k": 5,
+      "contracts_in_top_k": 5,
+      "flagged_as_missing": 14,
+      "precision": 0.36,
+      "recall": 1.0,
+      "false_alarms": [
+        "M02",
+        "M06",
+        "M09",
+        "M11",
+        "M12",
+        "M16",
+        "M17",
+        "M19",
+        "M20"
+      ],
+      "missed": []
+    },
+    {
+      "k": 10,
+      "contracts_in_top_k": 8,
+      "flagged_as_missing": 11,
+      "precision": 0.36,
+      "recall": 0.8,
+      "false_alarms": [
+        "M02",
+        "M06",
+        "M11",
+        "M16",
+        "M17",
+        "M19",
+        "M20"
+      ],
+      "missed": [
+        "M14"
+      ]
+    },
+    {
+      "k": 20,
+      "contracts_in_top_k": 8,
+      "flagged_as_missing": 11,
+      "precision": 0.36,
+      "recall": 0.8,
+      "false_alarms": [
+        "M02",
+        "M06",
+        "M11",
+        "M16",
+        "M17",
+        "M19",
+        "M20"
+      ],
+      "missed": [
+        "M14"
+      ]
+    },
+    {
+      "k": 40,
+      "contracts_in_top_k": 8,
+      "flagged_as_missing": 11,
+      "precision": 0.36,
+      "recall": 0.8,
+      "false_alarms": [
+        "M02",
+        "M06",
+        "M11",
+        "M16",
+        "M17",
+        "M19",
+        "M20"
+      ],
+      "missed": [
+        "M14"
+      ]
+    }
+  ],
+  "register": {
+    "reported": [
+      "M03",
+      "M08",
+      "M10",
+      "M14",
+      "M18"
+    ],
+    "recall": 1.0,
+    "precision": 1.0
+  }
+}

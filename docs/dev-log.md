@@ -7,6 +7,25 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-10-31 · Top-k against the register, measured (chapter 2)
+
+- **Problem:** The central argument of the talk – top-k retrieval cannot prove that a clause is
+  missing – rested on reasoning and on a one-off measurement by a planning agent; the chapter text
+  marked its numbers "to reproduce".
+- **Cause:** No script measured what a RAG system would answer to a completeness question.
+- **Technique and why:** `eval/negative_search.py` ranks the passages of the 19 merchant
+  agreements for "limitation of liability" with keyword search (BM25, no model call) and reads
+  "not in the top k" as "missing" – the only reading top-k allows – for k = 5, 10, 20, 40, next to
+  the register's answer. Stored in `eval/results/2026-10-31_negative_search.*`.
+- **Rejected alternative:** Hybrid search with vectors (a model call per question and the same
+  structural limit); asking a model with the top-k passages (adds variance, hides the mechanism).
+- **Metric before → after:** Claim → measured: 8 of 19 contracts contain the words; k = 5: 14
+  flagged, 9 false alarms, precision 0.36, recall 1.00; k ≥ 10: precision 0.36, recall 0.80 – M14
+  missed because its injected sentence ranks 8th. Register: 1.00 / 1.00.
+- **Links:** `eval/negative_search.py`, `docs/approach.md` chapter 2; decisions 5, 37, 41
+
+---
+
 ## 2026-10-31 · Review in the contract register, reused by every run; the archive gate is clickable
 
 - **Problem:** A review belonged to one run. Asking Q1 again showed M14 as "to look at" although
