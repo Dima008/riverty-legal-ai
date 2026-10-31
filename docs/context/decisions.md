@@ -105,7 +105,7 @@ Begründung: Riverty teilt keine echten Verträge. 20 synthetische Händlervertr
 Verworfen: Klein starten nur mit synthetischen Varianten; nur CUAD (nur Englisch).
 
 ### 21. Abweichung ist kein Rechtsverstoß: Agent meldet nur Beobachtungen
-Architektur · Entschieden (von Dima bestätigt am 30.10., in Notion ausstehend) · Hauptpunkt
+Architektur · Entschieden (von Dima bestätigt am 30.10.) · Hauptpunkt
 Begründung: Aus dem Workshop-Learning „Mismatch ist nicht gleich Fraud“; rechtliche Bewertung trifft nur die Juristin.
 Verworfen: Agent bewertet Wirksamkeit oder Rechtsverstöße.
 
@@ -130,7 +130,7 @@ Begründung: Weniger als eine Woche Zeit: lokal ist schnell und demo-sicher; das
 Verworfen: Komplett auf Azure deployen (rund ein Tag mehr, Einrichtungsrisiko).
 
 ### 26. EU-Region und EU-Datenzone für die Modelle im Betrieb
-Governance · Entschieden (von Dima bestätigt am 30.10., in Notion ausstehend) · Hauptpunkt
+Governance · Entschieden (von Dima bestätigt am 30.10.) · Hauptpunkt
 Begründung: Vertragsdaten eines europäischen Finanzinstituts; DSGVO. Zielbild für den Betrieb; im Prototyp bewusst Global Standard mit synthetischen Daten, weil das neue Abo kein EU-Kontingent hat.
 Verworfen: Global Standard (Verarbeitung weltweit).
 
@@ -299,79 +299,79 @@ Vorgehen · Entschieden · Kurz erwähnen
 Begründung: Wunsch von Dima: zu jedem Schritt Problem, Ursache, Technik und warum, verworfene Alternative, Messwert vorher und nachher. Das ist Stoff für Präsentation und Interviewfragen. Ein Arbeitsschritt ist ein Commit, der Code oder Verhalten ändert; der Pre-commit-Hook lehnt solche Commits ohne neuen Eintrag ab (SKIP_DEVLOG=1 für Kleinigkeiten). Gleiches Prinzip wie im Produkt: Der Prompt bittet, die Prüfung erzwingt. Neue Fehler zusätzlich in den Fehlerkatalog, neue Entscheidungen hierher. Am Sitzungsende kurze deutsche Zusammenfassung auf der Notion-Seite Sitzungsprotokolle (Skill session-summary).
 Verworfen: Nur Regel in CLAUDE.md (nichts erzwingt sie); Claude-Code-Stop-Hook nach jeder Antwort (feuert auch mitten im Schritt).
 
-### 60 (in Notion ausstehend – Verbindung war getrennt). Vertragsregister als Matrix gegen das Playbook (Zeilen Verträge, Spalten Klauseln) mit Vertragsakte als Seitenleiste
+### 60. Vertragsregister als Matrix gegen das Playbook (Zeilen Verträge, Spalten Klauseln) mit Vertragsakte als Seitenleiste
 Präsentation · Entschieden · Hauptpunkt
 Begründung: Beantwortet Dimas Fragen „Wo sehe ich die Verträge?“ und „Was vergleiche ich?“ auf einen Blick: Der Maßstab ist das Playbook von Legal (catalogue.py), jede Spalte eine Klausel mit Definition, Pflicht je Vertragstyp sichtbar. Zellen: gefunden / fehlt / unklar, blass wenn für den Typ nicht verlangt, Punkt wenn die Prüfungen das Modell überstimmt haben. Dazu Spalte Firmenname (offen / erledigt) – beide Pilotfragen in einer Ansicht. Klick öffnet die Vertragsakte mit Originalseite, allen Befunden, Prüfschichten und Definition. Ohne Modellaufruf. Geprüft: Matrix ergibt für Q1 genau die Gold-Antwort; 9 Händlerverträge mit Pflichtlücke = Vereinigung von Q1, Q3, Q4; 3 AV-Verträge = Q6 und Q7; 5 alte Namen = Q2.
 Verworfen: Nur Ergebnisse nach einer Frage (kein Gesamtbild); Liste ohne Maßstab; Vertragsakte als eigene Seite (Kontextverlust).
 
-### 61 (in Notion ausstehend). Auswertung als Daten: jeder Lauf als JSON mit Konfiguration, Live-Auswertung über die API
+### 61. Auswertung als Daten: jeder Lauf als JSON mit Konfiguration, Live-Auswertung über die API
 Vorgehen · Entschieden · Nur auf Nachfrage
 Begründung: Qualitätsansicht, Monitoring und Modellvergleich brauchen die Zahlen und die Konfiguration jedes Laufs (Modell, Prompt-Version). evaluate() rechnet, render() druckt den bisherigen Bericht (zeichengleich geprüft), --json speichert die Zahlen; GET /evaluation liefert Live-Auswertung plus gespeicherte Läufe mit dem ehrlichen Hinweis, dass am selben Testsatz verbessert wurde. Ein Test stellt sicher, dass Auswertung und Workbench dieselben Verträge melden.
 Verworfen: Textbericht im Frontend parsen; zweite Auswertung nur für die API.
 
-### 62 (in Notion ausstehend). Vertragsvergleich deterministisch: Dublette gegen Original und Vertrag gegen Vertrag, Abschnitt für Abschnitt
+### 62. Vertragsvergleich deterministisch: Dublette gegen Original und Vertrag gegen Vertrag, Abschnitt für Abschnitt
 Analyse · Entschieden · Kurz erwähnen
 Begründung: Wunsch von Dima, bei Dubletten in den ähnlichen Vertrag schauen zu können; zugleich die zweite Bedeutung von „vergleichen“ (Vertrag gegen Vertrag, vgl. Entscheidung 16). Ohne Modell: Beziehung (Dublette, Familie), gleiche Datei / gleicher Text per Hash, Ähnlichkeit, Metadaten-Unterschiede, jede Playbook-Klausel für beide, Text je Abschnitt gepaart (Nummer, sonst ähnlichster Text) mit Wortunterschieden. M15 vs M01: identischer Text in anderer Datei; M01 vs M02: 92,8 %, Haftungsklausel nur 43,8 % ähnlich, aber in beiden als vorhanden erkannt.
 Verworfen: Modell beschreibt Unterschiede (Kosten, kann Unterschiede erfinden); ein Diff über den ganzen Text (für Juristen unlesbar).
 
-### 63 (in Notion ausstehend). Monitoring aus vorhandenen Daten: Kosten, Latenz, Pipeline-Zustand, Prüflast und Korrekturquote
+### 63. Monitoring aus vorhandenen Daten: Kosten, Latenz, Pipeline-Zustand, Prüflast und Korrekturquote
 Governance · Entschieden · Kurz erwähnen
 Begründung: Wunsch von Dima; setzt den Monitoring-Baustein aus Governance & Einführung um (Recall, Korrekturquote, Prüflast, Kosten; monatliche Durchsicht mit Legal). GET /monitoring rechnet bei Abruf aus llm_calls, Audit-Log, Workflow-Datenbank und gespeicherten Auswertungen: Aufrufe je Zweck mit Kosten, Tokens und Latenz (p50/p95/max), Dokumentstatus und Markierungen, offene und strittige Fälle, Entscheidungen und Korrekturquote, Archivkopien, Qualität je Lauf. Im Betrieb: Azure Monitor / Application Insights.
 Verworfen: Eigener Metrikspeicher oder Application Insights schon im Prototyp (Aufwand); Korrekturquote nur je Lauf (verdeckt den Trend).
 
-### 64 (in Notion ausstehend). Modell-Evaluierung in frischen Registern: Wiederholungsläufe und Modellvergleich, Produktionsregister bleibt unberührt
+### 64. Modell-Evaluierung in frischen Registern: Wiederholungsläufe und Modellvergleich, Produktionsregister bleibt unberührt
 Vorgehen · Entschieden · Hauptpunkt
 Begründung: „Ein Lauf ist keine Messung“ (F7). eval/repeat.py baut N frische Register (REGISTER_DB, ohne Suchindex), wertet jeden Lauf wie die Produktion aus und vergleicht: Antworten je Frage und welche Befunde vor und nach den Prüfungen kippen. Ergebnis (3 Läufe + Laptop-Lauf + Cloud-Lauf): 233 von 235 Befunden stabil, nur M08 und M10 kippen, jedes falsche „vorhanden“ wird „unklar“; Recall und Precision 1,0 in allen Läufen, Modell allein bei Q1 0,6 bis 1,0. Kosten je Lauf 0,09–0,11 $ (Prompt-Caching), 101–134 s. Derselbe Aufruf mit --chat-deployment vergleicht ein anderes Modell. Dazu: Pipeline startet nicht, wenn für ein Modell kein Preis hinterlegt ist (sonst würde es als kostenlos verbucht).
 Verworfen: Neu extrahieren ins Produktionsregister (Referenz geht verloren); Schwankung nur über Q1 messen; fehlender Preis nur als Warnung.
 
-### 65 (in Notion ausstehend). Produktionsmodell bleibt gpt-4.1-mini: gpt-4.1 bringt mit Prüfungen keinen Gewinn bei fünffachen Kosten
+### 65. Produktionsmodell bleibt gpt-4.1-mini: gpt-4.1 bringt mit Prüfungen keinen Gewinn bei fünffachen Kosten
 Architektur · Entschieden · Hauptpunkt
 Begründung: Gemessen mit eval.repeat in frischen Registern, gleicher Prompt (v2), gleiche Prüfungen; gpt-4.1 auch als Checker. Beide Modelle erreichen Recall und Precision 1,0 auf Q1–Q8 in jedem Lauf. gpt-4.1 allein findet bei Q1 alle Fallen (1,0/1,0 statt 1,0/0,8/0,8) – genau das, was die Prüfungen bei mini ohnehin leisten. Dafür kostet ein Lauf 0,45–0,60 $ statt 0,09–0,11 $ (Faktor 5) und dauert 245–252 s statt 101–134 s. Die Extraktion ist stabiler (235/235), der Checker nicht (232/235 nach den Prüfungen, F11); die CUAD-Übereinstimmung sinkt auf 18/20, weil gpt-4.1 unsere Definition wörtlicher nimmt (F12). Bestätigt Entscheidung 42 mit Messwerten. Beide Modelle sind laut Microsoft abgekündigt (Recherche vom 30.10.); die Messumgebung ist das Tor für jeden Modellwechsel, der nächste Kandidat (GPT-5.x, Reasoning-Modell ohne temperature) braucht eine Adapter-Änderung.
 Verworfen: gpt-4.1 als Produktionsmodell (fünffache Kosten für einen Gewinn, den die Prüfungen schon liefern); Modellwahl nach einem Lauf; nur die CUAD-Zahl vergleichen, ohne die Abweichungen zu lesen (hätte das Modell besser bewertet, das eine Klausel übersieht, F12).
 
-### 66 (in Notion ausstehend). Präsentation und Werkzeug als eine Webseite mit zwei Ebenen; Hash-Routing ohne Router-Bibliothek, Kapitel als Daten
+### 66. Präsentation und Werkzeug als eine Webseite mit zwei Ebenen; Hash-Routing ohne Router-Bibliothek, Kapitel als Daten
 Präsentation · Entschieden · Kurz erwähnen
 Begründung: Wunsch von Dima: von der Fallstudie bis zum Werkzeug durch eine Seite klicken, das Werkzeug kommt am Ende. Kopfzeile mit „Case study“ | „Legal Workbench“, die Reiter des Werkzeugs als zweite Ebene. Die Adresse sagt, wo man ist (#/story/<kapitel>, #/tool/<ansicht>): jedes Kapitel lässt sich direkt öffnen, die Seite läuft auf jedem statischen Hosting. Kapitel als Daten (Akt, Titel, Leitsatz, Redezeit) – die Geschichte ändert sich an einer Stelle, die Leiste zeigt die geplante Zeit (Entwurf: 10 Kapitel, 18:45 min). Pfeiltasten und PageUp/PageDown (Presenter) nur in der Präsentation. Inhalt der Kapitel nach Freigabe der Geschichte.
 Verworfen: Getrennte Folien (PowerPoint, reveal.js – zwei Dinge synchron halten, Werkzeug nicht Teil der Seite); react-router (Abhängigkeit für zwei Ebenen).
 
-### 67 (in Notion ausstehend). Fehler live zeigen: Schutzschichten abschalten und die gespeicherten Modellantworten auf einer Kopie des Registers neu bewerten
+### 67. Fehler live zeigen: Schutzschichten abschalten und die gespeicherten Modellantworten auf einer Kopie des Registers neu bewerten
 Präsentation · Entschieden · Hauptpunkt
 Begründung: Wunsch von Dima, Probleme live zu zeigen (fehlende Prüfung, nicht genutzte Technik). Jede Schutzschicht hat einen Schalter; die gespeicherten Modellantworten laufen ohne diese Schicht durch die Prüfungen – auf einer Kopie im Arbeitsspeicher, ohne Modellaufruf, in 0,7 s, jedes Mal gleich, also sicher für die Live-Demo. Zwei Invarianten als Tests: ohne Abschalten exakt das Register; eine Schutzschicht macht das System nur vorsichtiger. Ergebnis ehrlich: Einzeln abgeschaltet bleibt Q1 bei 1,0, weil sich Vokabelprüfung und Checker überlappen (Defense in Depth); beide aus → 0,6 (M08, M10); Recall first aus → 0,6; Injection-Schutz aus → M14 ohne Vier-Augen-Prüfung; Nachtragsprüfung aus → C11 fehlt in allen Antworten.
 Verworfen: Live-Modellaufrufe mit schlechtem Prompt als Hauptdemo (Kosten, Dauer, Schwankung – bleibt Option für einen Vertrag); Neuberechnung aus gespeicherten Markierungen (zweite Wahrheit); Wiederholung im Produktionsregister.
 
-### 68 (in Notion ausstehend). Storyline der Webseite: 10 Kapitel in 5 Akten (Why · How · Proof · Operate · Live), 17:15 min, Q1 als roter Faden
+### 68. Storyline der Webseite: 10 Kapitel in 5 Akten (Why · How · Proof · Operate · Live), 17:15 min, Q1 als roter Faden
 Präsentation · Entschieden · Hauptpunkt
 Begründung: Ergebnis eines Workflows mit drei unabhängigen Entwürfen (Story-, Demo-, Prüfer-Sicht), bewertet von zwei Jury-Agenten (Wirkung, Machbarkeit) und zusammengeführt; von Dima freigegeben. Drei rote Fäden: eine Frage (Q1) durch alle Kapitel, eine Pipeline-Karte, die mit Fehlern und Feedback-Schleife wiederkommt, fünf Testverträge als Besetzung (M18, M08, M14, C11, M15). Jedes Diagramm sagt, was es zeigt, warum es existiert und warum es so aussieht. 2:45 min Puffer für Fragen, 15-Minuten-Fassung (~13:30) vorbereitet. Hauptweg der Demo ohne Modellaufruf, mit Snapshot-Rückfall und PDF.
 Verworfen: Werkzeug zuerst, Vortrag danach (Demo-Entwurf als Hauptlinie – zu wenig Herangehensweise); 18:45 min (zu wenig Puffer); Architektur vor der Pipeline (die Pipeline-Karte ist die Grundlage für Fehler- und Feedback-Bild).
 
-### 69 (in Notion ausstehend). Kein Modell-Umschalter im Frontend: Nur-Lese-Modellkarte und Checkliste „Modellwechsel vorschlagen“
+### 69. Kein Modell-Umschalter im Frontend: Nur-Lese-Modellkarte und Checkliste „Modellwechsel vorschlagen“
 Governance · Entschieden · Kurz erwähnen
 Begründung: Ein Modellwechsel leitet jeden Befund neu ab und ist damit ein Release, keine Einstellung (Entscheidungen 40, 42, 43). Läufe sind Schnappschüsse einer Registerversion; Modelle pro Nutzer machten Antworten zweier Juristen unvergleichbar (56). Live-Aufrufe bringen Kosten, Wartezeit (p95 36 s) und Schwankung (F7) vor das Panel. Der Vergleich ist gemessen (64, 65). Stattdessen: Karte „gpt-4.1-mini · extract-v2 · Gate-Ergebnis“ und ein Knopf, der die Release-Checkliste zeigt (Auswertung, Freigabe durch Legal, gestaffelter Rollout, Rückweg).
 Verworfen: Modellauswahl für Juristen; Umschalter nur für den Präsentator (Live-Risiko).
 
-### 70 (in Notion ausstehend). Repo-Audit umsetzen: erst die bestätigten Fehler (je Beleg, Test, Fix), dann Lesbarkeit; keine Ordner-Umzüge vor dem Interview
+### 70. Repo-Audit umsetzen: erst die bestätigten Fehler (je Beleg, Test, Fix), dann Lesbarkeit; keine Ordner-Umzüge vor dem Interview
 Vorgehen · Entschieden · Nur auf Nachfrage
 Begründung: Audit-Workflow mit Gegenprüfung: 61 Punkte bestätigt, 14 verworfen, darunter echte Fehler mit Demo-Risiko (gleichzeitige API-Aufrufe → 500 und leeres Audit-Log; erneutes Einlesen entfernt die Vier-Augen-Markierung von M14; BM25-Filter liefert 0 Treffer). Fehler werden erst mit wörtlichem Beleg nachgestellt und im Fehlerkatalog aufgenommen, dann mit Test behoben. Lesbarkeit: README neu, docs/approach.md (englischer Text der Kapitel), docs/diagrams.md (Diagramm-Index), kürzerer Status in CLAUDE.md, Kommentare, die sagen, was der Code heute tut.
 Verworfen: Alles auf einmal vor der Webseite (kostet einen Tag); Ordner umbauen (Risiko kurz vor der Generalprobe).
 
-### 71 (in Notion ausstehend). Archiv-Button bleibt klickbar, auch vor der Freigabe: der Server lehnt ab (409) und protokolliert die Ablehnung
+### 71. Archiv-Button bleibt klickbar, auch vor der Freigabe: der Server lehnt ab (409) und protokolliert die Ablehnung
 Präsentation · Entschieden · Kurz erwähnen
 Begründung: Bisher sperrte die Oberfläche den Knopf, die Server-Sperre (Tool-Gate, Entscheidungen 2, 57) wurde nie vorgeführt. Klickbar mit Schloss-Symbol und Hinweis zeigt die Demo: „Der Button ist nicht die Kontrolle, der Server ist es.“ Die Ablehnung erscheint im Audit-Log.
 Verworfen: Sperre nur in der Oberfläche (beweist nichts über den Server).
 Umgesetzt 31.10.: Knopf klickbar mit Schloss und Hinweis; Ablehnung „tool gate: archive copy only after approval; M03 is FOUND“ erscheint in der Oberfläche und im Audit-Log.
 
-### 72 (in Notion ausstehend). Held-out-Testset: 10 weitere CUAD-Verträge (Zufall mit festem Seed) und 2–4 von Dima geschriebene Verträge, vor dem ersten Lauf versiegelt
+### 72. Held-out-Testset: 10 weitere CUAD-Verträge (Zufall mit festem Seed) und 2–4 von Dima geschriebene Verträge, vor dem ersten Lauf versiegelt
 Analyse · Entschieden · Hauptpunkt
 Begründung: Prompt und Prüfungen wurden am Goldstandard verbessert (Overfitting-Risiko). Von Hand geschriebene Verträge brechen die Muster des Generators (neue Fallen: Haftungsgrenze im Anhang, per Verweis, Namensvariante „arvato infoscore“). Manifest mit SHA-256 und erwarteten Antworten wird committet, bevor gemessen wird; gemessen wird einmal mit eingefrorener Konfiguration, das Ergebnis wird gezeigt, wie es kommt.
 Verworfen: Nur weitere synthetische Verträge vom selben Generator; Messen vor dem Versiegeln.
 
-### 73 (in Notion ausstehend). Review direkt im Vertragsregister: das Review gehört zum Befund in einer Fassung (Vertrag, Klausel, Text-Hash, Prompt-Version); Läufe übernehmen es; neu „Eskalieren“
+### 73. Review direkt im Vertragsregister: das Review gehört zum Befund in einer Fassung (Vertrag, Klausel, Text-Hash, Prompt-Version); Läufe übernehmen es; neu „Eskalieren“
 Vorgehen · Entschieden · Hauptpunkt
 Begründung: Idee von Dima. Bisher hing ein Review an einem Lauf (Entscheidung 56): Wer Q1 erneut stellt, sieht M08 wieder als „zu prüfen“, obwohl zwei Juristen es schon geklärt haben. Ein Review ist eine Aussage über den Vertrag, nicht über eine Frage. Gleiche Regeln wie im Lauf (Begründung, Vier-Augen bei kritischen Befunden, DISPUTED bei Widerspruch); „Eskalieren“ schickt einen Befund mit Begründung in die Vier-Augen-Prüfung. Ändern sich Vertragstext oder Extraktion, gilt das alte Review nicht mehr und wird als „geprüft an einer früheren Fassung“ gezeigt. Die Archivkopie bleibt an den freigegebenen Lauf gebunden (57). Wirkung für die Einführung: Prüflast sinkt mit jeder Frage („reviewed once, reused in every question“). Umsetzung direkt nach den Fehlerkorrekturen.
 Verworfen: Reviews nur im Lauf (doppelte Arbeit, Prüflast wächst mit jeder Frage); Review ohne Fassung (ein geändertes Ergebnis würde stillschweigend als geprüft gelten).
 Umgesetzt 31.10.: Tabelle finding_reviews, api/findings.py, Läufe übernehmen Reviews derselben Fassung, Review aus dem Lauf zählt auch im Register; Eskalieren ist keine Stimme, hebt aber auf vier Augen (wer eskaliert, darf eine der zwei Stimmen abgeben – sonst bliebe der Fall mit zwei simulierten Prüfern hängen).
 
-### 74 (in Notion ausstehend). Werkzeug zweisprachig (Deutsch/Englisch umschaltbar), Präsentation bleibt Englisch
+### 74. Werkzeug zweisprachig (Deutsch/Englisch umschaltbar), Präsentation bleibt Englisch
 Präsentation · Entschieden · Kurz erwähnen
 Begründung: Wunsch von Dima; Riverty's Rechtsabteilung arbeitet auf Deutsch („die Sprache der Juristen“). Kleine Übersetzungsschicht ohne Bibliothek (zwei Wörterbücher, Umschalter in der Kopfzeile, Wahl gemerkt). Vertragszitate, Playbook-Definitionen und Modell-Begründungen bleiben in der Originalsprache und sind so gekennzeichnet. Dabei wird „Missing“ zu „Not found“ / „Nicht gefunden“ (Entscheidung 21: Beobachtung, kein Urteil – Vorschlag, mit Dima abzustimmen). Die Präsentation bleibt eine englische Fassung, weil der Vortrag Englisch ist und zwei Fassungen auseinanderlaufen.
 Verworfen: Alle Kapitel zweisprachig (ein Tag mehr, zwei Quellen); Werkzeug nur Deutsch (im englischen Interview liest das Panel deutsche Oberflächen).
