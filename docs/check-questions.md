@@ -250,6 +250,20 @@ every `/api` call there.
 The third build appears: the truth, with the false alarms and M14 missed. Only the fourth press
 opens the next card.
 
+**25. On the register card it says "7 false alarms, M14 missed". Where does that number come
+from – and what happens to the card if the register changes?**
+
+Nobody typed it. The card imports the stored measurement of the top-k search,
+`eval/results/2026-10-31_negative_search.json`, and counts the false alarms itself. The other
+numbers (the register matrix, M18's journey, the embedding ruler) come from a script,
+`tools/deck_data.py`: it reads the built register and writes `deck-data.json`. If the register
+changes, I run the measurement and the script again, and every card shows the new numbers. So
+the talk cannot say something the data does not say.
+
+*Numbers:* 41 cards; the data file is about 51 KB; the script makes one model call (the query is
+embedded once, < $0.0001). *Where:* `tools/deck_data.py`, `web/src/deck/slides/deck-data.json`,
+`web/src/deck/slides/act3.tsx`, dev-log entry "The talk built through to the close".
+
 ## How I worked
 
 **17. Which step of the path "from process to platform" decides between a fixed workflow and an
