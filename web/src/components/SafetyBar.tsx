@@ -1,14 +1,10 @@
-// Safety signals that must not be missed: a suspected prompt injection and a poor scan. They are
-// shown as a full-width warning with the page and a button to open it, not as one chip among
-// others. Minor flags stay chips (decision 77, design audit).
-import { MessageBar, MessageBarBody, MessageBarTitle } from "@fluentui/react-components";
+// Safety signals that must not be missed: a suspected prompt injection and a poor scan. This file finds
+// their page (the injection's, the worst OCR page) for the "why a person looks" callout (Words.tsx), and
+// tells the page view when a highlight must not look like evidence.
 import { api, type DocText, type DocumentInfo } from "../api";
-import { useT } from "../i18n";
 
 const INJECTION_FLAGS = ["prompt_injection_suspected", "document_contains_suspected_injection", "quote_in_suspected_injection"];
 const OCR_FLAGS = ["low_ocr_quality"];
-/** Flags shown as a warning bar; the badges leave them out, so nothing is said twice. */
-export const ALERT_FLAGS = new Set([...INJECTION_FLAGS, ...OCR_FLAGS]);
 export const flagName = (flag: string) => flag.split(":")[0];
 
 // The same patterns as INJECTION_PATTERNS in pipeline/catalogue.py. The register stores THAT a
@@ -29,6 +25,12 @@ function injectionPage(text: DocText): number | null {
   if (starts.length === 0) return null;
   const at = Math.min(...starts);
   return text.page_offsets.filter((offset) => offset <= at).length || 1;
+}
+
+/** The same page for a run row, which has no text loaded: "Text addressed to AI systems (page 3)". */
+export async function injectionPageOf(docId: string): Promise<number | null> {
+  const text = await api.text(docId).catch(() => null);
+  return text ? injectionPage(text) : null;
 }
 
 /** The passages addressed to software, cut as in pipeline/catalogue.py injection_spans: from the
@@ -106,45 +108,4 @@ export async function documentAlerts(doc: DocumentInfo, flags: string[], text: D
     alerts.push({ kind: "ocr", page: pages && worst ? worst.page_no : null, conf: worst?.ocr_conf ?? doc.ocr_mean_conf });
   }
   return alerts;
-}
-
-const TEXT = {
-  injection: {
-    title: "Text addressed to AI systems",
-    page: "Page {page} contains text addressed to AI systems, not to the contract parties – a suspected prompt injection. It is never used as evidence, and two reviewers must approve the finding.",
-    doc: "This contract contains text addressed to AI systems, not to the contract parties – a suspected prompt injection. It is never used as evidence, and two reviewers must approve the finding.",
-  },
-  ocr: {
-    title: "Poor scan quality",
-    page: "Page {page} was read by text recognition (OCR) with only {conf} % confidence. Compare the finding with the original page before relying on it.",
-    doc: "This contract was read by text recognition (OCR) with low confidence. Compare the finding with the original before relying on it.",
-  },
-};
-
-export function SafetyBars({ alerts, onPage }: { alerts: Alert[]; onPage?: (page: number) => void }) {
-  const t = useT();
-  if (alerts.length === 0) return null;
-  return (
-    <div className="safety-bars">
-      {alerts.map((a) => (
-        <MessageBar key={a.kind} intent="warning" className="safety-bar">
-          <MessageBarBody>
-            <MessageBarTitle>{t(TEXT[a.kind].title)}</MessageBarTitle>
-            {a.page != null
-              ? t(TEXT[a.kind].page, { page: a.page, conf: Math.round(a.conf ?? 0) })
-              : t(TEXT[a.kind].doc)}
-            {/* at the end of the sentence, not on a line of its own: the bar stays two lines high */}
-            {a.page != null && onPage && (
-              <>
-                {" "}
-                <button type="button" className="link-btn" onClick={() => onPage(a.page!)}>
-                  {t("Show page {page}", { page: a.page })}
-                </button>
-              </>
-            )}
-          </MessageBarBody>
-        </MessageBar>
-      ))}
-    </div>
-  );
 }

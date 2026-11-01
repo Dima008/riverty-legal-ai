@@ -131,9 +131,9 @@ def sampled(run_id: str, doc_id: str) -> bool:
 # ---------------------------------------------------------------------------- scope
 def _documents(con) -> list[dict]:
     rows = con.execute(
-        "SELECT d.doc_id, d.status, d.ocr_mean_conf, d.duplicate_of, d.family_id, d.flags, m.doc_type, m.title,"
-        " m.counterparty_name, m.governing_law, m.is_amendment, m.text_sha256 AS extracted_sha256, m.prompt_version"
-        " FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id "
+        "SELECT d.doc_id, d.status, d.ocr_mean_conf, d.duplicate_of, d.family_id, d.flags, d.ingested_at, m.doc_type,"
+        " m.title, m.counterparty_name, m.governing_law, m.is_amendment, m.text_sha256 AS extracted_sha256,"
+        " m.prompt_version FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id "
         "ORDER BY d.doc_id").fetchall()
     docs = [dict(r) for r in rows]
     for d in docs:
@@ -162,8 +162,11 @@ def _exclusion(doc: dict, check: str, doc_type: str | None = None) -> str | None
 
 
 def _row(doc: dict, **fields) -> dict:
+    """A reported row. It also carries the document's scan quality and arrival, so every check can
+    say "poor scan" or "new" - also those whose rows have no low_ocr_quality flag (names, law, copies)."""
     return {"doc_id": doc["doc_id"], "title": doc["title"], "counterparty_name": doc["counterparty_name"],
-            "doc_type": doc["doc_type"], **fields}
+            "doc_type": doc["doc_type"], "doc_status": doc["status"], "ocr_mean_conf": doc["ocr_mean_conf"],
+            "ingested_at": doc["ingested_at"], **fields}
 
 
 # ---------------------------------------------------------------------------- checks
@@ -281,8 +284,10 @@ def run_check(con, plan: dict, run_id: str = "") -> dict:
         "rows": rows,
         "counts": counts,
         "info": info,
+        # checked_ids: the answer names every contract it covered, so a stored run can later tell
+        # what arrived or was removed since (the Workbench's "out of date")
         "coverage": {"scope": doc_type or "all documents", "in_scope": len(in_scope), "checked": len(checked),
-                     "excluded": excluded, "reported": len(rows),
+                     "checked_ids": [d["doc_id"] for d in checked], "excluded": excluded, "reported": len(rows),
                      "selection": {"chosen": len(in_scope), "of": len(docs), "filters": selection["filters"]}
                      if selection else None},
         "triage": dict(Counter(r["triage"] for r in rows)),

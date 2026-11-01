@@ -32,7 +32,16 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F22 | `forget --remove-file` deleted a git-tracked gold-set PDF without asking; restoring it made the original M01 the copy of M15, Q8 recall 0.00 (M01, M15) | families | nobody at first - found by the dry-run review on a scratch copy | fixed - forget never deletes from a source folder |
 | F23 | In the redesigned Workbench the hidden instruction in M14 was drawn with the yellow evidence highlighter and labelled "the passage that hints at the clause", right under a warning bar saying it "is never used as evidence" (M14) | frontend | the design and end-to-end reviews of the redesign (before commit) | fixed |
 | F24 | The new year filter "Dated from 2004" hid C02 (effective date 2004-00-00, month unknown) without naming it in "not shown, no date found" – a filter hid a contract silently (C02) | frontend | the end-to-end review of the redesign (before commit) | fixed |
-| F25 | A finding escalated in the register drops out of the run's review counts (5 rows, counts add up to 4) and out of the monitoring's open count (M03) | api | nobody at first - found by the design review of the Workbench redesign | open |
+| F25 | A finding escalated in the register drops out of the run's review counts (5 rows, counts add up to 4) and out of the monitoring's open count (M03) | api | nobody at first - found by the design review of the Workbench redesign | fixed, regression test |
+| F26 | The governing law has no evidence: the register stores only the code ("US-MA"), no quote and no page, so the Workbench cannot show or highlight the passage and a lawyer confirms Q5 rows blind (C09) | definition | nobody at first - found by Dima in the Workbench | open |
+| F27 | The decision was below the fold: after Q1 "Confirm finding" sat at y 1067 (1366x768) and 1106 (1600x900), in the contract file at y 1697 - the click script needed about 5 window scrolls (M08, M14) | frontend | nobody at first - found by measuring the tool for the talk's click script | fixed - step 3 "Decide" is one screen with the decision pinned (decision 91) |
+| F28 | The header scrolled away during four eyes: once the page scrolled, the reviewer switch was off screen, while the tool told the lawyer to "switch the reviewer at the top" (M14) | frontend | nobody at first - found by the end-to-end walkthrough of the four-eyes path | fixed - sticky header at 0, "Continue as Legal Reviewer B" in the decision panel |
+| F29 | An answer was lost on a tab switch: the run lived only in memory, so Register → Workbench showed an empty step 1 | frontend | nobody at first - found by the screen map of the tool | fixed - the run is in the address (`?run=`), the Workbench tab returns to it |
+| F30 | A stored answer did not keep which contracts it checked: after a new contract arrived, its tiles were dropped without a word, and nothing said the answer was out of date (H01) | api / frontend | nobody at first - found by the design review of the Workbench redesign | fixed - runs store `checked_ids` and `register_version`; the work bar says "out of date" with Ask again |
+| F31 | A register selection made with the type toggle would have left out a contract that is still being read: its type is not known yet, so "Merchant agreements" did not contain it (H01) | frontend | nobody at first - found by the design review of the Workbench redesign | fixed - the tick boxes are gone; a filter keeps what it cannot judge and names it (decision 91) |
+| F32 | Former names counted 5 on the Workbench's start strip but 6 in Q2 with the poor scan: the strip counted only contracts with a name hit, not "cannot be ruled out" (H01) | frontend | nobody at first - found by the design review of the Workbench redesign | fixed - one rule for the register and Q2, the strip is gone; regression test |
+| F33 | Raw server text reached the lawyer: "tool gate: archive copy only after approval; M14 is IN_REVIEW" (M14) | frontend | nobody at first - found by the end-to-end walkthrough of the four-eyes path | fixed - fixed sentences in lawyers' words, EN and DE |
+| F34 | A lawyer's correction of a Found clause is stored, but Q1 still answers from the register's status, so the corrected contract never appears in the answer (M01) | queries | nobody at first - found by the design review of the Workbench redesign | open - next step "human-corrected status" |
 
 ---
 
@@ -1186,13 +1195,361 @@ decision 73), but the list of states that `attach_reviews` counts was not extend
 
 **Layer.** api.
 
-**Fix.** open.
+**Fix.** `attach_reviews` counts every state `review_state()` can return, ESCALATED included, so
+the counts add up to the rows. Monitoring counts as open everything not decided yet:
+`FOUND + ESCALATED + IN_REVIEW + DISPUTED` (an escalated finding waits for two people, a disputed
+one for a decision).
+
+**Proof.** The same script on a fresh register copy and a scratch workbench DB, after the fix:
+
+```
+escalate M03: 201 ESCALATED
+rows: 5 | M03 state: ESCALATED
+review_states: {"FOUND": 4, "ESCALATED": 1, "IN_REVIEW": 0, "CONFIRMED": 0, "REJECTED": 0, "CORRECTED": 0, "DISPUTED": 0} | sum: 5
+monitoring workflow: {"runs": 1, "rows": 5, "review_states": {"ESCALATED": 1, "FOUND": 4}, "open": 5, "disputed": 0}
+```
+
+`tests/test_api_findings.py::test_an_escalated_finding_is_counted` escalates M03 in the register,
+runs Q1 and asserts `review_states["ESCALATED"] == 1`, the counts add up to the rows and the
+monitoring's `open` equals the rows. It fails on the old code (`assert run["review_states"]
+["ESCALATED"] == 1` - the key is missing) and passes now; the full suite: 116 passed.
+
+**Reproduce.** `PYTHONPATH=. REGISTER_DB=<copy> WORKBENCH_DB=<scratch> python repro.py` (script
+above), or `python -m pytest tests/test_api_findings.py -k escalated`. Found by the design review
+of the Workbench redesign (2026-11-01), fixed with it (spec A5).
+
+---
+
+## F26 - The governing law has no evidence (C09)
+
+**Symptom.** Dima opened C09 in the redesigned Workbench (question "not governed by German law").
+The finding card says only "Das Register hat gelesen: Recht US-MA" and "Bestätigen"; the page
+view shows the top of the contract with nothing highlighted. To check it, a lawyer has to search
+the whole contract – or confirms without reading it. Our rule is that every finding carries a
+verified quote.
+
+**Evidence.** Screenshot (2026-11-01, DE):
+
+```
+Anwendbares Recht
+Anderes Recht (US-MA) → Bestätigen
+Das Register hat gelesen: Recht US-MA
+Eine Beobachtung zum Text, keine rechtliche Bewertung.
+```
+
+The passage exists. Read-only on the register:
+
+```
+('other_commercial_agreement', 'US-MA', '1999-03-29')
+1 32761 | Governing Law; Jurisdiction. This Agreement and all related business transactions will be governed by the laws of the Commonwealth of Massachusetts (without reference to principles of conflicts or choice of law
+pages 1 chars 40066
+```
+
+**Root cause.** The extraction schema asks for `governing_law` as an ISO code only
+(`pipeline/extract.py` lines 117-120: "ISO 3166 code of the chosen law ... null if no choice of
+law"); the `metadata` table has no quote, page or span columns (`pipeline/store.py`). Clauses got
+a quote and the quote check from the start; the metadata fields were treated as plain values, not
+as findings. Q5 reports them as findings all the same. The values themselves are right
+(governing_law 27/27 against the ground truth), but nothing on screen proves it.
+
+**Layer.** definition (extraction schema) – shown in the frontend.
+
+**Fix.** open. Options: (a) a quote for the governing law in the extraction schema, checked like a
+clause quote – needs a new prompt version and a full re-extraction, which can change other
+findings (F7) right before the talk; (b) a deterministic locator without a model call: find the
+choice-of-law passage ("governed by", "laws of", "Recht", ...) that names the jurisdiction of the
+code (US-MA → Massachusetts), store its page and span, highlight it; no passage → a person looks.
 
 **Proof.** open.
 
-**Reproduce.** `PYTHONPATH=. REGISTER_DB=<copy> WORKBENCH_DB=<scratch> python repro.py` (script
-above). Automated test missing. Found by the design review of the Workbench redesign
-(2026-11-01), which plans the fix (spec A5).
+**Reproduce.** Workbench → "Which merchant agreements are not governed by German law?" or the
+register filter on law → open C09. Automated test missing.
+
+---
+
+## F27 - The decision was below the fold (M08, M14)
+
+**Symptom.** After asking Q1 the lawyer saw the answer, the result list and the top of the
+evidence, but not the decision. "Confirm finding" and "Store archive copy" were far below the
+window; the four-eyes path of the live demo needed about five window scrolls.
+
+**Evidence.** Measured with the tool before the redesign (scratch site, `shots/map-report.json`,
+`map-1366-03-answer.png`, `map-1600-05-M14-row.png`):
+
+```
+1366 answer       scrollY 152  confirmBtn top 1067 (BELOW)  archiveBtn top 1226 (BELOW)
+1366 M08 via tile scrollY 452  confirmBtn top 1255 (BELOW)  archiveBtn top 1414 (BELOW)
+1366 file M08     scrollY 0    confirmBtn top 1697 (BELOW)
+1600 answer       scrollY 152  confirmBtn top 1106 (BELOW)  archiveBtn top 1265 (BELOW)
+```
+
+**Root cause.** One long page (decision 87): question, answer, list, evidence and decision stacked
+below each other; the decision scrolled with the window, under a page view as tall as the page
+image (674 px).
+
+**Layer.** frontend.
+
+**Fix.** Three steps, one screen each (decision 91). Step 3 "Decide" has a fixed height: the queue
+and the page scroll inside their columns, the finding card scrolls above the decision, and the
+decision panel is pinned to the bottom of the right column, so it can never leave the screen.
+
+**Proof.** `scratchpad/wb-finish/final.mjs` on the working tree (1 Nov, scratch register and
+workbench DBs), window `scrollY` 0 and 0 window scroll events on every screen:
+
+```
+1366x768 EN  M08: Confirm finding 589-621, Store archive copy 711-735
+1366x768 EN  M14: Confirm finding 628-660, after A: Continue as Legal Reviewer B 658-690, Store 717-741
+1366x768 DE  M14: Befund bestätigen 617-649, Archivkopie speichern 711-735
+1600x900 EN  M08: Confirm finding 732-764, Store archive copy 849-873
+```
+
+**Reproduce.** `node final.mjs 1366x768 en <tag>` against Vite and an API with a fresh workbench DB
+(see the script's header); or open `#/tool/workbench?run=<id>&doc=M14` at 1366x768.
+
+---
+
+## F28 - The header scrolled away during four eyes (M14)
+
+**Symptom.** After reviewer A approved M14, the tool said to switch the reviewer "at the top" -
+but the page had scrolled and the reviewer switch was no longer on the screen.
+
+**Evidence.** The header was sticky at -54 px (`app.css`: `.app > .topbar-provider { position:
+sticky; top: -54px }`); measured on the answer: `topbar {"top": -54, "bottom": 2}` at scrollY 152
+(`map-report.json`). The hint at that moment, verbatim from `i18n.tsx` (HEAD):
+
+```
+You ({user}) already approved this row. The second approval must come from a different person – switch the reviewer at the top.
+```
+
+Screenshot: `shots/e2e-1366-07-M14-after-A-refused.png`.
+
+**Root cause.** The -54 px rule kept only the 2 px hairline on screen, to save height for the
+evidence (decision 77) - on a long page the header's controls were then out of reach.
+
+**Layer.** frontend.
+
+**Fix.** The header is sticky at 0 on every tool screen; the tabs and pills never wrap. After the
+first of two approvals the decision panel says "You approved. The second approval must come from
+another person." and offers "Continue as Legal Reviewer B" (the Entra ID stand-in; the server still
+refuses the same person twice).
+
+**Proof.** `scratchpad/wb-finish/l4.mjs`, scrolled to the bottom at 1366x768:
+
+```
+register {"scrollY":99,"topbar":[0,56],"talk":[13,41],"user":[13,41],"tabs":[5,5,5]}
+audit {"scrollY":632,"topbar":[0,56],"talk":[13,41],"user":[13,41],"tabs":[5,5,5]}
+```
+
+**Reproduce.** Open the audit log, scroll to the end: the header stays at the top.
+
+---
+
+## F29 - The answer was lost on a tab switch
+
+**Symptom.** A lawyer asked Q1, opened the contract register to look something up and came back to
+the Workbench tab: the answer was gone, step 1 was empty ("Check all contracts" disabled).
+
+**Evidence.** Screenshot `shots/map-1366-08-after-tab-switch.png`. `App.tsx` (HEAD) mounts one area
+at a time, and the run lived in the Workbench's state only:
+
+```
+{area === "workbench" && <Workbench />}
+{area === "register" && <Register />}
+{area === "audit" && <AuditLog />}
+```
+
+**Root cause.** The run id was not in the address, so unmounting the Workbench forgot it.
+
+**Layer.** frontend.
+
+**Fix.** The address says where the lawyer is (D2): `#/tool/workbench?run=<id>` is the answer,
+`&doc=M14` one contract of it. The Workbench tab returns to the last Workbench address of the
+session; `#/tool/workbench` without parameters is still a fresh step 1. A reload keeps the answer.
+
+**Proof.** `final.mjs` after the archive copy: Register tab, then the Workbench tab →
+
+```
+tab memory -> http://localhost:5241/#/tool/workbench?run=run-20261101-150214-179e31&doc=M14
+```
+
+**Reproduce.** Ask Q1, click "Contract register", then "Workbench".
+
+---
+
+## F30 - A stored answer forgot which contracts it checked (H01)
+
+**Symptom.** A run stores counts and rows, not the list of contracts it checked. The answer's tiles
+were rebuilt from today's register; once a contract arrived, the counts no longer matched and every
+quiet tile vanished - and nothing told the lawyer that the register had changed since the answer.
+
+**Evidence.** `RunOverview.tsx` (HEAD, lines 25-39):
+
+```
+/** The IDs of every contract in scope. The run stores counts, not the list (for a selection it
+ *  stores the list), so the scope is rebuilt from the register with the rule of
+ *  pipeline/portfolio.py run_check - and used only if it matches the run's own counts. */
+...
+  return consistent ? [...ids].sort() : null;   // the register changed since the run: no tile is better than a wrong one
+```
+
+**Root cause.** The run was a snapshot of the findings, not of the coverage; the client had to
+guess the scope again.
+
+**Layer.** api / frontend.
+
+**Fix.** A run stores `coverage.checked_ids` and the `register_version` (the highest audit-log id)
+it was asked at (spec A3). The tiles come from the snapshot. The work bar previews the same plan
+again (`POST /runs/preview`, nothing stored) and compares by membership: "Out of date: H01 arrived
+after this answer", "… has been read since", "… was removed from the register"; **Ask again** is a
+new run. Limitation: a re-extraction of a contract that was already in the answer is not detected.
+
+**Proof.** One H01 drop with the tool open (1 Nov, register copy, 1366x768, `h01.mjs`), a Q1 answer
+made before the drop:
+
+```
+4.3 s  answer: still reading: Out of date: H01 arrived after this answer – the model is still reading it
+10.5 s  answer: out of date + Ask again: Out of date: H01 arrived after this answer Ask again
+ask again: {"headline":"6 of 20 merchant agreements to look at","firstRow":"H01\nNew\nGarhkisty Krüger uK\n\t\nNot found\tPoor scan (OCR 61 %)\tReview","bar":"Up to date · asked 16:08"}
+1.002 s after reset: Out of date: H01 was removed from the register
+```
+
+The old answer kept its 20 tiles (`shots/H-05-q1-out-of-date.png`). `tests/test_api_runs.py`:
+`checked_ids` and the excluded ids are disjoint and together the scope, for Q1-Q8.
+
+**Reproduce.** Ask Q1, then `python -m tools.demo drop` with a watcher on a register copy.
+
+---
+
+## F31 - A type selection would have left out a contract being read (H01)
+
+**Symptom.** In the register, "Merchant agreements" + "Check the 20 shown in the Workbench" sent
+those 20 as the selection. A merchant agreement that was still being read had no type yet, so it
+was neither shown nor sent - the answer would have been silently incomplete.
+
+**Evidence.** `Register.tsx` (HEAD, line 200) - the type filter drops a row whose type is not known:
+
+```
+      (!type || r.doc_type === type) &&
+```
+
+While H01 is read, the API says `doc_type: null` (`h01.mjs`, the row in the Merchant view after
+3.3 s on the new tool): `H01 New unknown party type not known yet – – Photo scan · OCR 61 % poor
+scan the model is reading it … cannot rule out`.
+
+**Root cause.** Two ideas of scope (register ticks and the Workbench's type) and a look-up filter
+used as a question's scope.
+
+**Layer.** frontend.
+
+**Fix.** One idea of scope (D8): "Narrow down" in the plan card; the register's ticks are gone and
+"Ask in the Workbench →" carries filters only. A type alone sends no selection (the server's rule:
+the type plus unknown types); any other filter keeps every contract it cannot judge - not read yet,
+no law, no date - and names it (`filters.ts` `applyScope`). In the register, rows being read are
+pinned at the top under every type toggle.
+
+**Proof.** The register's Merchant view during the drop shows H01 pinned "the model is reading it
+…" (above); after it was read: "Merchant agreements 21", H01 first (`shots/H-13-register-H01.png`).
+
+**Reproduce.** Register → Merchant agreements while `tools.demo drop` runs on a copy.
+
+---
+
+## F32 - Former names counted 5 on the start strip, 6 in Q2 (H01)
+
+**Symptom.** With the poor scan H01 in the register, Q2 reported 6 contracts to look at, the
+register 6, but the Workbench's start strip "Portfolio today" said 5 "still naming a former
+company".
+
+**Evidence.** `Workbench.tsx` (HEAD, line 32):
+
+```
+  const names = matrix.rows.filter((r) => r.former_names.open > 0 && !r.duplicate_of && !r.is_amendment).length;
+```
+
+H01 has no name hit (`former_names.open` 0) but `not_ruled_out: true` (F19) - Q2 reports it, the
+strip did not count it.
+
+**Root cause.** The same number computed in three places with three rules.
+
+**Layer.** frontend.
+
+**Fix.** One rule, `formerNameToCheck` in `web/src/filters.ts` (open > 0 or not ruled out, not a
+copy, not an amendment), the same as Q2; the register's summary says "6 to check for a former name
+(5 name one · 1 cannot be ruled out)". The start strip is gone (D14).
+
+**Proof.** The register with H01 (`shots/H-13-register-H01.png`): "6 to check for a former name (5
+name one · 1 cannot be ruled out)". `tests/test_legacy_poor_scan.py::test_former_name_count_rule_matches_q2`:
+the rule equals Q2's `reported`, 5 on the clean register, 6 with the poor scan.
+
+**Reproduce.** `python -m pytest tests/test_legacy_poor_scan.py -k count_rule`.
+
+---
+
+## F33 - Raw server text reached the lawyer (M14)
+
+**Symptom.** A refused archive copy showed the server's own message on screen.
+
+**Evidence.** Reviewer A's refused archive attempt on M14 (end-to-end walkthrough, before the
+redesign), shown verbatim in the decision box:
+
+```
+tool gate: archive copy only after approval; M14 is IN_REVIEW
+```
+
+**Root cause.** The tool printed `ApiError.message` as it came; the server writes for the log, not
+for a lawyer.
+
+**Layer.** frontend.
+
+**Fix.** `serverMessage()` in `labels.ts` (D17) turns every known refusal into a fixed sentence in
+lawyers' words, EN and DE: the archive gate with the approvals still needed, the second vote by the
+same person, an escalation that already exists, a finding already decided. The audit log uses the
+same words; "tool gate" no longer appears on any screen.
+
+**Proof.** `final.mjs`, M14 after A, "Store archive copy" clicked:
+
+```
+1366x768 EN  Refused by the server: the archive copy needs 2 approvals (1 so far). The attempt is in the audit log.
+1366x768 DE  Vom Server abgelehnt: Die Archivkopie braucht 2 Freigaben (bisher 1). Der Versuch steht im Audit-Log.
+```
+
+The audit log: "Archive copy of M14 refused: needs 2 approvals (1 so far)". No screen of the run
+contains "tool gate:" (`banned: []` on all 15 screens, EN and DE, 1366 and 1600).
+
+**Reproduce.** Q1 → M14 → reason → Confirm finding → Store archive copy.
+
+---
+
+## F34 - A correction of a Found clause never reaches the answer (M01)
+
+**Symptom.** A lawyer opens M01 in the register, where the limitation of liability is Found, and
+corrects it to "does not contain it" (decide one finding, D6). The decision is stored and the
+register shows Legal's ✗ - but Q1 ("which merchant agreements do not contain a limitation of
+liability?") still does not list M01.
+
+**Evidence.** Scratch API on a register copy (1 Nov, no model call):
+
+```
+POST /findings/M01/liability_limitation/reviews  {"decision":"CORRECTED","corrected_status":"ABSENT", ...}
+-> {"state":"CORRECTED","required":1,"done":1,...,"status":"PRESENT"}
+GET /findings/review-states  -> M01: {"liability_limitation": "CORRECTED"}
+POST /runs (Q1)  -> reported ['M03', 'M08', 'M10', 'M14', 'M18'], checked 19, M01 in rows: False
+GET /documents/M01/findings  -> register status M01 liability: PRESENT 0.95
+```
+
+**Root cause.** A missing-clause run answers from the register's `status` and skips PRESENT rows
+(`pipeline/portfolio.py`); human decisions are attached to reported rows only. The correction is a
+human fact the queries do not read. This existed before the redesign too.
+
+**Layer.** queries.
+
+**Fix.** open. Next step "human-corrected status": a run reports a finding whose current version
+Legal corrected to ABSENT, marked "corrected by Legal", and a correction to PRESENT drops it with
+that reason - so the answer and the register agree.
+
+**Proof.** open.
+
+**Reproduce.** The four calls above against an API on a register copy with a scratch workbench DB.
 
 ---
 

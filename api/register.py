@@ -1,4 +1,4 @@
-"""Read-only endpoints over the register: overview, documents, evidence and the pipeline explorer.
+"""Read-only endpoints over the register: overview, changes, documents, evidence and the pipeline explorer.
 
 Everything here shows stored results. The only endpoint that calls a model is /search (one
 embedding for the question, recorded in llm_calls).
@@ -20,6 +20,7 @@ from fastapi.responses import FileResponse, Response
 from pipeline import catalogue, chunking, compare, config, extract, queries, search
 from pipeline.chunking import page_of
 from pipeline.evidence import quote_boxes, text_boxes
+from pipeline.store import now
 
 from .deps import get_adapter, get_con
 
@@ -116,12 +117,14 @@ def contract_matrix(con: sqlite3.Connection = Depends(get_con)) -> dict:
     for r in con.execute("SELECT doc_id, SUM(resolved_by IS NULL) open, SUM(resolved_by IS NOT NULL) resolved "
                          "FROM name_hits GROUP BY doc_id"):
         names[r["doc_id"]] = {"open": r["open"], "resolved": r["resolved"]}
+    stage = queries.stages(con)
     rows = []
     for r in con.execute(
             "SELECT d.doc_id, d.format, d.status AS ingest_status, d.ocr_mean_conf, d.family_id, d.duplicate_of,"
-            " d.flags, m.doc_type, m.title, m.counterparty_name, m.effective_date, m.governing_law, m.language,"
-            " m.is_amendment FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id ORDER BY d.doc_id"):
+            " d.flags, d.ingested_at, m.doc_type, m.title, m.counterparty_name, m.effective_date, m.governing_law,"
+            " m.language, m.is_amendment FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id ORDER BY d.doc_id"):
         row = dict(r)
+        row["stage"] = stage[row["doc_id"]]
         row["flags"] = _json(row["flags"], [])
         row["is_amendment"] = bool(row["is_amendment"])
         row["cells"] = cells.get(row["doc_id"], {})
@@ -156,18 +159,51 @@ def clause_catalogue() -> dict:
                         for k, c in catalogue.CLAUSES.items()}}
 
 
+# ---------------------------------------------------------------------------- changes
+EVENTS = ("ingested", "ingest_failed", "extracted", "extraction_failed", "forgotten")
+EVENT_DETAILS = ("format", "pages", "status", "ocr_mean_conf", "model", "prompt_version", "error")   # never a path
+MAX_EVENTS = 200
+
+
+@router.get("/changes")
+def register_changes(after: int | None = Query(None, ge=0, description="the register version the client has seen"),
+                     con: sqlite3.Connection = Depends(get_con)) -> dict:
+    """Did the register change since version `after`? The version is the highest audit_log id - the
+    same idea as a Graph delta link. Without `after` the events are empty: the cheap poll. With it,
+    the pipeline events since then (a contract arrived, was read, reading failed, was removed),
+    oldest first, at most the newest 200. `reset`: the client is ahead of the register (it was
+    rebuilt) and reloads everything. Read-only."""
+    version = queries.register_version(con)
+    rows = []
+    if after is not None:
+        rows = con.execute(f"SELECT id, ts, action, target, details_json FROM audit_log WHERE id > ? AND action IN"
+                           f" ({', '.join('?' * len(EVENTS))}) ORDER BY id DESC LIMIT ?",
+                           (after, *EVENTS, MAX_EVENTS + 1)).fetchall()
+    events = []
+    for r in reversed(rows[:MAX_EVENTS]):
+        details = {k: v for k, v in _json(r["details_json"], {}).items() if k in EVENT_DETAILS}
+        if "error" in details:
+            details["error"] = str(details["error"])[:200]
+        events.append({"id": r["id"], "ts": r["ts"], "action": r["action"], "doc_id": r["target"], "details": details})
+    return {"version": version, "now": now(), "documents": con.execute("SELECT COUNT(*) FROM documents").fetchone()[0],
+            "reset": after is not None and after > version, "more": len(rows) > MAX_EVENTS, "events": events}
+
+
 # ---------------------------------------------------------------------------- documents
 @router.get("/documents")
 def list_documents(doc_type: str | None = None, con: sqlite3.Connection = Depends(get_con)) -> list[dict]:
+    """Every document, also one that is still being read (doc_type null) - the live-add card counts them."""
     sql = ("SELECT d.doc_id, d.format, d.status, d.page_count, d.language, d.family_id, d.duplicate_of, d.flags, "
-           "m.doc_type, m.title, m.counterparty_name, m.effective_date, m.governing_law, m.is_amendment "
+           "d.ingested_at, m.doc_type, m.title, m.counterparty_name, m.effective_date, m.governing_law, m.is_amendment "
            "FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id")
     args: list = []
     if doc_type:
         sql += " WHERE m.doc_type = ?"
         args.append(doc_type)
     rows = [dict(r) for r in con.execute(sql + " ORDER BY d.doc_id", args)]
+    stage = queries.stages(con)
     for r in rows:
+        r["stage"] = stage[r["doc_id"]]
         r["flags"] = _json(r["flags"], [])
         r["is_amendment"] = bool(r["is_amendment"])
     return rows
@@ -190,6 +226,9 @@ def get_document(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> dic
         "source_files": [Path(p).name for p in d["source_path"].split(";")],
         "format": d["format"], "status": d["status"], "language": d["language"],
         "page_count": d["page_count"], "ocr_mean_conf": d["ocr_mean_conf"],
+        # when it arrived (the first ingest, F14), when the model read it, and where it stands now
+        "ingested_at": d["ingested_at"], "extracted_at": m["extracted_at"] if m else None,
+        "stage": queries.stages(con)[doc_id],
         "flags": _json(d["flags"], []),
         "family_id": d["family_id"], "duplicate_of": d["duplicate_of"],
         # both directions, so the file of a copy leads to its original and the original to its copies

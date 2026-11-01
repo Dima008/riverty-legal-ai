@@ -73,8 +73,10 @@ def attach_reviews(wb: sqlite3.Connection, run: dict) -> dict:
         shared = finding_reviews(wb, finding, exclude_source=run["run_id"]) if finding else []
         combined = sorted(reviews.get(row["doc_id"], []) + shared, key=lambda r: r["ts"])
         row["review"] = review_state(row["triage"], combined)
+    # every state review_state() can return, so the counts add up to the rows (F25: ESCALATED was missing)
     run["review_states"] = {s: sum(1 for row in run["rows"] if row["review"]["state"] == s)
-                            for s in ("FOUND", "IN_REVIEW", "CONFIRMED", "REJECTED", "CORRECTED", "DISPUTED")}
+                            for s in ("FOUND", "ESCALATED", "IN_REVIEW", "CONFIRMED", "REJECTED", "CORRECTED",
+                                      "DISPUTED")}
     return run
 
 

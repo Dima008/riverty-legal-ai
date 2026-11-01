@@ -1,0 +1,63 @@
+/* The register pill in the tool's header (spec 2.0, RegisterPulse.tsx) and the register's own events in
+   the audit log. The header itself (sticky at the top) is in app.css. */
+
+/* ---------------------------------------------------------------- register pill */
+/* the one item of the bar that may give way: "48 Verträge · H01: das Modell liest ihn …" is wider
+   than the room left at 1366 px in German, so its text is cut with "…" instead of pushing the bar wide */
+.pulse {
+  flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid transparent; background: transparent; font: inherit; font-size: 12.5px; white-space: nowrap;
+  color: var(--on-night-2); text-decoration: none; cursor: pointer;
+}
+.pulse-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pulse-spin, .pulse-dot { flex: none; }
+.pulse:hover { color: var(--on-night); background: rgba(255, 255, 255, 0.07); }
+.pulse:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+/* being read: the talk's cyan (10.2:1 on --night) and a small ring that turns */
+.pulse.reading { color: var(--cyan); border-color: rgba(92, 200, 255, 0.45); }
+.pulse-spin {
+  width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(92, 200, 255, 0.3); border-top-color: var(--cyan);
+  animation: pulse-turn 0.9s linear infinite;
+}
+@keyframes pulse-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pulse-spin { animation: none; border-color: var(--cyan); } }
+/* new: mint border and dot (11.7:1 on --night) */
+.pulse.new { color: var(--mint); border-color: var(--mint); }
+.pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 3px rgba(68, 226, 176, 0.22); }
+/* could not be read: amber (13.8:1 on --night) */
+.pulse.failed { color: #ffd58a; border-color: rgba(255, 197, 107, 0.6); }
+.pulse-short { display: none; }
+/* "48 · H01: the model is reading it …": the two long states drop the word first, below 1440 px */
+@media (max-width: 1440px) {
+  .pulse.reading .pulse-long, .pulse.failed .pulse-long { display: none; }
+  .pulse.reading .pulse-short, .pulse.failed .pulse-short { display: inline; }
+}
+@media (max-width: 1280px) {
+  .pulse-long { display: none; }
+  .pulse-short { display: inline; }
+}
+
+/* the popover: the header's dark surface, one block per new contract */
+.pulse-pop.fui-PopoverSurface {
+  width: 380px; max-width: calc(100vw - 24px); padding: 14px 16px; border-radius: 12px;
+  background: var(--desk); color: var(--on-night); border: 1px solid rgba(68, 226, 176, 0.35);
+}
+.pulse-pop-title { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mint); margin-bottom: 8px; }
+.pulse-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pulse-list > li + li { padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.pulse-doc { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 14px; }
+.pulse-doc b { font-family: var(--font-display); }
+.pulse-pop a { color: var(--mint); font-size: 13px; text-underline-offset: 2px; }
+.pulse-lines { list-style: none; margin: 4px 0 0; padding: 0; font-size: 13px; line-height: 1.5; color: var(--on-night-2); }
+.pulse-lines .warn { color: #ffd58a; }
+.pulse-all { display: inline-block; margin-top: 12px; }
+
+/* ---------------------------------------------------------------- audit log: the register's own events */
+/* "Open the answer" at the right end of a question's head */
+.au-group-head .au-open { margin-left: auto; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+/* the pipeline is no person: its events are drawn in the desk's neutral colours */
+.au-event.a-ingested .au-icon, .au-event.a-extracted .au-icon { background: #e6eeec; color: var(--ink-2); }
+.au-event.a-forgotten .au-icon { background: #eef1f0; color: var(--ink-3); }
+.au-event.a-extraction_failed .au-icon, .au-event.a-ingest_failed .au-icon { background: var(--amber-tint); color: var(--amber-ink); }
+.au-event.a-extraction_failed .au-text, .au-event.a-ingest_failed .au-text { color: var(--amber-ink); font-weight: 600; }
+.au-group .au-more { margin: 6px 0 0 44px; }

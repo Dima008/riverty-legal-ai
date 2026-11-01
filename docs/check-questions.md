@@ -324,6 +324,28 @@ the yardstick, the database stores the *result* of the comparison.
 *Where:* `pipeline/catalogue.py` (the playbook), the register tab (one column per playbook
 clause), `api/review.py` (four eyes, approval before the archive copy).
 
+**36. Why can a lawyer not decide a finding in the contract register any more?**
+
+The register is for looking things up: it shows what the text says, compared with Legal's
+playbook. Deciding is work: it needs the page, a reason, sometimes a second person, and it can
+lead to the archive copy. So every decision happens in one place, the Workbench, with one set of
+rules. The decision is still stored with the finding, so the register shows it, and every later
+question reuses it.
+
+*Where:* decision 91; `web/src/register/ContractFile.tsx` (read-only, "Decide in the Workbench →"),
+`web/src/components/DecisionPanel.tsx`, `api/findings.py` (reviews per finding version, decision 73).
+
+**37. Why does the plan show how many contracts are in scope, but not how many have the
+problem?**
+
+Because nothing should run before the lawyer confirms the plan. The preview only says which
+contracts the question will cover, which are left out, and why. The answer comes after the
+click, and it is stored and audited as a run. So the lawyer checks the scope first, not the
+result.
+
+*Where:* `POST /runs/preview` in `api/workflow.py` (writes nothing, returns no rows),
+`web/src/workbench/PlanCard.tsx`, decision 91.
+
 ## Running it
 
 **14. What do you see in the frontend if only `npm run dev` runs and the API does not?**

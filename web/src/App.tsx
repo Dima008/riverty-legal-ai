@@ -5,12 +5,15 @@
 // (decision 54). The tool switches between English and German (decision 74); the presentation
 // stays English. The tool's frame comes from the talk (decision 77): one near-black bar with the
 // mint-to-cyan hairline and the contract-tile logo; the surfaces lawyers work on stay light.
+// Only the tool layer watches the register for changes (live.tsx): the talk's pages poll nothing new.
 import { Avatar, Dropdown, FluentProvider, Option, Tab, TabList } from "@fluentui/react-components";
 import { ArrowLeft16Regular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { api, setCurrentUser } from "./api";
 import { AuditLog } from "./AuditLog";
+import { RegisterPulse } from "./components/RegisterPulse";
 import { LangContext, translate, type Lang, type Params } from "./i18n";
+import { RegisterLiveProvider } from "./live";
 import { Register } from "./register/Register";
 import { navigate, parseHash, TOOL_AREAS, useHashRoute } from "./routing";
 import { Page } from "./deck/Page";
@@ -35,6 +38,11 @@ function TileLogo() {
   );
 }
 
+function isWorkbench(hash: string): boolean {
+  const r = parseHash(hash);
+  return r.layer === "tool" && r.page === "workbench";
+}
+
 // The chosen language is remembered in the browser. localStorage can be blocked (private mode,
 // strict settings): then the switch still works, it is just forgotten on reload.
 function savedLang(): Lang {
@@ -54,6 +62,10 @@ export function App() {
   // "Talk" in the header returns to where the tool was opened from: the card, and the view - the
   // scrolling page or full-screen present mode (act 6 opens the tool from present mode)
   const [backToTalk, setBackToTalk] = useState(`#/story/${SLIDES[0].id}`);
+  // The Workbench tab returns to the last Workbench address of the session - the open answer and
+  // contract are in it (?run=…&doc=…) - so a look at the register or the audit log loses nothing.
+  // #/tool/workbench itself (the talk's link, the step "Ask") is still a fresh step 1.
+  const [lastWorkbench, setLastWorkbench] = useState(() => (isWorkbench(location.hash) ? location.hash : "#/tool/workbench"));
   const area = TOOL_AREAS.includes(route.page) ? route.page : "workbench";
   // German only in the tool; the presentation is always English
   const shown: Lang = route.layer === "tool" ? lang : "en";
@@ -70,6 +82,9 @@ export function App() {
       const was = parseHash(from);
       // an empty address ("", "#/story") keeps the first card
       if (parseHash(location.hash).layer === "tool" && was.layer !== "tool" && was.page) setBackToTalk(from);
+      // the Workbench address we are on, or the one we just left (oldURL: also after a replaceState)
+      if (isWorkbench(location.hash)) setLastWorkbench(location.hash);
+      else if (isWorkbench(from)) setLastWorkbench(from);
     };
     window.addEventListener("hashchange", remember);
     return () => window.removeEventListener("hashchange", remember);
@@ -93,10 +108,18 @@ export function App() {
   if (route.layer === "present") return <Present slideId={route.page || SLIDES[0].id} step={route.step} />;
   if (route.layer === "presenter") return <Presenter slideId={route.page || SLIDES[0].id} step={route.step} />;
 
+  // step 3 (Decide) fills the window: the footer's sentence is on the finding card there
+  const deciding = area === "workbench" && route.params.has("doc");
+  const openTab = (value: string) => {
+    if (value === area) return;          // the tab of this screen: stay where you are
+    navigate(value === "workbench" ? lastWorkbench : `/tool/${value}`);
+  };
+
   return (
     <LangContext.Provider value={shown}>
     <UserContext.Provider value={user}>
       <SwitchUserContext.Provider value={switchUser}>
+      <RegisterLiveProvider>
       <div className="app" lang={shown}>
         <FluentProvider theme={darkTheme} className="topbar-provider">
           <header className="topbar">
@@ -108,17 +131,16 @@ export function App() {
               <span className="brand-name">Legal Workbench</span>
             </div>
             <nav aria-label="Legal Workbench" className="nav">
-              <TabList selectedValue={area} onTabSelect={(_, d) => navigate(`/tool/${d.value}`)}>
+              <TabList selectedValue={area} onTabSelect={(_, d) => openTab(String(d.value))}>
                 <Tab value="workbench">{t("Workbench")}</Tab>
                 <Tab value="register">{t("Contract register")}</Tab>
                 <Tab value="audit">{t("Audit log")}</Tab>
               </TabList>
             </nav>
+            {/* how many contracts, and what is new; "API offline" when the register cannot be reached */}
+            <RegisterPulse />
             <div className="spacer" />
             <span className="env-pill warn">{t("Synthetic test data")}</span>
-            {version === null && (
-              <span className="env-pill off"><span className="dot" /> {t("API offline")}</span>
-            )}
             <div className="lang-switch" role="group" aria-label={t("Language")}>
               {(["en", "de"] as const).map((l) => (
                 <button key={l} type="button" aria-pressed={lang === l} onClick={() => switchLang(l)}>
@@ -148,11 +170,14 @@ export function App() {
           {area === "register" && <Register />}
           {area === "audit" && <AuditLog />}
         </main>
-        <footer className="footer">
-          {t("Observations, not legal advice – lawyers decide · Synthetic and public test data (CUAD, CC BY 4.0) · Every model call is logged with its cost")}
-          {version && <> · {t("Register {version}", { version })}</>}
-        </footer>
+        {!deciding && (
+          <footer className="footer">
+            {t("Observations, not legal advice – lawyers decide · Synthetic and public test data (CUAD, CC BY 4.0) · Every model call is logged with its cost")}
+            {version && <> · {t("Register {version}", { version })}</>}
+          </footer>
+        )}
       </div>
+      </RegisterLiveProvider>
       </SwitchUserContext.Provider>
     </UserContext.Provider>
     </LangContext.Provider>

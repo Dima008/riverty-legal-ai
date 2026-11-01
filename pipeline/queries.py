@@ -107,3 +107,35 @@ def costs(con) -> dict:
                     "FROM llm_calls GROUP BY purpose, model")
     return {"calls": r[0], "prompt_tokens": r[1], "completion_tokens": r[2], "cost_usd": round(r[3], 4),
             "by_purpose": by}
+
+
+def register_version(con) -> int:
+    """The register's change cursor: the highest audit_log id. Every pipeline write adds an audit row
+    in the same transaction, and AUTOINCREMENT never reuses an id - a new number means the register changed."""
+    return con.execute("SELECT COALESCE(MAX(id), 0) FROM audit_log").fetchone()[0]
+
+
+def stages(con) -> dict[str, str]:
+    """Where each document stands, for the tool: 'reading' until its findings for the current text and the
+    family / former-name step are stored; 'failed' when the last attempt to read it failed; else 'ready'.
+    From the documents table and the pipeline's own audit log - no model call."""
+    families = con.execute("SELECT COALESCE(MAX(id), 0) FROM audit_log WHERE action = 'families_built'").fetchone()[0]
+    last = {r[0]: r[1:] for r in con.execute(
+        "SELECT target, MAX(CASE WHEN action = 'ingested' THEN id END), MAX(CASE WHEN action = 'extracted' THEN id END),"
+        " MAX(CASE WHEN action = 'extraction_failed' THEN id END) FROM audit_log"
+        " WHERE action IN ('ingested', 'extracted', 'extraction_failed') GROUP BY target")}
+    out = {}
+    for doc_id, status, text_sha, read_sha in con.execute(
+            "SELECT d.doc_id, d.status, d.text_sha256, m.text_sha256 FROM documents d"
+            " LEFT JOIN metadata m ON m.doc_id = d.doc_id"):
+        ingested, extracted, failed = (x or 0 for x in last.get(doc_id, (0, 0, 0)))
+        current = read_sha is not None and read_sha == text_sha        # findings belong to today's text
+        # failed after the last ingest: a re-check of the old findings may come later, it does not read today's text
+        if status == "FAILED" or (not current and failed > ingested):
+            out[doc_id] = "failed"
+        # an ingest replaces the document row (family, copy) and an extraction its findings: both wait for families
+        elif not current or max(ingested, extracted) > families:
+            out[doc_id] = "reading"
+        else:
+            out[doc_id] = "ready"
+    return out

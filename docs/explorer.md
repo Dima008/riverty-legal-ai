@@ -157,8 +157,12 @@ depth). `GET /what-if?off=injection_guard` → M14 loses its four-eyes check.
 `GET /what-if/layers` → the table "each layer off on its own" (`python -m eval.what_if`).
 
 **Diagram.** A vertical stack: model on top, one row per check with ✓ / ✗, register result at
-the bottom. Click a contract to replay its finding through the stack. In the workbench this is
-"Model proposed → n checks, m failed → Register says" plus the checks as a timeline.
+the bottom. Click a contract to replay its finding through the stack. In the Workbench the finding
+card says it in four signals (decision 91): the status word and the next step ("Unclear → Review"),
+one "why a person looks" callout ("The checks overruled the model. The model said Found, but the
+quote does not fit the clause, and a second model call disagreed."), and the fold "How the
+register decided · 2 of 5 checks failed" with the checks as a timeline - 18 marks on the M08
+screen before, 4 (plus the page hint) after.
 
 ---
 
@@ -185,7 +189,10 @@ without any match is a REVIEW row "cannot be ruled out - poor scan (OCR confiden
 threshold 70 %) - a person checks" (`NAME_NOT_RULED_OUT`), never "without hits". Measured on a
 register copy with H01: the legacy-name run reports H01 plus the five gold contracts; counts 5
 with open hits, 1 cannot be ruled out, 1 resolved by amendment, 38 without hits = 45 checked.
-Fuzzy matching was not chosen (false hits on clean text).
+Fuzzy matching was not chosen (false hits on clean text). The contract register counts with the
+same rule as Q2 (`formerNameToCheck` in `web/src/filters.ts`): "6 to check for a former name (5 name
+one · 1 cannot be ruled out)" with H01, 5 without it - the Workbench's old start strip said 5 while
+Q2 said 6 (F32); the strip is gone.
 
 **Live.** `GET /documents/M05` (family M05, M05-A; legacy name resolved), `GET /documents/C11`
 (flag `amendment_contradiction`). Every document and every `GET /matrix` row carries
@@ -241,18 +248,39 @@ unknown, not extracted): the scope is read from all documents, also those never 
 each contract lands in exactly one of the two lists; the tests count it against the register. No model
 call: a question costs $0 – reading the contracts was paid once ($0.12 for 47). Inside the checked
 list nothing is "fine" by default either: in the legacy-name check a poor scan without a match is
-reported for review, not counted "without hits" (F19); its four counts add up to "checked".
+reported for review, not counted "without hits" (F19); its four counts add up to "checked". The
+answer also names every contract it checked (`coverage.checked_ids`, next to the excluded ones),
+and every reported row carries its document's scan quality and arrival (`doc_status`,
+`ocr_mean_conf`, `ingested_at`) – so the names, law and copy checks can say "poor scan" too.
 
-Legal can also choose the contracts (decision 75): filter the register (law, date, clause status,
-review state) or tick contracts, then "check these in the Workbench". The selection is then the
-scope: every chosen contract is checked or excluded by name – also one of another type ("selected,
-but a data processing agreement"). An id that is not in the register is refused. The answer says
-"a selection: 3 of 47, chosen by Legal Reviewer A – not the whole portfolio", and the audit keeps
-the list and how it was made. A filter never hides a contract it cannot judge: "law DE" names the
-contracts without a governing law instead of dropping them.
+In the Workbench the question is step 1 (decision 93): all eight example questions in one box,
+grouped by topic - clause not found (5), former company name, governing law, copies - the case
+study's two pilot questions (Q1, Q2) tagged "Pilot", and "Build your own question" at the end of the
+same box. One click fills the plan card beside it; nothing runs before "Confirm the plan".
+
+Legal can also narrow the question down (decisions 75 and 91): in the plan, by type, law, dated
+from/to, or party and contract IDs (picking by hand = IDs separated by commas); the register hands
+its filters over with "Ask in the Workbench →". There is one idea of scope – the register's tick
+boxes are gone. A type alone sends no selection: the server's own rule applies (the type plus
+contracts of unknown type). Any other filter becomes a selection: the contracts it matched plus
+every contract the filter cannot judge – not read yet, no governing law found, no date found –
+kept in and named, never dropped. The selection is then the scope: every chosen contract is checked
+or excluded by name – also one of another type ("selected, but a data processing agreement"). An
+id that is not in the register is refused. The answer says "a selection: 3 of 47, chosen by Legal
+Reviewer A – not the whole portfolio", and the audit keeps the list and the filters that made it
+(recorded, never applied again).
+
+Before the lawyer confirms, `POST /runs/preview` shows the plan's scope: how many are in scope,
+which will be excluded and why, which are still being read. It is the same function as the run,
+so the number before and the coverage after cannot drift apart – the test compares them for
+Q1–Q8. It never returns rows or counts of findings (nothing runs before the plan is confirmed),
+and it stores and audits nothing. Measured on a register copy with a new contract N01 still being
+read: Q1 preview "21 in scope · 19 checked · M15 excluded: duplicate of M01 · N01 excluded: not
+extracted (status LOW_QUALITY)" – the tool words it "not read yet – listed, not checked".
 
 **Why this way.** Compile, don't search (4); negative search checks every contract, with
-coverage (5); filters, not vector search, select contracts (17).
+coverage (5); filters, not vector search, select contracts (17); one way to narrow the scope, a
+filter keeps what it cannot judge, the preview shows the scope but never the answer (91).
 
 **What went wrong.** F10 – a filter that excludes documents can hide a miss. Since then every
 exclusion is listed with its reason. F16 – "not governed by US law" compared "US" with "US-NY"
@@ -264,7 +292,8 @@ guarantees are named instead.
 "20 merchant agreements in scope · 19 checked · excluded: M15 (duplicate of M01, the original
 is checked) · reported: M03, M08, M10, M14, M18". The same plan with
 `"scope": {"doc_ids": ["M01", "M03", "M08", "M15", "V01"]}`: 5 in scope, M03 and M08 reported,
-M15 (duplicate) and V01 (another type) excluded with reason.
+M15 (duplicate) and V01 (another type) excluded with reason. `POST /runs/preview` with the same
+body: the same `coverage` without `reported`, no `rows` (733 bytes for Q2, 4 ms).
 
 **Diagram.** A bar of all contracts in scope: checked (with result), excluded (with reason),
 nothing in between.
@@ -279,7 +308,10 @@ nothing in between.
 metadata; REVIEW if UNCLEAR, a former name that a poor scan cannot rule out (F19), or confidence
 below 0.8; otherwise CONFIRM, with a deterministic
 10 % spot-check sample. Only signals from the register, never the model's self-assessment.
-Q1: M14 FOUR_EYES (injected note), M08 and M10 REVIEW (unclear), M03 and M18 CONFIRM.
+Q1: M14 FOUR_EYES (injected note), M08 and M10 REVIEW (unclear), M03 and M18 CONFIRM. On screen
+the triage and the decision state are one word, the **next step** (decision 91): Confirm (Spot check
+for a sample) · Review · Four eyes · 0 of 2 → 1 of 2 → Confirmed ✓ - the talk's own words; "Routine"
+is gone.
 
 **Why this way.** Risk-based human-in-the-loop (13), concrete rule (53).
 
@@ -303,22 +335,48 @@ REVIEW or FOUR_EYES rows or spot-check samples: no bulk confirmation of critical
 Reviewers are simulated (reviewer A / B via a header); in production the user comes from the
 Entra ID token.
 
-A review belongs to the finding, not to the question (decision 73). It can also be made directly
-in the contract register, and it is stored per finding version – document, clause, the text it
-was extracted from, prompt version and status. Every run that reports the same version reuses it
-("confirmed by A and B, in the register"), so review work shrinks with every question; when the
-text, the extraction or the status changes, the old review no longer applies and is shown as
-"reviewed on an earlier version". "Escalate" (with a reason) raises a routine finding to four
-eyes. The archive button is clickable before approval on purpose (decision 71): the server
-refuses with 409 and the refusal is audited – the button is not the control, the server is.
+A review belongs to the finding, not to the question (decision 73): it is stored per finding
+version – document, clause, the text it was extracted from, prompt version and status. Every run
+that reports the same version reuses it, so review work shrinks with every question; when the text,
+the extraction or the status changes, the old review no longer applies.
+
+Decisions are made in one place, the Workbench (decision 91: the register looks up, the Workbench
+works). Step 3 "Decide" shows the queue, the page with the passage highlighted, the finding card and
+the decision panel on one screen; the panel is pinned, so "Confirm finding" never leaves the screen
+(1366x768: y 589–621 for M08, 617–660 for M14, "Store archive copy" at 711–741; before, Confirm
+was at y 1067 after the answer and 1697 in the drawer - F27). After the first of two approvals the
+panel says "You approved. The second approval must come from another person." and offers
+"Continue as Legal Reviewer B" (the Entra ID stand-in; the server still refuses the same person
+twice). "Not sure? Ask for a second person" (with a reason) escalates a one-person finding to four
+eyes. The contract register is read-only: a finding there shows Legal's decision as a line ("Legal:
+not decided yet" / "confirmed by …") and the link "Decide in the Workbench →", which opens the
+Workbench on that one finding (`#/tool/workbench?doc=M08&clause=liability_limitation`) - also for a
+Found clause, so a wrong "Found" can still be challenged. A vote made there is marked "from the
+register" in every answer. The archive button is clickable before approval on purpose (decision
+71): the server refuses with 409, the refusal is audited, and the screen says it in fixed words -
+"Refused by the server: the archive copy needs 2 approvals (1 so far). The attempt is in the audit
+log." - never the raw "tool gate: …" (F33).
+
+Every state counts. A run's `review_states` count every state a row can have, so they add up to
+the rows; the monitoring's open workload is everything not decided yet – found, escalated (waiting
+for two people), one of two approvals, and disputed.
 
 **Why this way.** Risk-based human-in-the-loop (13); triage rule (53); simulated reviewers
 (54). Automation bias is real: evidence before verdict, reasons on record.
 
+**What went wrong.** F25: a finding escalated in the register dropped out of the counts – Q1 with
+M03 escalated had 5 rows, but the review counts added up to 4 and the monitoring said 4 open. The
+state ESCALATED existed, but nobody counted it. Fixed: the counts add up to 5, monitoring says 5
+open, and a regression test escalates M03.
+
 **Live.** `POST /runs/{run_id}/reviews` as reviewer A on M14 → `IN_REVIEW`; again as A →
 409 "the second review must come from a different person"; as B → `CONFIRMED`. In the register:
 `POST /findings/M14/liability_limitation/reviews` (A, then B) → a new Q1 run shows M14 as
-`CONFIRMED`, sources "in the register"; `GET /findings/review-states` feeds the marks in the matrix.
+`CONFIRMED`, sources "from the register"; `GET /findings/review-states` feeds the three marks in the
+matrix (✓ confirmed by Legal · ✗ Legal disagrees · … in review).
+`POST /findings/M03/liability_limitation/reviews` with `ESCALATED` and a reason → a new Q1 run
+counts `"ESCALATED": 1`; `GET /monitoring` → `workflow.open` 5 of 5 rows. In the tool:
+`#/tool/workbench?run=<id>&doc=M14` (step 3 of a stored answer; a reload or a tab switch keeps it).
 
 **Diagram.** State machine FOUND → IN_REVIEW → CONFIRMED / REJECTED / CORRECTED, with the
 DISPUTED branch; two avatars (A, B) on the four-eyes path.
@@ -356,9 +414,24 @@ the file hash; a second click bounces off ("already archived").
 **In our system.** Every model call is recorded with tokens and cost (`llm_calls`); pipeline
 events in the register's audit log; human and workflow actions (runs, reviews, archive) in the
 workflow database (decision 56), which survives a rebuild of the register. Runs are snapshots:
-the audit shows what the reviewer actually saw.
+the audit shows what the reviewer actually saw. A run also keeps the register version it was
+asked at (`register_version`) and the contracts it checked, so the audit of a question names
+every contract it covered.
 
-**Live.** `GET /summary` (`cost`), `GET /audit`.
+What the machine did on its own is shown too: `GET /changes?after=<version>` returns the
+register's pipeline events since a version – a contract arrived (format, pages, poor scan), was
+read (model, prompt version), reading failed (the error, cut to 200 characters), was removed. The
+tool's audit log shows them as the group "Register (pipeline)" next to the questions and decisions
+(decision 91); the filters are Questions · Decisions · Archive copies · Refused · Register, and every
+question has "Open the answer →", which opens that stored answer in the Workbench. Only a short whitelist of details leaves the API, never a file path – although the
+register's own "forgotten" row keeps the removed file for the operator.
+
+**Why this way.** Audit in the workflow database, separate from the register (56); the register's
+own audit log is the change feed, so there is no second place to keep in sync (91).
+
+**Live.** `GET /summary` (`cost`), `GET /audit`. `GET /changes?after=144` on the register after
+Dima's first rehearsal: `ingested` H01 (jpeg, 1 page, LOW_QUALITY, OCR 61.3) · `extracted` H01
+(gpt-4.1-mini, extract-v2) · `forgotten` H01 (no details).
 
 ---
 
@@ -380,10 +453,36 @@ the families; model calls stay for the cost audit, re-labelled `forgotten:<id>@<
 `python -m tools.demo reset` uses it after every rehearsal: four times on a copy, the register
 came back identical, table by table, and the evaluation stayed at 1.00.
 
+Seeing it in the tool: every document carries `stage` and `ingested_at` on `/documents`,
+`/documents/{id}` and `/matrix`. *Reading* from the moment ingest writes its row until its
+findings for today's text and the families step are stored (only then is the former-name answer
+complete); *failed* when the last attempt to read today's text failed; otherwise *ready*. The
+stage is read from the documents table and the pipeline's own audit log – no new state to keep.
+The register version is the highest audit-log id: every pipeline write adds an audit row in the
+same transaction, and the id is never reused, so a new number means the register changed.
+`GET /changes` returns the version, the document count and the server's clock (103 bytes, 4 ms) –
+the cheap poll; the tool asks every 3 s while it is visible and reloads the matrix only when the
+version grew (`web/src/live.tsx`). "New" = arrived in the last 24 hours by the server's clock. A
+stored answer never changes underneath the reader: it keeps its version and its `checked_ids`, and
+the tool previews the same plan again to say "out of date: H01 arrived after this answer" – Ask
+again is a new run. Limitation: membership only – a re-extraction of a contract that was already
+in the answer is not detected. Measured on a register copy with a new contract N01 inserted the
+way ingest writes it: 48 documents, 47 ready and N01 reading, type unknown, no findings yet,
+former name "cannot be ruled out" already before the model; `/changes?after=150` → version 151,
+one event `ingested` N01 (263 bytes). Measured with the tool open during one H01 drop (1 Nov, register
+copy, 1366x768): the register showed H01 pinned as "the model is reading it …" 3.3 s after the drop
+and filled in after 9.4 s; a Q1 answer made before the drop said "Out of date: H01 arrived after this
+answer – the model is still reading it" after 4.3 s and "… · Ask again" after 10.5 s; Ask again gave
+"6 of 20 merchant agreements to look at" with H01 first (Not found · Poor scan (OCR 61 %) · Review);
+after `tools.demo reset` that answer said "Out of date: H01 was removed from the register" within
+1.0 s and the header was back to "47 contracts".
+
 **Why this way.** Watch folder as stand-in for SharePoint (35); in Azure a Graph delta query
-reports new, changed and deleted items, and a deleted item calls the same forget step. Recall
-first: a poor scan is not reported as "clause missing" without a person. Costs are never
-deleted - the cost view must add up (core design: show costs).
+reports new, changed and deleted items, and a deleted item calls the same forget step. The
+register version is the same idea as a Graph delta link: "what changed since what I saw" (91).
+Recall first: a poor scan is not reported as "clause missing" without a person, and a contract
+that is still being read is listed, never dropped. Costs are never deleted - the cost view must
+add up (core design: show costs).
 
 **What went wrong.** F19: the former company name on H01 was missed - exact match on bad OCR
 cannot prove absence; now H01 is a REVIEW row "cannot be ruled out - poor scan" (decision 89). F20: the live card fetched the findings before they existed and never
@@ -400,8 +499,11 @@ forget never deletes from a source folder.
 confidence, `own_entity_name` as read by the model; `legacy_names` stays empty, so
 `former_names` says `not_ruled_out: true` with the reason - F19),
 `GET /documents/H01/findings`, `GET /documents/H01/journey`; after
-the reset `GET /documents/H01` → 404 and `GET /summary` still counts the cost.
+the reset `GET /documents/H01` → 404 and `GET /summary` still counts the cost. `GET /changes`
+(the version), `GET /changes?after=<version>` (the events since), `stage` and `ingested_at` on
+every `GET /documents` row.
 
 **Diagram.** A folder with a photo dropping in → watcher (clock, 5 s) → OCR (61 %, amber) →
 model + checks → register (47 → 48); the way back: delete → forget → nine tables emptied,
-families rebuilt, the cost row kept and greyed out ("forgotten").
+families rebuilt, the cost row kept and greyed out ("forgotten"). Above it a version counter
+(150 → 151 → …) that the tool's header pill watches: reading → 1 new.

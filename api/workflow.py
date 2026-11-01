@@ -2,7 +2,8 @@
 
 A run is a snapshot: what was asked, which plan was confirmed, every contract in scope (checked
 or excluded with reason), the reported rows with triage, and the cost. Reviews and the archive
-copy (step 3) refer to a run, so the audit always shows what the reviewer actually saw.
+copy (step 3) refer to a run, so the audit always shows what the reviewer actually saw. Before
+the lawyer confirms a plan, the preview shows which contracts it would cover - never the answer.
 """
 
 from __future__ import annotations
@@ -78,6 +79,8 @@ def create_run(req: RunRequest, user: str = Depends(current_user), con: sqlite3.
     """Run a confirmed plan over every contract in scope - the whole type, or the selection in
     `plan.scope`. Register query only: no model call. The audit records the plan with the selection."""
     run_id = f"run-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}-{uuid.uuid4().hex[:6]}"
+    # read before the check: if the pipeline writes in between, the run looks older than it is, never newer
+    version = queries.register_version(con)
     try:
         result = portfolio.run_check(con, req.plan.model_dump(), run_id)
     except ValueError as exc:
@@ -85,6 +88,7 @@ def create_run(req: RunRequest, user: str = Depends(current_user), con: sqlite3.
     run = {
         "run_id": run_id, "created_at": now(), "created_by": user, "question": req.question,
         "prompt_version": config.PROMPT_VERSION,
+        "register_version": version,      # the register as it was asked (GET /changes counts on from here)
         "cost": {"model_calls": 0, "usd": 0.0,
                  "note": "answered from the register; reading the contracts was paid once at ingest",
                  "register_total_usd": queries.costs(con)["cost_usd"]},
@@ -100,6 +104,20 @@ def create_run(req: RunRequest, user: str = Depends(current_user), con: sqlite3.
     return attach_reviews(wb, run)
 
 
+@router.post("/runs/preview")          # declared before /runs/{run_id}
+def preview_run(req: RunRequest, con: sqlite3.Connection = Depends(get_con)) -> dict:
+    """Which contracts a plan would cover - shown before the lawyer confirms it. No rows, no counts:
+    the preview says which contracts, never what is found. Nothing is stored or audited. The same
+    function as the run, so the scope shown before and the coverage after cannot drift apart."""
+    version = queries.register_version(con)
+    try:
+        result = portfolio.run_check(con, req.plan.model_dump())
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {"plan": result["plan"], "register_version": version,
+            "coverage": {k: v for k, v in result["coverage"].items() if k != "reported"}}
+
+
 @router.get("/runs")
 def list_runs(wb: sqlite3.Connection = Depends(get_wb)) -> list[dict]:
     out = []
@@ -107,7 +125,7 @@ def list_runs(wb: sqlite3.Connection = Depends(get_wb)) -> list[dict]:
         res = json.loads(r["result_json"])
         out.append({"run_id": r["run_id"], "created_at": r["created_at"], "created_by": r["created_by"],
                     "question": r["question"], "plan": res["plan"], "coverage": res["coverage"],
-                    "triage": res["triage"]})
+                    "triage": res["triage"], "register_version": res.get("register_version")})   # None: older run
     return out
 
 

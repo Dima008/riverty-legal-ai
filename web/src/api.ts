@@ -4,6 +4,9 @@
 
 export type Status = "PRESENT" | "ABSENT" | "UNCLEAR";
 export type Triage = "CONFIRM" | "REVIEW" | "FOUR_EYES";
+// Where a document stands (pipeline/queries.py stages): "reading" until its findings and the family /
+// former-name step are stored, "failed" when the last attempt to read it failed
+export type Stage = "reading" | "ready" | "failed";
 export type ReviewStateName = "FOUND" | "IN_REVIEW" | "CONFIRMED" | "REJECTED" | "CORRECTED" | "DISPUTED" | "ESCALATED";
 export type Decision = "CONFIRMED" | "REJECTED" | "CORRECTED";
 
@@ -93,12 +96,16 @@ export interface RunRow {
   triage: Triage;
   sample: boolean;
   review: ReviewState;
+  // the document behind the row, for every check (a poor scan also in Q2, Q5 and Q8); missing in older runs
+  doc_status?: string | null;
+  ingested_at?: string | null;
 }
 
 export interface Coverage {
   scope: string;
   in_scope: number;
   checked: number;
+  checked_ids?: string[];          // which contracts the answer covered (snapshot); missing in older runs
   excluded: { doc_id: string; reason: string }[];
   reported: number;
   selection: { chosen: number; of: number; filters: Record<string, string> } | null;
@@ -118,6 +125,14 @@ export interface Run {
   triage: Partial<Record<Triage, number>>;
   review_states: Record<ReviewStateName, number>;
   cost: { model_calls: number; usd: number; note: string; register_total_usd: number };
+  register_version?: number;       // the register's change cursor when the question was asked; missing in older runs
+}
+
+/** Which contracts a plan would cover (POST /runs/preview): no rows and no counts of findings - never the answer. */
+export interface Preview {
+  plan: Plan;
+  register_version: number;
+  coverage: Omit<Coverage, "reported">;
 }
 
 export interface Layer {
@@ -167,6 +182,9 @@ export interface DocumentInfo {
   family_id: string;
   duplicate_of: string | null;
   copies: string[];            // documents that are copies of this one
+  stage?: Stage;
+  ingested_at?: string | null;     // when the file arrived (first ingest, F14)
+  extracted_at?: string | null;    // when the model read it; null while it is being read
   metadata: {
     title: string | null;
     doc_type: string;
@@ -218,6 +236,8 @@ export interface MatrixRow {
   cells: Record<string, MatrixCell>;
   gaps: string[];
   former_names: FormerNames;
+  stage?: Stage;
+  ingested_at?: string | null;
 }
 
 export interface ClauseSpec {
@@ -306,6 +326,36 @@ export interface RunListItem {
   question: string | null;
   plan: Plan;
   coverage: Coverage;
+  register_version?: number;
+}
+
+/** A pipeline event of the register (GET /changes): a contract arrived, was read, failed or was removed.
+ *  `details` is a whitelist - never a file path. */
+export interface RegisterEvent {
+  id: number;                      // audit_log id of the register
+  ts: string;
+  action: "ingested" | "ingest_failed" | "extracted" | "extraction_failed" | "forgotten";
+  doc_id: string;
+  details: {
+    format?: string;
+    pages?: number;
+    status?: string;
+    ocr_mean_conf?: number | null;
+    model?: string;
+    prompt_version?: string;
+    error?: string;
+  };
+}
+
+/** Did the register change (GET /changes?after=)? version = MAX(audit_log.id), the same idea as a Graph delta
+ *  link; reset: the cursor is ahead of the register (it was rebuilt), so reload everything. */
+export interface Changes {
+  version: number;
+  now: string;                     // the server's clock: "New" is measured with it
+  documents: number;
+  reset: boolean;
+  more: boolean;                   // the events were capped at the newest 200
+  events: RegisterEvent[];         // empty without `after` - the cheap poll
 }
 
 export interface AuditEvent {
@@ -357,6 +407,8 @@ export const api = {
   checks: () => request<Record<string, CheckSpec>>("/checks"),
   catalogue: () => request<{ clauses: Record<string, { label: string; definition: string }> }>("/catalogue"),
   createRun: (plan: Plan, question: string | null) => post<Run>("/runs", { plan, question }),
+  previewRun: (plan: Plan) => post<Preview>("/runs/preview", { plan }),
+  changes: (after?: number) => request<Changes>(after == null ? "/changes" : `/changes?after=${after}`),
   run: (id: string) => request<Run>(`/runs/${id}`),
   runs: () => request<RunListItem[]>("/runs"),
   summary: () => request<RegisterSummary>("/summary"),
@@ -378,6 +430,9 @@ export const api = {
   reviewFinding: (docId: string, clause: string,
                   body: { decision: Decision | "ESCALATED"; reason?: string; corrected_status?: string }) =>
     post<FindingReviewState>(`/findings/${docId}/${clause}/reviews`, body),
+  // "Not sure? Ask for a second person": the finding then needs four eyes (decision 73); a reason is required
+  escalate: (docId: string, clause: string, reason: string) =>
+    post<FindingReviewState>(`/findings/${docId}/${clause}/reviews`, { decision: "ESCALATED", reason }),
   reviewStates: () => request<Record<string, Record<string, ReviewStateName>>>("/findings/review-states"),
   whatIfLayers: () => request<{ layers: WhatIfLayer[]; model_alone: string[] }>("/what-if/layers"),
   whatIf: (off: string[]) => request<WhatIfResult>(`/what-if?off=${encodeURIComponent(off.join(","))}`),

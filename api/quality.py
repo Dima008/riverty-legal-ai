@@ -180,7 +180,8 @@ def _workflow(wb) -> dict:
         "rows": sum(states.values()),
         "triage": dict(triage),
         "review_states": dict(states),
-        "open": states["FOUND"] + states["IN_REVIEW"],
+        # not decided yet: also escalated (waiting for two people) and disputed (the two disagree) - F25
+        "open": states["FOUND"] + states["ESCALATED"] + states["IN_REVIEW"] + states["DISPUTED"],
         "disputed": states["DISPUTED"],
         "decisions": decisions,
         "override_rate": round(overruled / decided, 3) if decided else None,

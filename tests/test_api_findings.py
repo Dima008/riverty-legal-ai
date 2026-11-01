@@ -74,6 +74,18 @@ def test_escalation_raises_a_routine_finding_to_four_eyes():
     assert _review(doc, B).json()["state"] == "CONFIRMED"
 
 
+def test_an_escalated_finding_is_counted():
+    """F25: an escalated finding is open (it waits for two people), so the run's review counts and
+    the monitoring's open count include it - the counts add up to the rows."""
+    assert _review("M03", A, decision="ESCALATED", reason="the cap may sit in an annex").status_code == 201
+    run = _new_run()
+    assert _row(run["run_id"], "M03")["review"]["state"] == "ESCALATED"
+    assert run["review_states"]["ESCALATED"] == 1
+    assert sum(run["review_states"].values()) == len(run["rows"])
+    w = client.get("/monitoring").json()["workflow"]
+    assert w["review_states"]["ESCALATED"] == 1 and w["open"] == w["rows"] == len(run["rows"])   # nothing decided yet
+
+
 def test_a_review_made_in_a_run_counts_in_the_register_and_unlocks_the_archive():
     run = _new_run()
     rid = run["run_id"]

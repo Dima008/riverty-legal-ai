@@ -4,7 +4,14 @@
 //   #/present/<card>[/<step>]              the same cards one at a time, full screen (step: 0, 1, ... or 'last')
 //   #/presenter/<card>[/<step>]            the presenter view with speaker notes, in sync with present mode
 //   #/tool/<area>?doc=M08&clause=...       the Legal Workbench
+//   #/tool/workbench                       step 1 (Ask), fresh: nothing chosen
+//   #/tool/workbench?run=<id>[&doc=M14]    step 2 (Answer) of a stored answer; with doc, step 3 (Decide)
+//   #/tool/workbench?doc=M08&clause=<key>  decide one finding, opened from the contract file
+//   #/tool/workbench?q=Q2&check=&clause=&type=&law=&from=&to=&search=
+//                                          step 1 prefilled (filters.ts readParams) - nothing runs
+//   #/tool/register?doc=M08&clause=<key>   a contract file; ?type=all&only=new|gaps|names a filter
 import { useEffect, useState } from "react";
+import { toParams, type ScopeFilters } from "./filters";
 
 export type Layer = "story" | "present" | "presenter" | "tool";
 
@@ -30,6 +37,26 @@ export function parseHash(hash: string): Route {
 
 export function navigate(to: string): void {
   location.hash = to.startsWith("#") ? to : `#${to}`;
+}
+
+/** What a Workbench address can carry; type "" = every type ("all" in the address). */
+export interface WorkbenchLink extends Partial<ScopeFilters> {
+  q?: string;
+  check?: string;
+  clause?: string;
+  type?: string | null;
+  run?: string;
+  doc?: string;
+}
+
+/** A Workbench address, e.g. workbenchHref({ run: "run-…" }) or workbenchHref({ type: "", law: "NL" }).
+ *  The prefill part is written by filters.ts toParams, the same module that reads it back. */
+export function workbenchHref({ run, doc, q, check, clause, type, ...filters }: WorkbenchLink = {}): string {
+  const where = new URLSearchParams();
+  if (run) where.set("run", run);
+  if (doc) where.set("doc", doc);
+  const query = [where.toString(), toParams({ q, check, clause, type, filters })].filter(Boolean).join("&");
+  return `#/tool/workbench${query ? `?${query}` : ""}`;
 }
 
 export function useHashRoute(): Route {

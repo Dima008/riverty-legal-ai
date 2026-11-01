@@ -43,10 +43,10 @@ p { margin: 0; }
 /* ---------------------------------------------------------------- header */
 /* one 56px bar on the talk's near-black surface, with the talk's faint mint glow and its
    mint-to-cyan hairline at the bottom */
-/* Sticky at -54px: once the page scrolls, the bar leaves the screen but its 2px hairline stays at
-   the top, so the talk's frame is still there during the evidence and the decision - at no cost
-   in height. */
-.app > .topbar-provider { background-color: transparent; position: sticky; top: -54px; z-index: 20; }
+/* Sticky at the top of every tool screen (decision 91): the reviewer switch and "Talk" stay reachable
+   during four eyes, and the register pill is seen when a contract arrives. The tabs and the other pills
+   never wrap or squeeze: the bar keeps one line (only the register pill may give way, live.css). */
+.app > .topbar-provider { background-color: transparent; position: sticky; top: 0; z-index: 20; }
 .topbar {
   position: relative; display: flex; align-items: center; gap: 16px; height: 56px; padding: 0 20px 2px 14px;
   background: radial-gradient(520px 140px at 10% -60%, rgba(68, 226, 176, 0.16), transparent 70%), var(--night);
@@ -81,10 +81,11 @@ p { margin: 0; }
 .lang-switch button[aria-pressed="true"] { background: var(--mint); color: #03110d; }   /* 11.7:1 */
 .user { display: flex; align-items: center; gap: 8px; }
 .user .fui-Dropdown { min-width: 168px; }
+.topbar .nav, .topbar .env-pill, .topbar .lang-switch, .topbar .user { flex-shrink: 0; }
+.topbar .nav .fui-Tab { white-space: nowrap; }
 
 /* ---------------------------------------------------------------- layout */
 .content { padding: 24px 28px 32px; flex: 1; width: 100%; max-width: 1760px; margin: 0 auto; }
-.workbench { display: flex; flex-direction: column; gap: 20px; }
 .footer { padding: 14px 28px; font-size: 13px; color: var(--ink-3); text-align: center; border-top: 1px solid var(--line); }
 
 .panel {
@@ -121,48 +122,14 @@ p { margin: 0; }
 .q-text { flex: 1; font-size: 14.5px; line-height: 1.4; }
 .q-check { flex: none; color: var(--brand); }
 
-.own-check { margin-top: 10px; }
 .builder { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; padding: 4px 0 6px; }
 .builder .fui-Dropdown { min-width: 260px; }
 
-/* the plan is the panel's footer, not a box inside the box */
-.plan-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 .plan-label { font-size: 14px; font-weight: 600; color: var(--ink-2); }
-.plan-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; list-style: none; margin: 0; padding: 0; }
-.plan-steps li { display: inline-flex; align-items: center; gap: 6px; }
-.plan-steps .chip { font-size: 14px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; }
-.plan-steps .sep { color: var(--ink-3); font-size: 16px; }
-.plan-note { font-size: 13px; color: var(--ink-3); }
-
-/* the one hero action of the screen looks like the talk's primary pill: mint-to-cyan, dark text */
-.ask .hero-btn.fui-Button { border-radius: 999px; padding-inline: 20px; }   /* the talk's pill shape */
-.ask .hero-btn.fui-Button:not(:disabled) { background: var(--grad); color: #03110d; border-color: transparent; font-weight: 650; }
-.ask .hero-btn.fui-Button:not(:disabled):hover { background: var(--grad); color: #03110d; filter: brightness(1.06); }
-.ask .hero-btn.fui-Button:not(:disabled):active { background: var(--grad); color: #03110d; filter: brightness(0.95); }
-
-/* Step 1 after a run: one line with the plan and "Change question" */
-.ask.compact { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 12px 18px; }
-.ask.compact .eyebrow { margin: 0; }
-.answer { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 12px; }
-
-/* ---------------------------------------------------------------- portfolio today (start state) */
-.portfolio { padding: 16px 22px 18px; }
-.pf-items { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.pf-items li + li { border-left: 1px solid var(--line); }
-.pf-item { display: flex; flex-direction: column; gap: 2px; height: 100%; padding: 6px 16px 8px; border-radius: 10px; color: var(--ink); text-decoration: none; }
-.pf-items li:first-child .pf-item { padding-left: 2px; }
-a.pf-item:hover { background: var(--brand-tint); }
-a.pf-item:hover .pf-label { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
-a.pf-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.pf-n { font-family: var(--font-display); font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.pf-item.hit .pf-n { color: var(--red); }
-.pf-item.unsure .pf-n { color: var(--amber-ink); }
-.pf-label { font-size: 14px; line-height: 1.35; color: var(--ink-2); }
 
 /* ---------------------------------------------------------------- overview */
 /* the answer as one sentence, and one tile per contract in scope - the talk's tile picture on paper */
 .ov-question { margin: 2px 0 4px; font-size: 15px; line-height: 1.4; color: var(--ink-2); }
-.overview .scope-note { margin-top: 12px; }
 .ctiles { list-style: none; margin: 16px 0 0; padding: 4px 0 0; display: flex; flex-wrap: wrap; gap: 8px 5px; }
 .ctiles > li:not(.ctile) { display: contents; }   /* a reported tile is a button inside its li */
 /* one width for every tile, so 20 merchant agreements fit one line at 1280 px; a reported tile has
@@ -194,104 +161,23 @@ a.pf-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; 
 .ov-sw.excluded::before { border-style: dashed; background: repeating-linear-gradient(45deg, #eef2f1, #eef2f1 2px, #d9e0de 2px, #d9e0de 4px); }
 .ov-stats { display: flex; flex-wrap: wrap; gap: 4px 0; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-2); }
 .ov-stats span:not(:last-child)::after { content: "·"; margin: 0 10px; color: var(--ink-3); }
-.ov-notes { list-style: none; margin: 6px 0 0; padding: 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.6; }
-.ov-notes b { color: var(--ink); margin-right: 4px; font-family: var(--font-display); }
 
-/* ---------------------------------------------------------------- results */
-.master-detail { display: grid; grid-template-columns: 272px minmax(0, 1fr); gap: 20px; align-items: start; scroll-margin-top: 12px; }
-.results { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; padding: 16px 12px 14px; }
-.results-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0 4px 10px; }
-.results-head .eyebrow { margin: 0; }
-.results-head .fui-Button { margin-top: 4px; }
-/* one compact row per contract: the triage is the left border (and an icon), the words are in the label */
-.result-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.rl-row {
-  width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; font: inherit; color: inherit; cursor: pointer;
-  padding: 8px 8px 8px 10px; border: 1px solid transparent; border-left: 4px solid var(--line-strong); border-radius: 8px;
-  background: transparent; transition: background 0.15s;
-}
-.rl-row:hover { background: #eef3f1; }
-.rl-row:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
-.rl-row.triage-review { border-left-color: #e6a23c; }
-.rl-row.triage-four_eyes { border-left-color: var(--red); }
-.rl-row.selected { background: var(--brand-tint); border-top-color: var(--brand-tint-2); border-right-color: var(--brand-tint-2); border-bottom-color: var(--brand-tint-2); }
-.rl-id { flex: none; font-family: var(--font-display); font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
-/* the party may take two lines: cut to one, most names were unreadable at 1280-1366 px */
-.rl-party {
-  flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; color: var(--ink-2); overflow: hidden;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere;
-}
-.rl-icons { flex: none; display: inline-flex; align-items: center; gap: 3px; }
-/* a spot-check sample: a small dashed ring next to the ID */
-.rl-sample { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 2px dotted var(--brand); }
-.rl-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 10px 4px 0; font-size: 13px; color: var(--ink-3); }
-.rl-key { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }   /* icon and word stay together */
+/* ---------------------------------------------------------------- status icons */
 .si { display: inline-grid; place-items: center; width: 18px; height: 18px; }
 .si-danger, .si-severe { color: var(--red); }
 .si-warning { color: var(--amber-ink); }
 .si-success { color: var(--green); }
 .si-informative, .si-subtle { color: var(--ink-2); }
-.ri-found { color: var(--ink-3); }
-.ri-in_review, .ri-escalated { color: var(--amber-ink); }
-.ri-confirmed, .ri-corrected { color: var(--green); }
-.ri-rejected, .ri-disputed { color: var(--red); }
 .fui-Badge { white-space: nowrap; }
 
 /* ---------------------------------------------------------------- evidence */
 .evidence { display: flex; flex-direction: column; gap: 16px; container-type: inline-size; }
-.ev-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 16px 20px; }
-.ev-head h3 { font-family: var(--font-display); font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: -0.01em; }
-.ev-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .ev-id {
   flex: none; font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--brand); background: var(--brand-tint);
   border: 1px solid var(--brand-tint-2); border-radius: 10px; padding: 8px 12px;
 }
-.ev-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; font-size: 13px; color: var(--ink-3); }
-.ev-meta span { display: inline-flex; align-items: center; gap: 5px; }
-.i16 { width: 16px; height: 16px; }
-.ev-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.warn-chip { font-size: 13px; color: var(--amber-ink); background: var(--amber-tint); border: 1px solid #f3d29a; border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
-/* injection and scan quality: a full-width warning, not one chip among others */
-.safety-bars { display: flex; flex-direction: column; gap: 8px; }
-.safety-bar { font-size: 14px; }
-/* "Show page n" sits at the end of the sentence, not on a line of its own */
-.safety-bar .link-btn { font-size: inherit; font-weight: 600; white-space: nowrap; }
-
-/* the original page and the verdict side by side, as long as the evidence column is wide enough
-   (a container query: it follows the column, not the window - the list beside it takes room too).
-   The page fits the window and stays put (sticky); the verdict and the decision scroll with the
-   window. One scroll, no box that scrolls inside the page: the decision column used to scroll on
-   its own and its end was cut off below the fold at laptop sizes. */
-.ev-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
+/* the original page beside the findings; the page stays put while the findings scroll (the contract file) */
 .ev-source { position: sticky; top: 16px; padding: 20px; }
-.ev-side { display: flex; flex-direction: column; gap: 16px; }
-@container (max-width: 860px) {
-  .ev-grid { grid-template-columns: minmax(0, 1fr); }
-  .ev-source { position: static; }
-}
-
-/* the guardrail sandwich, read from top to bottom: what the model proposed, the checks, what the
-   register says. Stacked, because the verdict sits in a narrow column beside the original page. */
-.verdict { display: flex; flex-direction: column; gap: 0; }
-.v-box { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); }
-.v-box.model { background: #f4f6f5; }
-.v-box.result { background: var(--brand-tint); border-color: var(--brand-tint-2); }
-/* the checks changed what the model said: the register's box says so, in amber */
-.verdict.overruled .v-box.result { background: var(--amber-tint); border: 2px solid var(--amber); }
-.v-overruled { flex-basis: 100%; display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; color: var(--amber-ink); }
-.v-label { min-width: 8em; font-size: 13px; font-weight: 600; color: var(--ink-2); }
-.v-conf { margin-left: auto; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.v-arrow { display: flex; align-items: center; padding: 6px 0 6px 12px; }
-/* the checks as a chip between the two boxes; it opens "How the register decided" */
-.v-chip {
-  display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 999px; cursor: pointer;
-  font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-2); background: #fff; border: 1px solid var(--line-strong);
-}
-.v-chip:hover { border-color: var(--brand); color: var(--ink); }
-.v-chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.v-chip.static { cursor: default; }
-/* a failed check is red even while the checks are folded away */
-.verdict.failed .v-chip { color: var(--red); background: var(--red-tint); border-color: #e9a3b0; }
 
 .quote {
   margin: 14px 0 0; padding: 12px 16px; border-left: 3px solid var(--brand); border-radius: 0 8px 8px 0;
@@ -346,21 +232,13 @@ a.pf-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; 
 }
 .text-excerpt mark { background: rgba(255, 200, 40, 0.5); padding: 1px 0; }
 
-/* decision: the approvals as slots, the form, and the archive copy as the locked step after them */
-.review { display: flex; flex-direction: column; gap: 12px; }
-/* the main action on its own row, the others share the row below (in the 380px column the three
-   used to wrap with "Correct" alone on a second line) */
-.review .actions, .finding-review .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.review .actions > .fui-Button, .finding-review .actions > .fui-Button { flex: 1 1 0; min-width: max-content; }
-.review .actions > .fui-Button:first-child, .finding-review .actions > .fui-Button:first-child { flex-basis: 100%; }
-/* "Correct": only now the reviewer says what the clause actually is - nothing chosen in advance */
+/* decision: the approvals as slots (Approvals.tsx), shown in the decision panel (workbench.css).
+   "Correct": only now the reviewer says what the clause actually is - nothing chosen in advance */
 .correct-to {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px;
   border: 1px solid var(--line-strong); border-radius: 10px; background: #f4f6f5;
 }
 .correct-to .plan-label { flex-basis: 100%; }
-.review-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; }
-.review-head .section-title { margin: 0 auto 0 0; }
 .muted { color: var(--ink-3); }
 .appr { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .appr-step {
@@ -380,26 +258,9 @@ a.pf-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; 
 .appr-icon { display: inline-grid; color: var(--green); }
 .d-rejected .appr-icon { color: var(--red); }
 .d-corrected .appr-icon { color: var(--brand); }
-.appr-step.archive { grid-template-columns: 28px minmax(0, 1fr); margin-top: 2px; }
-.appr-step.archive .fui-Button { grid-column: 2; justify-self: start; }
-.appr-step.archive.locked { background: #f4f6f5; border-style: dashed; border-color: var(--line-strong); }
-.appr-step.archive.locked .appr-mark { color: var(--ink-3); }
-.appr-step.archive.unlocked { background: var(--brand-tint); border-color: var(--brand-tint-2); }
-.appr-step.archive.unlocked .appr-mark { color: var(--brand); }
-.appr-step.archive .appr-title { font-weight: 600; }
-/* Fluent's field hint is 12px: raised to the 13px floor for small text */
-.review .fui-Field__hint, .finding-review .fui-Field__hint { font-size: 13px; line-height: 1.4; }
 
 /* ---------------------------------------------------------------- register (matrix) */
 .register { display: flex; flex-direction: column; gap: 20px; }
-/* the playbook: one line until opened (the column headers carry the definitions as tooltips too) */
-.playbook { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line); }
-.playbook > summary { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; cursor: pointer; list-style: none; border-radius: 6px; }
-.playbook > summary::-webkit-details-marker { display: none; }
-.playbook > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.playbook > summary .note { margin: 0; }
-.playbook > summary .link-btn { margin-left: auto; }
-.playbook[open] .checks-chevron { transform: rotate(90deg); }
 .link-btn { background: none; border: none; padding: 0; font: inherit; font-size: 13px; color: var(--brand); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .pb-list { margin: 14px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px 28px; }
 .pb-item dt { display: flex; flex-direction: column; }
@@ -422,12 +283,6 @@ a.pf-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; 
 .mx-f-status { width: 170px; }
 .mx-f-review { width: 200px; }
 .mx-f-year { width: 116px; }
-.scope-box { display: flex; align-items: flex-start; gap: 14px; margin-top: 14px; padding: 12px 14px; border: 1px solid var(--line-strong); border-left: 4px solid var(--amber); border-radius: 10px; background: var(--amber-tint); font-size: 13px; }
-.scope-box .note { color: var(--ink-2); }
-.scope-note { margin-bottom: 14px; }
-.mx-select { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 10px; font-size: 13px; }
-.mx-pick { width: 36px; padding-left: 6px !important; padding-right: 0 !important; }
-.matrix tr.picked td { background: var(--brand-tint); }
 .mx-summary .s-unclear b { color: var(--amber-ink); }
 .legend-inline { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--ink-3); flex-wrap: wrap; }
 .c-ok { color: var(--green); } .c-bad { color: var(--red); } .c-warn { color: var(--amber); }
@@ -454,7 +309,6 @@ a.pf-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; 
 .matrix .mx-meta { color: var(--ink-2); font-size: 12.5px; white-space: nowrap; }   /* "US-CA" on one line */
 /* dense rows, so more contracts fit the first screen (the talk's register shows all 20 at once) */
 .matrix td { padding: 4px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-.matrix .mx-pick .fui-Checkbox__indicator { margin-top: 4px; margin-bottom: 4px; }
 .matrix tbody tr:hover td { background: #f7faf9; }
 .matrix tr.dup td { color: var(--ink-3); background: repeating-linear-gradient(45deg, #fafbfb, #fafbfb 6px, #f3f5f5 6px, #f3f5f5 12px); }
 .matrix .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -484,7 +338,6 @@ a.pf-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; 
 .mx-cell.opt button { color: var(--ink-3); }
 .mx-cell.opt button:hover { color: var(--ink); }
 .mx-cell.none { color: var(--ink-3); }
-.mx-dot { position: absolute; top: 3px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 2px #fff; }
 .mx-name { text-align: center; white-space: nowrap; font-size: 12px; }
 .name-open { color: var(--amber-ink); font-weight: 600; background: var(--amber-tint); border-radius: 999px; padding: 2px 8px; }
 .name-resolved { color: var(--ink-3); }
@@ -544,25 +397,18 @@ a.pf-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; 
 .au-detail { font-size: 13px; color: var(--ink-2); margin-top: 2px; line-height: 1.45; overflow-wrap: anywhere; }
 .au-time { padding-top: 7px; font-size: 13px; color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; cursor: help; }
 
-/* ---------------------------------------------------------------- review in the register (decision 73) */
-.finding-review { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
-.finding-review .section-title.small { margin: 0 auto 0 0; }
-.mx-cell button { position: relative; }
+/* ---------------------------------------------------------------- Legal's decision on a register cell (D19) */
+/* the mark on the cell's corner; its colour per kind is in register.css */
 .mx-rev {
   position: absolute; right: -6px; bottom: -6px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px;
   font-size: 11px; line-height: 15px; font-weight: 700; color: #fff; background: var(--green);
 }
-.mx-rev.r-rejected, .mx-rev.r-disputed { background: var(--red); }
-.mx-rev.r-in_review, .mx-rev.r-escalated { background: var(--amber-ink); }   /* white on it: 5.4:1 */
 
 /* ---------------------------------------------------------------- loading and motion */
 /* text for screen readers only */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 /* skeletons in the shape of the evidence: the page keeps its layout while it loads */
 .sk { display: flex; flex-direction: column; gap: 16px; }
-.sk-head { display: flex; align-items: center; gap: 14px; }
-.sk .sk-id { width: 64px; height: 40px; border-radius: 10px; }
-.sk-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
 .sk .sk-w30 { width: 30%; } .sk .sk-w50 { width: 50%; } .sk .sk-w70 { width: 70%; } .sk .sk-w90 { width: 90%; }
 .sk-desk { margin-top: 12px; overflow: hidden; }
 .sk-page { width: 100%; aspect-ratio: 1 / 1.414; background: #fff; opacity: 0.92; border-radius: 2px; }
@@ -570,7 +416,7 @@ a.pf-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; 
 /* new content fades in as in the talk (its easing) - only for people who have not asked for less motion */
 @keyframes wb-fade-in { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: no-preference) {
-  .evidence:not(.loading), .contract-file, .answer, .portfolio { animation: wb-fade-in 0.18s var(--ease) backwards; }
+  .contract-file { animation: wb-fade-in 0.18s var(--ease) backwards; }
 }
 @media (prefers-reduced-motion: reduce) {
   .app *, .contract-drawer * { transition: none !important; animation: none !important; }
@@ -578,34 +424,16 @@ a.pf-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; 
 
 /* ---------------------------------------------------------------- responsive
    Widest first. Tested at 1600, 1366, 1280 and 1093 px (a 1366 laptop at 125 % zoom, as on a
-   projector). The evidence and the contract file follow their own width (container queries above). */
-@media (max-width: 1440px) {
-  .master-detail { grid-template-columns: 260px minmax(0, 1fr); }
-}
+   projector). The contract file follows its own width (container query above). */
 @media (max-width: 1200px) {
   .topbar { gap: 12px; }
   .brand-name, .user .fui-Avatar { display: none; }   /* the logo and the reviewer's name stay */
 }
-@media (max-width: 1100px) {
-  /* the list moves above the evidence as a compact grid of rows, so the original page and the
-     verdict stay side by side (a 1366 laptop at 125 % zoom is 1093 px wide) */
-  .master-detail { grid-template-columns: 1fr; }
-  .results { position: static; max-height: none; }
-  .results-head { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
-  .result-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2px 10px; }
-}
-@media (max-width: 1000px) {
-  .pf-items { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 8px; }
-  .pf-items li:nth-child(odd) { border-left: none; }
-  .pf-items li:nth-child(odd) .pf-item { padding-left: 2px; }
-}
 @media (max-width: 760px) {
-  .app > .topbar-provider { position: static; }   /* the bar wraps to two lines: no fixed -54px */
+  .app > .topbar-provider { position: static; }   /* the bar wraps to two lines: it scrolls away */
   .topbar { flex-wrap: wrap; height: auto; gap: 8px 12px; padding: 8px 12px 10px; }
   .topbar .spacer { display: none; }
   .topbar .nav { order: 3; width: 100%; overflow-x: auto; }
   .user .fui-Dropdown { min-width: 0; }
   .content { padding: 16px 16px 24px; }
-  .pf-items { grid-template-columns: 1fr; }
-  .pf-items li + li { border-left: none; border-top: 1px solid var(--line); }
 }

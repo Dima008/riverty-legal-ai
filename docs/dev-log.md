@@ -7,6 +7,42 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-01 · Look up in the register, work in the Workbench: three steps, the decision always in view
+
+- **Problem:** Dima found the tool unclear: what does the register do, what the Workbench? He
+  could not filter contracts in the Workbench, and a new contract was not visible in the tool at
+  all. Screenshots showed both tabs listing all contracts, opening evidence and taking reviews;
+  "Confirm finding" below the fold (y 1067 at 1366x768, 1697 in the contract file); about 18
+  marks on one finding; the header scrolling away during four eyes.
+- **Cause:** The register grew a review form (decision 73) and a scope hand-over (decision 75)
+  next to the Workbench's own; every answer was one long page; nothing watched the register for
+  changes.
+- **Technique and why:** Decision 91 from a design round (three independent designs, scored,
+  merged into one spec): the register only looks up (read-only contract file, "Decide in the
+  Workbench →"); the Workbench is three steps with the run in the address – 1 Ask (all
+  questions in one box, decision 93; "Narrow down" as the only way to choose contracts; a preview
+  of the scope that shows no answer), 2 Answer (a tile per contract from the run's own snapshot,
+  coverage, the list to look at), 3 Decide (page, finding card and a pinned decision panel). One
+  status word, one next step and one "why" line per finding. New contracts: `stage` and
+  `ingested_at` on documents and `GET /changes` (register version from the audit log, like a
+  Graph delta link), polled every 3 s by the tool only; an older answer says "out of date" and
+  offers "Ask again". F25 fixed (escalated findings counted). Former names count 6 (5 name one ·
+  1 cannot be ruled out). Old components, CSS and 124 dead German entries removed.
+- **Rejected alternative:** One surface with the register as the start page (the biggest change,
+  the live demo would have to be rebuilt); keeping the structure and only tidying it (the
+  duplication stays); register tick boxes next to "Narrow down" (two ideas of scope).
+- **Metric before → after:** "Confirm finding" at 1366x768: y 1067 (after Q1) / 1255 (M08) →
+  589–621 (M08), 628–660 (M14); "Store archive copy" 1226–1446 → 711–741; window scrolls in the
+  click script about 5 → 0 (4 runs, EN/DE, 1366 and 1600); marks on the M08 screen 18 → 5; step 1
+  2 pilot cards + 6 hidden → 8 of 8 visible; H01 on a copy: "being read" after 3.3 s, "48 contracts
+  · 1 new" and "Out of date … Ask again" after 10.5 s, gone again 1.0 s after the reset. pytest
+  102 → 116 passed; eval Q1–Q8 recall and precision 1.00, metadata 27/27, CUAD 19/20; tsc 0, build
+  green; German entries missing 0; `app.css` 611 → 439 lines.
+- **Links:** decisions 91, 93 (87 partly replaced); F25, F27–F34 (F34 open: a correction of a
+  Found clause does not reach Q1); `api/register.py`, `api/workflow.py`, `api/review.py`,
+  `api/quality.py`, `pipeline/portfolio.py`, `web/src/workbench/*`, `web/src/components/*`,
+  `web/src/register/*`, `web/src/live.tsx`, `freshness.ts`, `filters.ts`
+
 ## 2026-11-01 · The talk follows Riverty's own outline, in six parts, with "what we use"
 
 - **Problem:** Dima wants the talk to pick up the task's sentences and to use the structure the

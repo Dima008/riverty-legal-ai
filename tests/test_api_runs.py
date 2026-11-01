@@ -37,6 +37,36 @@ def test_coverage_accounts_for_every_contract_in_scope():
     assert cov["in_scope"] == cov["checked"] + len(cov["excluded"]) == 20
     assert {"doc_id": "M15", "reason": "duplicate of M01 - the original is checked"} in cov["excluded"]
     assert run["cost"]["model_calls"] == 0
+    # the answer names what it covered: checked and excluded are disjoint and together the scope
+    # (the type plus contracts of unknown type)
+    excluded = {e["doc_id"] for e in cov["excluded"]}
+    scope = {d["doc_id"] for d in client.get("/documents").json() if d["doc_type"] in ("merchant_agreement", "unknown", None)}
+    assert len(cov["checked_ids"]) == cov["checked"] and not set(cov["checked_ids"]) & excluded
+    assert set(cov["checked_ids"]) | excluded == scope
+    assert run["register_version"] == client.get("/changes").json()["version"]
+    assert client.get(f"/runs/{run['run_id']}").json() == run
+    assert client.get("/runs").json()[0]["register_version"] == run["register_version"]
+    row = next(r for r in run["rows"] if r["doc_id"] == "M14")                 # every row carries its document
+    assert {"doc_status", "ocr_mean_conf", "ingested_at"} <= set(row) and row["ingested_at"]
+
+
+def test_preview_matches_the_run_and_writes_nothing():
+    """The plan card's scope comes from the same function as the answer, so they cannot drift - and the
+    preview shows which contracts, never what is found: no rows, no counts, nothing stored or audited."""
+    examples = client.get("/examples").json()
+    runs, events = len(client.get("/runs").json()), len(client.get("/audit").json())
+    previews = {e["id"]: client.post("/runs/preview", json={"plan": e["plan"]}) for e in examples}
+    assert all(p.status_code == 200 for p in previews.values())
+    assert (len(client.get("/runs").json()), len(client.get("/audit").json())) == (runs, events)
+    for e in examples:
+        preview = previews[e["id"]].json()
+        assert set(preview) == {"plan", "register_version", "coverage"}, e["id"]    # no rows, counts, triage
+        run = _run(e["plan"]).json()
+        assert preview["plan"] == run["plan"] and preview["register_version"] == run["register_version"], e["id"]
+        assert preview["coverage"] == {k: v for k, v in run["coverage"].items() if k != "reported"}, e["id"]
+    selection = {"check": "duplicates", "scope": {"doc_ids": ["M01", "NOPE"]}}
+    assert client.post("/runs/preview", json={"plan": selection}).status_code == 422
+    assert client.post("/runs/preview", json={"plan": {"check": "drop_table"}}).status_code == 422
 
 
 def test_triage_follows_the_rule():

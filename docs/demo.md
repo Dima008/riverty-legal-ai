@@ -4,8 +4,8 @@ The live moment of the talk: card **"live-add"** in act 6 ("A handwritten contra
 what is found.", 45 s), right after the act-6 opener "Let me show you." A photo of a handwritten
 contract is dropped into the inbox folder (the stand-in for the SharePoint library), the watcher
 reads it, and the card shows the new document and what the register found. The next card,
-**"live"** (100 s), is the Legal Workbench with a click script on Q1 - and the handwritten contract
-is part of that answer, so the two live moments tell one story.
+**"live"** (115 s, decision 92), is the Legal Workbench with a click script on Q1 - and the
+handwritten contract is part of that answer, so the two live moments tell one story.
 
 The document is **H01** (`data/demo/H01.jpg`, made by `tools/make_handwritten.py`): a synthetic
 German merchant agreement from 2009, written by hand, photographed on a desk, with the watermark
@@ -70,39 +70,49 @@ The same text in two more runs, with a slower model call: the answer was on the 
 
 The box under the number keeps the height of the five lines from the start, so nothing on the card
 moves while the audience watches the number (title position measured in all three states: the
-same, 157 px at 1600×900). Do not say the system *found* the old company name on H01: it did not -
+same, 157 px at 1600×900). Do not say the system *found* the former company name on H01: it did not -
 it knows that it cannot rule it out, and a person reads the page.
 
 ## What the Workbench shows for H01
 
-Question "Which contracts still name a legacy company?" (Q2) with H01 in the register, measured
-on a copy (2026-11-01): 6 contracts to look at - H01 plus the five gold contracts M04, M06, M10,
-M13, M18; 45 checked, 3 excluded with reason. H01's tile and row say **Cannot rule out**
-(German: "Nicht auszuschließen"), triage **Review** (the other five are routine). Its evidence
-shows the page with the poor-scan warning bar and the panel "Former company name: cannot be
-ruled out – poor scan (OCR confidence 61 %, threshold 70 %) – a person checks", with the hint
-"Read the page: confirm if it names a former company, reject if it does not." In the contract
-register, H01's name column says "cannot rule out", the summary line adds "1 former name cannot
-be ruled out (poor scan)", and the filter "Only still naming a former company" keeps H01.
+Question Q2 with H01 in the register: 6 contracts to look at – H01 plus M04, M06, M10, M13, M18; 45
+read, 3 excluded with reason. H01's row says **Cannot rule out**, why "Poor scan (OCR 61 %)", next
+step **Review** (the other five: **Confirm**, one of them may say **Spot check** - the sample changes
+per run). In step 3 (Decide) the card says "Cannot rule out → Review", the callout "Poor scan: page 1
+was read by text recognition with only 61 % confidence. Compare with the page." and "The exact search
+found no former company name – but this scan is too poor to prove that none is there. Read the page:
+confirm if it names a former company, reject if it does not." In the contract register H01 is tagged
+"New", its Source says "Photo scan · OCR 61 % · poor scan", its name column "cannot rule out", and the
+summary "6 to check for a former name (5 name one · 1 cannot be ruled out)". Before any question, the
+header says "48 contracts · 1 new" and step 1 shows H01 under "New in the register" with the card's
+lines ("poor scan → a person · not found: Limitation of liability, Data processing agreement ·
+unclear → a person: Consumer terms in checkout · former name: cannot be ruled out – a person checks").
+H01's contract file has the link "Ask about former names for this contract in the Workbench →": it
+opens step 1 with Q2 chosen and "Contracts: H01 (opened from the register)", 1 in scope; after
+"Confirm the plan" the one row opens step 3 directly. Measured on a register copy, 1 Nov
+(screens `scratchpad/wb-finish/shots/H-*.png`).
 
 ## The click script - card "live" (Q1, with H01 in the register)
 
 The note of the card "live" is this script. Measured in Edge on a register copy with H01 in it,
-2026-11-01, own workflow database and storage folder (screens as the audience sees them):
+2026-11-01, 1366x768, own workflow database and storage folder: **0 window scrolls** for the whole
+script (before the redesign about 5), every button inside the window when it is clicked.
 
 | Step | Click | What the Workbench shows |
 | --- | --- | --- |
-| 1 Ask | "Which merchant agreements do not contain a limitation of liability?" | the question is marked |
-| 2 Plan | read the plan bar, then **Check all contracts** | "Plan: Contracts that lack a clause (absent or unclear) › Limitation of liability › in merchant agreements · Register query · no model call · $0" - the check and the scope, no single contract |
-| 3 Answer | - | "6 of 20 merchant agreements to look at", a tile per merchant agreement, H01 first; M15 hatched, "M15 excluded: duplicate of M01 – the original is checked". The list: H01 Not found · Review (0.50), M03 Not found · Routine, M08 Unclear · Review, M10 Unclear · Review, M14 Not found · Four eyes, M18 Not found · Routine. H01 is open at once, with the bar "Poor scan quality – Page 1 was read by text recognition (OCR) with only 61 % confidence. Compare the finding with the original page before relying on it." |
-| 4 Evidence | tile **M08** | the model's quote (clause 6.2) highlighted on page 1, "The checks overruled the model", Unclear, 0.35 |
-| 5 Four eyes | tile **M14**: reason, **Confirm finding**; switch to Legal Reviewer B: reason, **Confirm finding** | two approval slots; after B "Confirmed", both reviewers named, the archive copy unlocked |
-| 6 Archive copy | **Store archive copy**, once | stored; a second click only says "already archived (receipt …) · approved by Legal Reviewer A and Legal Reviewer B" |
-| 7 Back | **← Talk**, top left | back to the deck, then → to the close |
+| (open) | "Open the Legal Workbench →" (`#/tool/workbench`) | Step 1. The header says "48 contracts · 1 new"; "New in the register": "H01 · arrived … · merchant agreement · poor scan → a person · not found: Limitation of liability, Data processing agreement · unclear → a person: Consumer terms in checkout · former name: cannot be ruled out – a person checks". Below it **every question in one box** (decision 93), grouped by topic: Clause not found (5), Former company name, Governing law, Copies; Q1 and Q2 tagged **Pilot**; "Build your own question" at the end of the box |
+| 1 Ask | the first question under "Clause not found", tagged Pilot: "Which merchant agreements do not contain a limitation of liability?" | the row is marked. The plan card on the right: "Question: Limitation of liability – not found or unclear · Contracts: every merchant agreement · In scope: 21 · M15 will be excluded: duplicate of M01 – the original is checked · Cost: register query · no model call · $0" |
+| 2 Confirm the plan | **Confirm the plan** | step 2 |
+| 3 Answer + coverage | – | "6 of 20 merchant agreements to look at"; a tile per merchant agreement, H01 first, M15 hatched; "M15 excluded: duplicate of M01 – the original is checked". The table "To look at": H01 Not found · Poor scan (OCR 61 %) · Review; M03 Not found · Confirm; M08 Unclear · The checks overruled the model · Review; M10 Unclear · The checks overruled the model · Review; M14 Not found · Text addressed to AI systems (page 3) · Four eyes · 0 of 2; M18 Not found · Confirm. A routine row may say **Spot check** instead: the sample changes per run |
+| 4 Evidence on the page | row or tile **M08** | step 3 (Decide): clause 6.2 highlighted on page 1 ("the model's quote · page 1"). Card: "Unclear → Review", "The checks overruled the model. The model said Found, but the quote does not fit the clause, and a second model call disagreed." The decision is on the same screen ("Confirm finding" at y 589–621) |
+| 5 Four eyes | **M14** in the queue → reason → **Confirm finding** → **Continue as Legal Reviewer B** → reason → **Confirm finding** | slot 1 "Legal Reviewer A confirmed", "You approved. The second approval must come from another person."; after B "Confirmed ✓", both reviewers named, the archive copy unlocked. *Optional, +7 s: click "Store archive copy" after A → "Refused by the server: the archive copy needs 2 approvals (1 so far). The attempt is in the audit log."* |
+| 6 Archive copy | **Store archive copy** (y ≈ 711–741) | "M14_Urban.pdf: stored (receipt rcpt-…) · approved by Legal Reviewer A and Legal Reviewer B"; a second click: "already archived (receipt …) · approved by Legal Reviewer A and Legal Reviewer B" |
+| (back) | **← Talk** (header, always visible) | back to the deck, then → to the close |
 
 Do not speak the scope numbers: with H01 they are 21 in scope and 20 read (20 and 19 without it),
 so they would not match the register card of act 3. The note reads its contract ids from the
-register snapshot (`deck-data.json`), so they follow the register; it adds H01 itself.
+register snapshot (`deck-data.json`), so they follow the register; it adds H01 itself. The plan card
+now shows "In scope: 21" before the answer – show it, do not say it.
 
 Steps 5 and 6 write to the workflow database (`WORKBENCH_DB`) and the storage folder
 (`STORAGE_MOCK_DIR`), and both survive `tools.demo reset`: a review belongs to the finding version
@@ -118,6 +128,14 @@ review of M03 and M15 and an archive copy of M15 from earlier sessions.
 | document in the register (after OCR) | 5.3 s | – | card shows 48 at 11.8 s | card shows 48 at 8.5 s and 8.5 s |
 | findings in the register | 10.7 s | 10.5 s | type on the card at 13.8 s | 14.0 s and 11.0 s; the whole answer on the card at 14.7 s and 11.4 s |
 | embeddings done, run logged | 11.2 s | – | – | "run cost: $0.0014 in 3 model calls" both times |
+| tool open: the register's pinned row "the model is reading it …"; an earlier Q1 answer says "… – the model is still reading it" | – | – | – | 3.3 s and 4.3 s (redesigned tool, one drop) |
+| tool header shows "1 new"; the earlier Q1 answer says "Out of date: H01 arrived after this answer · Ask again" | – | – | – | 10.5 s (the row filled in at 9.4 s: ≤ 3 s after the findings) |
+
+After `tools.demo reset` that answer said "Out of date: H01 was removed from the register" and the
+header "47 contracts" within 1.0 s (1 Nov, register copy, 1366x768).
+
+Card "live": 115 s (was 100 s, decision 92) - one more click (Answer → Decide) and two typed reasons,
+but no scrolling. Measure three rehearsals; if the median is above 115 s, shorten the spoken text.
 
 Where the time goes: 0–5 s until the watcher's next look (it polls every 5 s), OCR about 1.5 s,
 the extraction call 4.4 s (1,564 → 357 tokens), the checker 0.9 s, families and 6 embeddings
@@ -143,6 +161,10 @@ python -m pipeline.run --watch           # prints "watching ...\data\inbox"
 # 4 - the check, and later the drop (big font, can be on screen)
 python -m tools.demo status              # must end with "ready for the live demo: yes"
 ```
+
+Open `http://localhost:5173/#/tool/workbench` once: **EN** selected (the tool remembers DE in the
+browser), **Legal Reviewer A** selected (the switch survives going back to the talk), the header says
+"47 contracts" and nothing new. Then go back to the deck.
 
 `status` says NO if H01 is still in the register or in the inbox from a rehearsal: run
 `python -m tools.demo reset`. A forgotten H01 would be part of the card's baseline (the first
@@ -174,7 +196,9 @@ answer it gets), so it would never appear as new; `drop` refuses in that case.
 | 47 stays, "waiting for a new contract …" after 20 s | watcher not running, or the file is not in `data\inbox` | start the watcher - its first pass reads the inbox at once (about 10 s) |
 | 48, "H01 is new · the model is reading it …" and "poor scan → a person", and it stays after 20 s | Azure or the network is down: OCR runs locally, the model call does not. Measured with an unreachable endpoint: in the register after 5.5 s; the watcher retries for 204 s, then logs `H01 extraction failed: Connection error.` | "The model is not reachable right now. The contract is in the register anyway – nothing is lost. OCR already says: a poor scan, a person looks. The findings wait for the model." Then go on: the Workbench answers its questions from the register, without a model call - but skip the H01 sentence of the click script (step 3), and check the answer before you speak its ids |
 | the watcher prints `pass failed, still watching: …` | one pass hit an error (e.g. a file removed while it was read) | nothing - the watcher keeps polling, the next pass starts from the register as it is; the traceback above the line is for afterwards |
-| nothing works | – | "Live demos. Here is the same idea on a contract that is already in the register:" open the Workbench, contract M18 (the old German scan) |
+| The work bar says "Out of date: H01 …" | Q1 was asked before H01 was read | "The register changed since this answer – the tool says so instead of changing it silently." Click **Ask again** |
+| In the Q1 answer H01 is hatched: "not read yet – listed, not checked" | the model call is still running, or failed | "It is not dropped – the answer names it and why." Skip the H01 sentence of step 3 |
+| nothing works | – | "Live demos. Here is the same idea on a contract that is already in the register:" open the contract register, contract M18 (the old German scan) |
 
 ## Reset after every rehearsal - and after the talk
 
@@ -247,7 +271,7 @@ To see the card on the copy as well: an API on another port with the same variab
 (`cd web; $env:API_URL = "http://127.0.0.1:8019"; npm run dev -- --port 5198`), then open
 `http://localhost:5198/#/present/live-add/1` before the drop. After the card, rehearse the click
 script of the card "live" in `http://localhost:5198/#/tool/workbench` - its reviews and archive
-copy stay in the dry run's folder.
+copy stay in the dry run's folder. The header must say "1 new" after the drop.
 
 One thing differs from the talk: in the dry run the Workbench shows no page image for H01 (the
 request answers 403 "source file outside the data folder"). The API serves page images only from

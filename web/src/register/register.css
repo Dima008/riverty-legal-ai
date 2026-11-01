@@ -1,0 +1,67 @@
+/* Contract register - look up (spec 2.5). One top panel holds the title, filters, summary and the
+   matrix, so the matrix starts near y 330 at 1366x768 instead of 449 (about 10 rows on the first
+   screen). The base styles of the matrix stay in app.css; this file adds what the redesign changed.
+   Every rule starts with .register, so it wins over app.css whatever order the two files load in. */
+.register .rg-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.register .rg-head h2 { margin-top: 0; }
+.register .rg-head .lead { margin-top: 4px; }
+/* the playbook fold: a button at the top right, the definitions open below the head */
+.register .rg-playbook { flex: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.register .rg-playbook[aria-expanded="true"] .checks-chevron { transform: rotate(90deg); }
+.register .rg-definitions { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.register .rg-definitions .pb-list { margin-top: 10px; }
+.register .rg-definitions > .note { margin: 0; }
+
+/* "H01 arrived at 09:01 - the model is reading it": only while something is being read */
+.register .rg-reading { margin-top: 12px; }
+
+.register .mx-toolbar { margin-top: 14px; }
+.register .mx-filters { margin-top: 10px; }
+.register .mx-filters .fui-SearchBox { width: 200px; min-width: 0; }
+.register .mx-f-clause { width: 200px; }
+.register .mx-f-review { width: 190px; }
+/* the summary, the legend and the hand-over on one line where it fits */
+.register .mx-summary { margin: 12px 0 10px; gap: 6px 18px; }
+.register .mx-summary b { font-family: var(--font-display); color: var(--ink); }
+.register .mx-summary .s-absent b { color: var(--red); }
+.register .mx-summary .s-unclear b { color: var(--amber-ink); }
+.register .mx-summary .s-new b, .register .mx-summary .s-reading b { color: var(--brand); }
+.register .rg-handover { margin-left: auto; }
+.register .legend-inline { margin-left: 0; }
+.register .rg-handover.fui-Button { white-space: nowrap; }
+
+/* the matrix fills the first screen: no window scroll is needed to reach its last row */
+.register .mx-scroll { max-height: max(300px, calc(100vh - 342px)); }
+
+/* "New": the talk's mint on its tint (4.8:1) */
+.register .mx-new {
+  flex: none; align-self: center; font-size: 11.5px; font-weight: 700; line-height: 16px; padding: 0 6px; border-radius: 999px;
+  color: var(--brand); background: var(--brand-tint); border: 1px solid var(--brand-tint-2);
+}
+/* "poor scan" under "Photo scan · OCR 61 %": on one line the German row pushed the last column out of the box */
+.register .mx-poor { display: block; color: var(--amber-ink); font-weight: 600; }
+/* a contract that is still being read or could not be read: pinned on top, the words across the clause cells */
+.register .mx-stage { text-align: center; font-size: 12.5px; color: var(--ink-3); background: #f6faf8; }   /* 5.2:1 */
+.register tr.reading td { background: #f2f8fb; }
+/* "Typ noch unbekannt" may take two lines, so a pinned row never makes the table wider */
+.register tr.reading .mx-meta, .register tr.failed .mx-meta { white-space: normal; min-width: 64px; }
+.register tr.reading .mx-stage { color: #2b5b73; font-style: italic; }          /* 6.9:1 on its tint */
+.register tr.failed td { background: var(--amber-tint); }
+.register tr.failed .mx-stage { color: var(--amber-ink); font-weight: 600; }   /* 5.0:1 */
+
+/* Legal's decision on a finding (D19): three marks - confirmed, disagrees, in review - on the cell's corner */
+.register .mx-rev.k-confirmed { background: var(--green); }                     /* white on it: 5.3:1 */
+.register .mx-rev.k-disagrees { background: var(--red); }                       /* 5.4:1 */
+.register .mx-rev.k-in-review { background: var(--amber-ink); }                 /* 5.4:1 */
+
+/* ---- the contract file (ContractFile.tsx): read-only. The drawer is rendered outside .register and the
+   Workbench opens the same file, so these rules start with .contract-drawer. */
+.contract-drawer .cf-finding .sw { flex: none; }
+/* a clause the playbook does not require for this type: the word and its icon in grey, never red, as in the matrix */
+.contract-drawer .cf-finding.opt .sw, .contract-drawer .cf-finding.opt .sw .si { color: var(--ink-2); }   /* 7.0:1 on #f7f9f8 */
+/* still being read or could not be read: the words of the register's row instead of the clause list */
+.contract-drawer .cf-waiting { font-size: 13.5px; font-style: italic; color: #2b5b73; }                    /* 7.3:1 on white */
+.contract-drawer .cf-waiting.failed { font-style: normal; font-weight: 600; color: var(--amber-ink); }  /* 5.4:1 */
+.contract-drawer .cf-playbook .note { margin: 0; }
+/* "Ask about former names for this contract in the Workbench →" under the names */
+.contract-drawer .cf-ask { display: inline-block; margin-top: 10px; white-space: normal; }

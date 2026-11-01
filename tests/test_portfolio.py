@@ -51,6 +51,21 @@ def test_unknown_and_unextracted_documents_stay_visible(con):
     assert {r["doc_id"]: r["triage"] for r in run["rows"]} == {"I1": "FOUR_EYES"}
 
 
+@pytest.mark.parametrize("plan", [
+    {"check": "missing_clause", "params": {"clause_type": "liability_limitation", "doc_type": "merchant_agreement"}},
+    {"check": "legacy_names", "params": {}},
+    {"check": "governing_law_not", "params": {"law": "DE"}},
+    {"check": "duplicates", "params": {}},
+], ids=lambda p: p["check"])
+def test_coverage_names_every_checked_contract(con, plan):
+    """The answer keeps which contracts it covered (checked_ids): with the excluded ones, exactly the scope."""
+    cov = portfolio.run_check(con, plan)["coverage"]
+    excluded = [e["doc_id"] for e in cov["excluded"]]
+    assert len(cov["checked_ids"]) == cov["checked"] and not set(cov["checked_ids"]) & set(excluded)
+    assert len(cov["checked_ids"]) + len(excluded) == cov["in_scope"]
+    assert cov["checked_ids"] == sorted(cov["checked_ids"])
+
+
 def test_missing_finding_counts_as_unclear(con):
     """A checked contract without a stored finding is reported as UNCLEAR, never skipped."""
     con.execute("DELETE FROM clauses WHERE doc_id='I1'")
@@ -96,6 +111,7 @@ def test_a_selection_is_the_scope_and_nothing_in_it_drops_out(con):
     assert cov["in_scope"] == 3 and cov["checked"] + len(cov["excluded"]) == 3
     assert cov["selection"] == {"chosen": 3, "of": 6, "filters": {"law": "DE"}}
     assert {e["doc_id"] for e in cov["excluded"]} == {"A2", "U1"}      # duplicate and unknown type, with reason
+    assert set(cov["checked_ids"]) | {e["doc_id"] for e in cov["excluded"]} == set(plan["scope"]["doc_ids"])
 
 
 def test_a_selected_contract_of_another_type_is_excluded_by_name(con):

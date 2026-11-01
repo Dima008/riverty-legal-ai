@@ -92,6 +92,24 @@ def test_the_api_says_cannot_be_ruled_out(register, client):
     assert client.get(f"/runs/{run['run_id']}").json()["rows"] == run["rows"]   # the stored snapshot says the same
 
 
+def test_former_name_count_rule_matches_q2(register, client):
+    """D14: the register counts "to check for a former name" with one rule (web/src/filters.ts
+    formerNameToCheck): it names a former company or a poor scan cannot rule one out, copies and
+    amendments aside. That count must equal Q2's answer - 5 on the clean register, 6 with a poor scan."""
+    def count_rule() -> int:
+        return sum(1 for r in client.get("/matrix").json()["rows"]
+                   if (r["former_names"]["open"] > 0 or r["former_names"]["not_ruled_out"])
+                   and not r["duplicate_of"] and not r["is_amendment"])
+
+    q2 = client.post("/runs", json={"plan": Q2}).json()
+    assert count_rule() == q2["coverage"]["reported"] == 5
+    doc = _poor_scan(register)
+    q2 = client.post("/runs", json={"plan": Q2}).json()
+    assert count_rule() == q2["coverage"]["reported"] == 6
+    row = next(r for r in q2["rows"] if r["doc_id"] == doc)
+    assert (row["doc_status"], row["ocr_mean_conf"]) == ("LOW_QUALITY", 61.34)   # also Q2 knows the poor scan
+
+
 def test_h01_is_reported_not_a_silent_miss(register, tmp_path, monkeypatch):
     """The measured case: Tesseract reads the handwritten H01 (OCR about 61 -> LOW_QUALITY), the
     metadata are written as the model wrote them, then the deterministic families step looks for
