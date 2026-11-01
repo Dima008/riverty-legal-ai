@@ -80,9 +80,9 @@
   .p-wi-foot { margin-top: 1.4cqw; max-width: 40cqw; text-wrap: balance; }
 
   /* --- cost: once, then free; the small model */
-  .p-cost { display: flex; flex-direction: column; gap: 1.6cqw; }
+  .p-cost { display: flex; flex-direction: column; gap: 1.2cqw; }
   .p-two { display: grid; grid-template-columns: 1fr 1fr; gap: 2cqw; }
-  .p-num { padding: 1.3cqw 1.8cqw; border-radius: 1.2cqw; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.09); font-size: 1.45cqw; color: var(--ink); }
+  .p-num { padding: 1.1cqw 1.8cqw; border-radius: 1.2cqw; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.09); font-size: 1.45cqw; color: var(--ink); }
   .p-num small { display: block; margin-top: 0.3cqw; font-size: 1.2cqw; color: var(--ink-2); }
   .p-big2 { display: block; font-size: 4.2cqw; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 0.3cqw; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .p-models { display: flex; flex-direction: column; gap: 0.6cqw; }
@@ -95,6 +95,6 @@
   .p-mrow.p-alt .p-bar-track i { background: rgba(181, 157, 255, 0.6); }
   .p-bar b { font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .p-ratio { margin-top: 0.4cqw; font-size: 1.6cqw; font-weight: 750; color: var(--ink); }
-  .p-verdict { padding: 1cqw 1.6cqw; border-left: 0.35cqw solid var(--mint); font-size: 1.6cqw; line-height: 1.35; }
+  .p-verdict { padding: 0.8cqw 1.6cqw; border-left: 0.35cqw solid var(--mint); font-size: 1.6cqw; line-height: 1.35; }
   .p-verdict b { color: var(--mint); }
 }

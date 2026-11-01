@@ -8,16 +8,18 @@ register changed, and the cards follow:
 
 What it collects:
 - embedding ruler: the query "limitation of liability" embedded once, every passage's cosine
-  similarity to it, the k = 5 nearest, M14's planted note against M19's real German cap, and the
-  similarities of a few passages to M01's liability section (the decoy lesson);
-- register snapshot of the merchant agreements: the three required clauses, copy, former names;
-- one contract through the pipeline (M18), the chunking comparison for M09, the M08 liability
-  finding (model said vs register says), the M14 hidden note, coverage and cost totals;
+  similarity to it, the k = 5 nearest, and the similarities of a few passages to M01's liability
+  section (the decoy lesson);
+- register snapshot of the merchant agreements: the three required clauses, copy, former names
+  (open per contract, and the ones an amendment already fixed: Q2), the triage thresholds;
+- one contract through the pipeline (M18), the chunking comparison for M09, the M01 and M08
+  liability findings (M08: model said vs register says), the M14 hidden note, coverage and cost totals;
 - the Prompt Shields probe result from eval/results;
 - deep dives: M18 read again by OCR with the word confidences the register does not keep (guarded
   against the stored pages), the handwritten demo page H01 as measured by --measure-h01 (decision
   82; the demo reset removes H01 from the register, so the measurement is kept in eval/results),
-  the fixed form of the extraction call with M18's real answer, the agent patterns in numbers, and
+  the fixed form of the extraction call with M18's real answer, the agent building blocks in numbers
+  (model calls only of documents still in the register: a demo rehearsal keeps H01's calls), and
   one hybrid search ("cap on damages", embeds one more query).
 """
 
@@ -74,18 +76,13 @@ def embedding_map(con) -> dict:
     q /= np.linalg.norm(q)
     sims = unit @ q
     order = np.argsort(-sims)
-    rank = {ids[i]: n + 1 for n, i in enumerate(order)}
     titles = {r["chunk_id"]: r["section_title"] for r in rows}
-    spot = lambda cid, has_cap: {"id": cid, "title": titles[cid], "sim": round(float(sims[ids.index(cid)]), 3),  # noqa: E731
-                                 "rank": rank[cid], "has_cap": has_cap}
     anchor = unit[ids.index(DECOY_ANCHOR)]
     return {
         "query": QUERY, "k": K, "passages": len(rows), "dims": int(mat.shape[1]),
         "points": [{"id": ids[i], "s": round(float(sims[i]), 3), "g": group(r["doc_id"]),
                     "lia": bool(LIABILITY.search(r["section_title"] or ""))} for i, r in enumerate(rows)],
         "near": [{"id": ids[i], "title": titles[ids[i]], "sim": round(float(sims[i]), 3)} for i in order[:K]],
-        # the planted note in M14 (no cap) scores higher than M19's real cap in German
-        "spots": [spot("M14:013", False), spot("M19:008", True)],
         "decoy": {"anchor": DECOY_ANCHOR, "anchor_title": titles[DECOY_ANCHOR],
                   "sims": [{"id": cid, "title": titles[cid], "sim": round(float(unit[ids.index(cid)] @ anchor), 3)}
                            for cid in DECOY_PASSAGES]},
@@ -93,18 +90,44 @@ def embedding_map(con) -> dict:
 
 
 def register_snapshot(con) -> dict:
-    docs = con.execute("SELECT d.doc_id, d.duplicate_of, m.counterparty_name FROM documents d JOIN metadata m "
-                       "ON m.doc_id = d.doc_id WHERE m.doc_type = 'merchant_agreement' ORDER BY d.doc_id").fetchall()
+    """The merchant agreements against the three required clauses, and Legal's second question (Q2):
+    'legacy' = the former names still open in a contract; 'resolved' = contracts whose former-name
+    hits an amendment already fixed (M05 by M05-A), so they are not counted; 'renames' = what that
+    amendment says, for the card 'hard'."""
+    docs = con.execute("SELECT d.doc_id, d.duplicate_of, m.counterparty_name, m.effective_date FROM documents d "
+                       "JOIN metadata m ON m.doc_id = d.doc_id WHERE m.doc_type = 'merchant_agreement' "
+                       "ORDER BY d.doc_id").fetchall()
     status = {(r["doc_id"], r["clause_type"]): r["status"]
               for r in con.execute("SELECT doc_id, clause_type, status FROM clauses")}
     names = {r["doc_id"]: r["n"] for r in con.execute(
         "SELECT doc_id, COUNT(*) AS n FROM name_hits WHERE resolved_by IS NULL GROUP BY doc_id")}
-    rows = [{"id": d["doc_id"], "party": d["counterparty_name"], "copy_of": d["duplicate_of"],
+    legacy: dict[str, list[str]] = {}
+    for r in con.execute("SELECT DISTINCT doc_id, name FROM name_hits WHERE resolved_by IS NULL ORDER BY doc_id, name"):
+        legacy.setdefault(r["doc_id"], []).append(r["name"])
+    merchant = {d["doc_id"] for d in docs}
+    resolved = [{"id": r["doc_id"], "by": r["resolved_by"], "hits": r["n"]} for r in con.execute(
+        "SELECT doc_id, resolved_by, COUNT(*) AS n FROM name_hits WHERE resolved_by IS NOT NULL "
+        "AND resolved_by != doc_id GROUP BY doc_id, resolved_by ORDER BY doc_id") if r["doc_id"] in merchant]
+    renames = [{"amendment": r["doc_id"], "date": r["effective_date"], "amends_date": r["amended_agreement_date"],
+                "contract": next((x["id"] for x in resolved if x["by"] == r["doc_id"]), None),
+                "old": next((h["name"] for h in con.execute("SELECT name FROM name_hits WHERE resolved_by = ? "
+                                                            "AND doc_id != ?", (r["doc_id"], r["doc_id"]))), None),
+                "from": r["renames_from"], "to": r["renames_to"]}
+               for r in con.execute("SELECT doc_id, effective_date, amended_agreement_date, renames_from, renames_to "
+                                    "FROM metadata WHERE is_amendment = 1 AND renames_to IS NOT NULL ORDER BY doc_id")]
+    rows = [{"id": d["doc_id"], "party": d["counterparty_name"], "copy_of": d["duplicate_of"], "date": d["effective_date"],
              "cells": [status.get((d["doc_id"], c), "UNCLEAR") for c in REQUIRED],
-             "former_names": names.get(d["doc_id"], 0)} for d in docs]
+             "former_names": names.get(d["doc_id"], 0), "legacy": legacy.get(d["doc_id"], [])} for d in docs]
     return {"clauses": ["Limitation of liability", "Consumer terms in checkout", "Data processing agreement"],
-            "rows": rows, "documents": con.execute("SELECT COUNT(*) FROM documents").fetchone()[0],
+            "rows": rows, "resolved": resolved, "renames": renames,
+            "documents": con.execute("SELECT COUNT(*) FROM documents").fetchone()[0],
             "passages": con.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]}
+
+
+def triage_rules() -> dict:
+    """The triage thresholds of pipeline/portfolio.py, for the card 'human'."""
+    return {"review_below": portfolio.REVIEW_BELOW, "sample_percent": portfolio.SAMPLE_PERCENT,
+            "four_eyes": sorted(portfolio.FOUR_EYES_SIGNALS)}
 
 
 def chunking_m09(client) -> dict:
@@ -231,17 +254,27 @@ def ocr_m18(con) -> dict:
     }
 
 
+def register_calls(con, purpose: str) -> dict:
+    """Model calls of one purpose for the documents in the register now. A rehearsal of the live
+    demo forgets H01 but keeps its calls, re-labelled 'forgotten:H01@<time>' (pipeline/forget.py),
+    so the cost view still adds up - counted here, they would make '47 documents, 48 calls'."""
+    r = con.execute("SELECT COUNT(*) AS calls, ROUND(COALESCE(SUM(cost_usd), 0), 4) AS cost_usd FROM llm_calls "
+                    "WHERE purpose = ? AND doc_id IN (SELECT doc_id FROM documents)", (purpose,)).fetchone()
+    return {"calls": r["calls"], "cost_usd": r["cost_usd"]}
+
+
 def fixed_form(con) -> dict:
     """The form the extraction call must fill (strict JSON schema), M18's real answer, and what is
     added after the call: page and confidence by our code, the checker's verdict by a second model
     call - the extraction call never gives a page. The model cites a section by its marker (S4);
-    the card shows the section title the register stores for it."""
+    the card shows the section title the register stores for it. Calls: only those of documents in
+    the register (register_calls)."""
     src = inspect.getsource(ModelAdapter.chat_json)
     raw = json.loads(con.execute("SELECT raw_json FROM metadata WHERE doc_id=?", (OCR_DOC,)).fetchone()[0])
     answer = raw["extraction"]
     rows = {r["clause_type"]: r for r in con.execute(
         "SELECT clause_type, status, section, page, confidence, flags FROM clauses WHERE doc_id=?", (OCR_DOC,))}
-    calls = {p["purpose"]: p for p in queries.costs(con)["by_purpose"]}
+    calls = {"extract": register_calls(con, "extract")}
     return {
         "strict": '"strict": True' in src,
         "fields": EXTRACTION_SCHEMA["required"], "clause_fields": CLAUSE_SCHEMA["required"],
@@ -257,7 +290,8 @@ def fixed_form(con) -> dict:
                     for key in catalogue.CLAUSES],
         "extract_calls": calls["extract"]["calls"], "extract_cost": calls["extract"]["cost_usd"],
         "most_calls_per_document": con.execute("SELECT COALESCE(MAX(n), 0) FROM (SELECT COUNT(*) n FROM llm_calls "
-                                               "WHERE purpose='extract' GROUP BY doc_id)").fetchone()[0],
+                                               "WHERE purpose='extract' AND doc_id IN (SELECT doc_id FROM documents) "
+                                               "GROUP BY doc_id)").fetchone()[0],
         "documents": con.execute("SELECT COUNT(*) FROM documents").fetchone()[0],
         # above this length a contract is read in parts (map-reduce over section batches, pipeline/extract.py)
         "single_pass_chars": MAX_SINGLE_PASS_CHARS,
@@ -266,19 +300,22 @@ def fixed_form(con) -> dict:
 
 
 def agent_patterns(con) -> dict:
-    """Four agent patterns, built as code inside a fixed workflow: plan first (a fixed list of
-    checks), maker and checker, a tool behind a gate, a person decides (Q1's triage, not stored)."""
+    """Four agent building blocks, built as code inside a fixed workflow: plan first (a fixed list
+    of checks), maker and checker, a tool behind a gate, a person decides (Q1's triage, not stored).
+    The checker is called once per contract with a found clause ('checked_contracts'); its calls
+    count only for documents in the register (register_calls)."""
     q1 = json.loads((config.DATA / "gold_queries.json").read_text(encoding="utf-8"))[0]
     plan = {"check": "missing_clause", "params": {"clause_type": "liability_limitation", "doc_type": "merchant_agreement"}}
     run = portfolio.run_check(con, plan, run_id="deck")
     reported = sorted(r["doc_id"] for r in run["rows"])
     if reported != sorted(q1["expected"]):
         raise SystemExit(f"Q1 plan reports {reported}, the answer key says {q1['expected']}")
-    check = next(p for p in queries.costs(con)["by_purpose"] if p["purpose"] == "check")
+    check = register_calls(con, "check")            # one checker call per contract with a found clause
     one = lambda sql: con.execute(sql).fetchone()[0]  # noqa: E731
     return {
         "checks": [c["label"] for c in portfolio.CHECKS.values()],
         "found_by_model": one("SELECT COUNT(*) FROM clauses WHERE model_status='PRESENT'"),
+        "checked_contracts": one("SELECT COUNT(DISTINCT doc_id) FROM clauses WHERE model_status='PRESENT'"),
         "checker_agreed": one("SELECT COUNT(*) FROM clauses WHERE flags LIKE '%checker_agreed%'"),
         "checker_rejected": [r[0] for r in con.execute(
             "SELECT doc_id FROM clauses WHERE flags LIKE '%checker_rejected%' ORDER BY doc_id")],
@@ -327,9 +364,11 @@ def main() -> None:
         "register": register_snapshot(con),
         "m18": journey,
         "m09": chunking_m09(client),
+        "m01": finding(con, "M01", "liability_limitation"),
         "m08": finding(con, "M08", "liability_limitation"),
         "m14": {"note": hidden.strip(), "finding": finding(con, "M14", "liability_limitation")},
         "costs": queries.costs(con),
+        "triage": triage_rules(),
         "prompt_shields": {"cases": probe["cases"], "chunks": probe["register"]["chunks"],
                            "flagged": [f["chunk_id"] for f in probe["register"]["flagged"]],
                            "characters": probe["register"]["characters"]},
@@ -341,7 +380,7 @@ def main() -> None:
     }
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     e = data["embedding"]
-    print(f"written {OUT.relative_to(config.ROOT)}: {e['passages']} passages, nearest {[n['id'] for n in e['near']]}, spots {e['spots']}, "
+    print(f"written {OUT.relative_to(config.ROOT)}: {e['passages']} passages, nearest {[n['id'] for n in e['near']]}, "
           f"decoy {[(s['id'], s['sim']) for s in e['decoy']['sims']]}, M09 cut by the fixed size: {data['m09']['cut_by_fixed']}")
     o, pa, h = data["ocr"], data["patterns"], data["hybrid"]
     hw = o["handwritten"]

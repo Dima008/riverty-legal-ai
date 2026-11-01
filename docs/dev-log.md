@@ -7,6 +7,40 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-01 · The talk in the order of the problem: nothing reaches ahead, and the live card works (F20)
+
+- **Problem:** Dima asked for a check that the talk goes step by step – identify the problems,
+  find the lever, weigh the approaches – and never reaches ahead. Four reviewers (arc, first
+  mentions, interview panel, delivery) found about 70 terms, ids or numbers used before they
+  were explained, two meta cards between "three guarantees" and the solution, the register
+  result shown before the solution act, Legal's second pilot question raised but never answered,
+  and adoption in about 17 s. The live-add card showed nothing at all for H01 (F20).
+- **Cause:** The cards were built act by act over several days; each card was checked on its
+  own, never the whole order. F20: the card fetched the findings once, before they existed.
+- **Technique and why:** One approved plan (decision 88): the roadmap right after the title, the
+  test set as the yardstick for the approaches, the solution along the target process, proof,
+  operations, adoption, live, and a close with the lesson; "choices" moved to the deep dives.
+  Then two rounds of a strict re-audit by a fresh reviewer, each followed by a fix round, with
+  numbers recomputed from their sources and new dev guards for every fact that could drift
+  (e.g. the errors the traps missed must be exactly C04 · C09, C10 · C11). Honesty fixes: the
+  top-k measurement is named a keyword (BM25) search, the SharePoint card is marked "target
+  design", the prototype model is named "Azure OpenAI (Global Standard, synthetic data)". The
+  presenter view got clock checkpoints with skip hints. F20: the card asks again until the
+  type is there and shows poor scan, not found, unclear and the former-name line (F19).
+- **Rejected alternative:** Keeping "how I worked" in act 3 (a look back in the middle of the
+  solution); register first in act 3 (the contracts of the Q1 answer would still be unknown);
+  "choices" as a summary at the end (the densest text card, all said before). A third audit
+  round on this order was skipped: decision 90 changes the act structure next.
+- **Metric before → after:** 50 → 45 cards (now 35 in the main track, 10 deep dives), main track
+  18:59 → 18:58 (1138 s);
+  re-audit round 1: order ok, 2 major + 10 minor → fixed; round 2: 1 major + 10 minor → fixed;
+  rendered word budget 0 problems, `newcards.mjs` 45 of 45 cards without problems, `deck.mjs`
+  errors none, no card over 2 spoken words per second. F20: card blank for H01 → full answer
+  after 11.0, 14.0 and 14.7 s in three runs on a copy, title fixed at y 157 px in every state.
+- **Links:** decisions 88 (act structure since replaced by 90), 89; F19, F20;
+  `web/src/deck/slides.ts`, `slides/act1.tsx`–`act6.tsx`, `proof.tsx`, `deep.tsx`,
+  `deck/Presenter.tsx`, `tools/deck_data.py`
+
 ## 2026-11-01 · A poor scan cannot prove that a former name is gone (F19)
 
 - **Problem:** The handwritten H01 names "Arvato Financial Solutions", but the former-name check

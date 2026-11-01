@@ -1,13 +1,51 @@
 // Deep dives (decision 78): cards after the close, outside the timed track. The presenter opens
 // them from the overview (O) when a question comes. Numbers from deck-data.json and decisions 79/80.
 import { useState } from "react";
+import shieldsProbePy from "../../../../eval/prompt_shields_probe.py?raw";
+import runPy from "../../../../pipeline/run.py?raw";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import "./acts.css";
 import deck from "./deck-data.json";
 
+// ---------------------------------------------------------------- each problem picked its technique
+// Moved here from act 3 (decision 88): as a preview it put about nine terms on screen before the
+// main track explained them. Every row's rejected alternative is also said on the main track
+// (keywords: 'hard'; top-k and a free agent: act 2; the model's own confidence: 'checks'; automatic
+// copies: 'human'). Amendments: renames are resolved today (Q2), clause changes are a known gap.
+const CHOICES = [
+  { problem: "Prove what is missing", tech: "Read every contract into a register", sub: "one table: every contract against Legal's playbook", not: "top-k search · a free agent" },
+  { problem: "Scans and photos", tech: "OCR, page by page, with a confidence", sub: "Tesseract now · Content Understanding on Azure", not: "" },
+  { problem: "Amendments", tech: "Read with their contract", sub: "names today, clause changes planned", not: "each file alone" },
+  { problem: "Same clause, other words", tech: "A model reads against the playbook", sub: "the same definitions for every contract", not: "keywords" },
+  { problem: "A model can be wrong", tech: "A quote we find + a second model call", sub: "", not: "the model's own confidence" },
+  { problem: "Hidden instructions", tech: "A pattern check", sub: "next: Microsoft Prompt Shields", not: "" },
+  { problem: "Lawyers decide", tech: "Triage · four eyes · approval gate", sub: "sorted by how sure we are; risky = two people", not: "automatic archive copies" },
+];
+
+function Choices() {
+  return (
+    <div className="x-choices">
+      <div className="x-choice-head"><span>Problem</span><span /><span>Technique</span><span>Rejected</span></div>
+      {CHOICES.map((c, i) => (
+        <Build key={c.problem} at={i} className="x-choice">
+          <span className="x-choice-problem">{c.problem}</span>
+          <span className="x-arrow" aria-hidden>→</span>
+          <span className="x-choice-tech">{c.tech}{c.sub && <small>{c.sub}</small>}</span>
+          <span className="x-choice-not">{c.not ? <s>{c.not}</s> : "–"}</span>
+        </Build>
+      ))}
+    </div>
+  );
+}
+
+// The similarities the notes say: M10's clause without a cap, M19's real cap in German.
+const DECOY = deck.embedding.decoy;
+const SIM = (id: string) => DECOY.sims.find((s) => s.id === id)?.sim ?? NaN;
+const DECOY_NO_CAP = SIM("M10:008"), DECOY_CAP = SIM("M19:008");
+
 function Decoy() {
-  const d = deck.embedding.decoy;
+  const d = DECOY;
   const label: Record<string, string> = {
     "M02:008": "M02 · reworded cap", "M10:008": "M10 · indemnification – no cap", "M01:005": "M01 · fees",
     "M01:010": "M01 · termination", "M19:008": "M19 · real cap, in German",
@@ -24,8 +62,8 @@ function Decoy() {
         ))}
       </div>
       <Build at={1} className="x-wide" >
-        The clause <b>without</b> a cap sits closer than the real German cap. Vectors say what a passage is <b>about</b> – not
-        whether it <b>is</b> a cap. The values only compare; the same template lifts them all.
+        The clause <b>without</b> a cap sits closer than the real German cap. Embeddings say what a passage is <b>about</b> – not
+        whether it <b>is</b> a cap. The values only compare; my merchant agreements share one template, so all score high.
       </Build>
     </div>
   );
@@ -73,6 +111,13 @@ const LAYERS = [
   { layer: "Triage and four eyes", who: "our code", ms: false },
 ];
 
+// The cost of one Prompt Shields pass over the register: Microsoft bills text records of up to 1,000
+// characters; the price per 1,000 records is the one eval/prompt_shields_probe.py was measured with
+// (decision 80), the characters are the probe's count of the register's passages (deck-data.json).
+const SHIELDS_PRICE = Number(/\$([\d.]+) per 1,000 records/.exec(shieldsProbePy)?.[1]);
+const SHIELDS_RECORDS = deck.prompt_shields.characters / 1000;
+const SHIELDS_PASS_USD = (SHIELDS_RECORDS * SHIELDS_PRICE) / 1000;
+
 function MsChecks() {
   const ps = deck.prompt_shields;
   return (
@@ -87,21 +132,26 @@ function MsChecks() {
       <Build at={1} className="x-side">
         <div className="x-fact">Prompt Shields says only <b>yes or no</b> per document, without the position. So our pattern check stays for the highlight.</div>
         <div className="x-fact">Measured: {ps.flagged.length - 1} false alarm in {ps.chunks} passages ({ps.flagged.filter((f) => !f.startsWith("M14")).join(", ")}, data protection rules written as orders). A hit means <b>four eyes</b>, never a block.</div>
-        <div className="x-fact">A full pass over the register: about <b>$0.33</b>.</div>
+        {SHIELDS_PASS_USD > 0 && <div className="x-fact">A full pass over the register: about <b>${SHIELDS_PASS_USD.toFixed(2)}</b>.</div>}
       </Build>
     </div>
   );
 }
 
+// In the words of the main track (decision 88): no "changeType", "token", "endpoint" or "least
+// privilege". The Microsoft numbers are the verified ones of decision 79; the watcher's interval is
+// read from pipeline/run.py, like on the card 'follow-m18'.
+const WATCH_S = Number(/"--interval", type=int, default=(\d+)/.exec(runPy)?.[1]);
+
 function GraphDetails() {
   return (
     <div className="x-sp-net" style={{ gridTemplateColumns: "1fr 1fr" }}>
-      <div className="x-fact">A subscription on the library's root folder covers every file in it – changeType <b>updated</b> only, no file name.</div>
-      <div className="x-fact">The <b>delta query</b> returns new, changed and deleted files and a token for next time.</div>
+      <div className="x-fact">A subscription on the library's root folder covers every file in it – only <b>“something changed”</b>, no file name.</div>
+      <div className="x-fact">The <b>delta query</b> returns new, changed and deleted files – and a bookmark for next time.</div>
       <div className="x-fact">Lifetime at most <b>42,300 minutes</b> (under 30 days): renew it in time.</div>
-      <div className="x-fact">The endpoint must answer the validation within <b>10 s</b>; a message counts only with an answer within <b>3 s</b>, then retries for up to 4 hours.</div>
-      <Build at={1} className="x-fact">Least privilege: <b>Sites.Selected</b> – read rights on the one library, not on all of SharePoint.</Build>
-      <Build at={1} className="x-fact">Prototype: the folder data/inbox, checked every 5 s – same interface, same pipeline.</Build>
+      <div className="x-fact">Our address must answer Microsoft's test within <b>10 s</b>; a message counts only with an answer within <b>3 s</b>, then retries for up to 4 hours.</div>
+      <Build at={1} className="x-fact">Read rights on the one library only (<b>Sites.Selected</b>) – not on all of SharePoint.</Build>
+      <Build at={1} className="x-fact">Prototype: the folder data/inbox, checked every {WATCH_S} s – same interface, same pipeline.</Build>
     </div>
   );
 }
@@ -132,7 +182,7 @@ function Ocr() {
                   className={`x-wbox${step >= 1 ? (c < OCR.threshold ? " low" : " ok") : ""}${step >= 2 && OCR_RING.has(i) ? " ring" : ""}`} />
           ))}
         </div>
-        <figcaption>{OCR.doc} · page 1 of {OCR.pages.length} · a scan, no text layer</figcaption>
+        <figcaption>{OCR.doc} · page 1 of {OCR.pages.length} · a scan: only an image, no text</figcaption>
       </figure>
       <div className="x-side">
         <div className="x-fact">
@@ -145,7 +195,7 @@ function Ocr() {
         </Build>
         <Build at={1} className="x-hand">
           <div><span className="x-tag built">measured</span> <b>{HW.doc_id}</b> (handwritten): <b>{HW.mean_conf.toFixed(0)} %</b>{HW_PERSON ? " → a person" : ""}</div>
-          <div><span className="x-tag planned">planned</span> multimodal fallback for handwriting (decision 10)</div>
+          <div><span className="x-tag planned">planned</span> a model that reads images</div>
         </Build>
         <Build at={2} className="x-fact x-misread">
           OCR read <b className="x-said">“{OCR_SURE.word}”</b> – <span className="bad">{OCR_SURE.conf} % sure</span>
@@ -166,6 +216,10 @@ const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n).replace(/
 const FORM_FOUND = FORM.clauses.find((c) => c.status === "PRESENT" && c.quote && c.section)!;
 const FORM_CAP = FORM.clauses.find((c) => c.key === "liability_limitation")!;
 const FORM_SECTION_NO = FORM_FOUND.section!.split(" ")[0].replace(/\.$/, "");   // "3. Checkout-…" -> "3"
+const FORM_FOUND_LABEL = FORM_FOUND.label.replace(/ \(.*\)$/, "");                // "Consumer terms in checkout"
+// the statuses in the main track's words, not the schema's enum
+const SAID: Record<string, string> = { PRESENT: "found", ABSENT: "not found", UNCLEAR: "unclear" };
+const said = (status: string) => SAID[status] ?? status;
 
 function FixedForm() {
   const step = useStep();
@@ -190,7 +244,7 @@ function FixedForm() {
       </div>
       <div className="x-form-row head">
         <span>Clause</span>
-        <span>Status<small>{FORM.statuses.join(" · ")}</small></span>
+        <span>Status<small>{FORM.statuses.map(said).join(" · ")}</small></span>
         <span>Section</span>
         <span>Quote – or the reason</span>
         <span className={`x-form-code${added}`}>Added after the call<small>page, confidence (our code)</small><small>checker (a 2nd model call)</small></span>
@@ -198,7 +252,7 @@ function FixedForm() {
       {FORM.clauses.map((c) => (
         <div key={c.key} className="x-form-row">
           <span className="x-form-clause">{c.label.replace(/ \(.*\)$/, "")}</span>
-          <span className={`x-form-slot${step >= 1 ? ` x-form-${c.status}` : ""}`}><span className={hide}>{c.status}</span></span>
+          <span className={`x-form-slot${step >= 1 ? ` x-form-${c.status}` : ""}`}><span className={hide}>{said(c.status)}</span></span>
           <span className="x-form-slot"><span className={`x-form-sec ${hide}`}>{c.section ?? "–"}</span></span>
           <span className="x-form-slot text"><span className={hide}>{text(c)}</span></span>
           <span className={`x-form-code${added}`}>
@@ -208,13 +262,13 @@ function FixedForm() {
         </div>
       ))}
       <div className="x-form-foot">
-        <Build at={2} className="inline"><b>{FORM.extract_calls} extraction calls</b> – one per contract</Build>
+        <Build at={2} className="inline"><b>{FORM.extract_calls} model calls</b> to read {FORM.documents} contracts – one each</Build>
       </div>
     </div>
   );
 }
 
-// ---------------------------------------------------------------- agent patterns, no free agent
+// ---------------------------------------------------------------- agent building blocks, no free agent
 // deck.patterns: the fixed check list (pipeline/portfolio.py), the checker's numbers from the
 // clauses table and llm_calls, Q1's triage (run without storing anything).
 const PAT = deck.patterns;
@@ -223,7 +277,8 @@ const TRIAGE = PAT.q1.triage as Record<string, number>;
 // click for all of them (batch), with a random spot-check sample (pipeline/portfolio.py)
 const TO_LAWYER = (TRIAGE.REVIEW ?? 0) + (TRIAGE.FOUR_EYES ?? 0);
 
-// name + one line each; what each pattern does, the speaker says (notes)
+// name + one line each; what each building block does, the speaker says (notes). "Building blocks",
+// not "patterns": the main track's "pattern check" is the injection check (decision 88).
 const PATTERNS = [
   { at: 0, name: "Plan first", data: <><b>{PAT.checks.length} fixed check types</b> – a plan can only pick one</> },
   { at: 0, name: "Maker and checker",
@@ -250,7 +305,7 @@ function AgentPatterns() {
       </div>
       <Build at={2} className="x-wide">
         <span className="x-tag planned">planned</span>{" "}
-        a planner that uses a model · <b>Microsoft Agent Framework</b> · the tools as <b>MCP servers</b>
+        a planner that uses a model · <b>Microsoft Agent Framework</b> · the tools via <b>MCP</b> – a standard plug that gives a model its tools
       </Build>
     </div>
   );
@@ -311,7 +366,7 @@ function HybridSearch() {
       </div>
       <Build at={2} className="x-wide">
         <span className="x-tag planned">planned</span>{" "}
-        a reranker · a test set for open questions · <b>Azure AI Search</b> – and never for “which contracts lack …”
+        a reranker – a second model that re-sorts the best hits · a test set · <b>Azure AI Search</b> – never for “which contracts lack …”
       </Build>
     </div>
   );
@@ -320,8 +375,13 @@ function HybridSearch() {
 // ---------------------------------------------------------------- guards (development only)
 if (import.meta.env.DEV) {
   const problems = [
+    !(SHIELDS_PASS_USD > 0) && "card 'ms-checks': the Prompt Shields price per 1,000 records is no longer in eval/prompt_shields_probe.py",
     FORM.most_calls_per_document !== 1 && `a document needed ${FORM.most_calls_per_document} extraction calls - "one model call per contract" is wrong`,
-    FORM.extract_calls !== FORM.documents && `${FORM.extract_calls} extraction calls for ${FORM.documents} documents`,
+    FORM.extract_calls !== FORM.documents && `${FORM.extract_calls} model calls to read ${FORM.documents} documents - card 'fixed-form' says one each`,
+    PAT.checker_calls !== PAT.checked_contracts
+      && `${PAT.checker_calls} checker calls for ${PAT.checked_contracts} contracts with a found clause - note 0 of 'agent-patterns' says one per contract`,
+    !(DECOY_NO_CAP > DECOY_CAP) && "card 'decoy': the clause without a cap no longer scores higher than M19's real cap",
+    !(WATCH_S > 0) && "card 'graph-details': the watcher's interval is no longer in pipeline/run.py",
     !FORM.strict && "the extraction call is no longer strict",
     !OCR_SURE && "OCR misread nothing on M18 - card 'ocr' build 2 has no example",
     HY_EXTRA.length === 0 && "hybrid search: meaning found nothing the keywords missed",
@@ -338,17 +398,30 @@ export const DEEP: Slide[] = [
     notes: ["If you want to see a technique closer, I pick a card."],
   },
   {
+    id: "choices", act: 7, kind: "content", title: "Each problem picked its technique.", steps: 6, seconds: 45, deep: true, Body: Choices,
+    notes: [
+      "Each problem picked its technique. Prove what is missing: read every contract into the register.",
+      "Scans: OCR reads each page, with a confidence.",
+      "Amendments: read with their contract. Old names work today; clause changes are planned.",
+      "Other words: the model reads against the playbook. Keywords miss M02.",
+      "Models can be wrong: a quote we find, and a second model call.",
+      "Hidden instructions: a pattern check, next Microsoft Prompt Shields.",
+      "Lawyers decide: triage. Unclear goes to one lawyer, risky to two – four eyes.",
+    ],
+    words: [{ word: "technique", say: "tek-NEEK" }, { word: "playbook", say: "PLAY-book" }, { word: "triage", say: "TREE-ahzh" }],
+  },
+  {
     id: "decoy", act: 7, kind: "content", title: "Embeddings know the topic – not whether the clause is there.", steps: 1, seconds: 40, deep: true, Body: Decoy,
     notes: [
-      "These are real similarities to M01's liability section. M10's indemnification clause has no cap, but it scores 0.805.",
-      "M19's real cap, in German, scores only 0.746. Vectors say what a text is about. Whether it is a cap, the model and the checks decide.",
+      `These are real similarities to M01's liability section. M10's indemnification clause has no cap, but it scores ${DECOY_NO_CAP.toFixed(3)}.`,
+      `M19's real cap, in German, scores only ${DECOY_CAP.toFixed(3)}. Embeddings say what a text is about. Whether it is a cap, the model and the checks decide.`,
     ],
     words: [{ word: "indemnification", say: "in-dem-nih-fih-KAY-shun" }, { word: "similarity", say: "sim-ih-LAR-ih-tee" }],
   },
   {
     id: "chunking", act: 7, kind: "content", title: "Chunking: cut at the headings, not at a fixed length.", steps: 2, seconds: 40, deep: true, Body: Chunking,
     notes: [
-      "A common way is to cut every 2,000 characters.",
+      `A common way is to cut every ${deck.m09.fixed_size.toLocaleString("en")} characters. Cutting a contract into passages is called chunking.`,
       "We cut at the headings instead. Each clause stays one piece.",
       "In M09 the liability clause runs over the page break. A fixed cut splits it. Our sections keep it whole.",
     ],
@@ -365,10 +438,10 @@ export const DEEP: Slide[] = [
   {
     id: "graph-details", act: 7, kind: "content", title: "SharePoint in detail: subscription, delta query, safety net.", steps: 1, seconds: 40, deep: true, Body: GraphDetails,
     notes: [
-      "The details from Microsoft's documentation. The subscription only wakes us up. The delta query tells us what changed. It must be renewed within 30 days.",
+      "The details from Microsoft's documentation. The subscription only wakes us up. The delta query tells us what changed. The subscription must be renewed within 30 days.",
       "And we ask only for read rights on the one library.",
     ],
-    words: [{ word: "subscription", say: "sub-SKRIP-shun" }, { word: "privilege", say: "PRIV-ih-lij" }],
+    words: [{ word: "subscription", say: "sub-SKRIP-shun" }, { word: "Sites.Selected", say: "sites dot seh-LEK-tid" }],
   },
   {
     id: "ocr", act: 7, kind: "content", title: "OCR reads a scan word by word – its confidence is a hint, not proof.", steps: 2, seconds: 45, deep: true, Body: Ocr,
@@ -379,30 +452,30 @@ export const DEEP: Slide[] = [
       `But confidence is a hint, not proof. OCR lost the umlaut in ${OCR_SURE.truth}, ${OCR_SURE.conf} percent sure. ${OCR.misread.length} words have wrong letters.`,
     ],
     words: [{ word: "OCR", say: "oh-see-AR" }, { word: "confidence", say: "KON-fih-dence" }, { word: "umlaut", say: "OOM-lowt" },
-            { word: OCR_SURE.truth ?? "Händlers", say: "HEND-lers" }, { word: "multimodal", say: "mul-tee-MOH-dul" }],
+            { word: OCR_SURE.truth ?? "Händlers", say: "HEND-lers" }],
   },
   {
     id: "fixed-form", act: 7, kind: "content", title: "One model call per contract fills a fixed form.", steps: 2, seconds: 40, deep: true, Body: FixedForm,
     notes: [
-      "The model fills a fixed form, a JSON schema: per clause found, not found or unclear, the section, a quote, a reason. Nothing outside the form.",
+      "The model fills a fixed form, a JSON schema: per clause found, not found or unclear, a section, a quote, a reason – nothing else.",
       `This is ${FORM.doc}'s real answer. Liability cap: ${FORM_CAP.status === "ABSENT" ? "not found" : FORM_CAP.status === "PRESENT" ? "found" : "unclear"}, with a reason. ` +
-        `Checkout terms: found, with a quote from section ${FORM_SECTION_NO}.`,
-      `Then our code adds page and confidence, and a second model call checks each found clause. ${FORM.documents} contracts, ${FORM.extract_calls} extraction calls. ` +
-        `Very long contracts, over ${FORM.single_pass_chars.toLocaleString("en")} characters, are read in parts – none here.`,
+        `${FORM_FOUND_LABEL}: found, with a quote from section ${FORM_SECTION_NO}.`,
+      `Then our code adds page and confidence; a second model call checks each found clause. ${FORM.documents} contracts, ${FORM.extract_calls} calls to read them. ` +
+        `Over ${FORM.single_pass_chars.toLocaleString("en")} characters, a contract is read in parts – none here.`,
     ],
     words: [{ word: "schema", say: "SKEE-muh" }, { word: "JSON", say: "JAY-sun" }, { word: "characters", say: "KAR-ik-terz" }],
   },
   {
-    id: "agent-patterns", act: 7, kind: "content", title: "Agent patterns, each with one job – but no free agent.", steps: 2, seconds: 50, deep: true, Body: AgentPatterns,
+    id: "agent-patterns", act: 7, kind: "content", title: "Agent building blocks, each with one job – but no free agent.", steps: 2, seconds: 50, deep: true, Body: AgentPatterns,
     notes: [
-      "Where is the agent? Code fixes the order. One: plan first. The lawyer confirms it before anything runs. " +
-        `Two: maker and checker. A second call checks every “found” and overruled ${PAT.checker_rejected.length} of ${PAT.found_by_model}.`,
-      "Three: a tool behind a gate. The only action outside the system, the archive copy, needs approval and runs once. " +
-        `Four: a person decides. In ${PAT.q1.id} a lawyer opens ${TO_LAWYER} of ${PAT.q1.reported}, ${TRIAGE.FOUR_EYES === 1 ? "one" : TRIAGE.FOUR_EYES} with a second lawyer. ` +
-        `The ${TRIAGE.CONFIRM} sure ones are confirmed in one click, with a spot check.`,
-      "Honestly: the planner has no model yet. Agent framework and MCP tools: planned, not built.",
+      "Code fixes the order. One: plan first – the lawyer confirms it. Two: maker and checker: a second call checks every “found” – " +
+        `${PAT.checker_calls} calls, one per contract, each for all its found clauses. It overruled ${PAT.checker_rejected.length} of ${PAT.found_by_model}.`,
+      "Three: a tool behind a gate – the archive copy needs approval and runs once. Four: a person decides. " +
+        `In ${PAT.q1.id} a lawyer opens ${TO_LAWYER} of ${PAT.q1.reported} – ${TRIAGE.FOUR_EYES === 1 ? "one" : TRIAGE.FOUR_EYES} with four eyes; ` +
+        `${TRIAGE.CONFIRM} sure ones: one click, with a spot check.`,
+      "Honestly: the planner has no model yet. Agent Framework and MCP – a standard plug that gives a model its tools: planned, not built.",
     ],
-    words: [{ word: "patterns", say: "PAT-ernz" }, { word: "overruled", say: "oh-ver-ROOLD" }, { word: "MCP", say: "em-see-PEE" }],
+    words: [{ word: "overruled", say: "oh-ver-ROOLD" }, { word: "MCP", say: "em-see-PEE" }, { word: "plug", say: "PLUG" }],
   },
   {
     id: "hybrid-search", act: 7, kind: "content", title: "Open questions: keywords and meaning, merged.", steps: 2, seconds: 40, deep: true, Body: HybridSearch,
@@ -410,7 +483,7 @@ export const DEEP: Slide[] = [
       `For open questions we search. I ask: ${HY.query}. Keywords find ${HY.keywords.length} passages with the word ${HY_IN_ALL[0]} – none says ${HY_IN_NONE[0]}. ` +
         `Embeddings find the meaning: also ${HY_EXTRA[0]?.doc}'s German cap, and caps called liability.`,
       "We merge both lists by rank, not by score: what both found comes first. That is hybrid search – built.",
-      "Still open: a reranker and a test set for open questions. On Azure, AI Search would do this. Never for which contracts lack a clause.",
+      "Still open: a reranker – a second model that re-sorts the best hits – and a test set. On Azure: AI Search. Never for which contracts lack a clause.",
     ],
     words: [{ word: "hybrid", say: "HY-brid" }, { word: "reranker", say: "ree-RANK-er" }, { word: "damages", say: "DAM-ih-jiz" }],
   },

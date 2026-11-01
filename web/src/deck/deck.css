@@ -203,7 +203,7 @@
 
   /* ------------------------------------------------------------------ act 2 */
   .node { width: 15cqw; padding: 1.3cqw 1.5cqw; border-radius: 1.2cqw; font-size: 1.32cqw; line-height: 1.3; border: 1px solid; }
-  .node-kind { display: block; font-size: 0.92cqw; text-transform: uppercase; letter-spacing: 0.13em; margin-bottom: 0.5cqw; font-weight: 700; }
+  .node-kind { display: block; font-size: 1cqw; text-transform: uppercase; letter-spacing: 0.13em; margin-bottom: 0.5cqw; font-weight: 700; }
   .node.person { border-color: rgba(255, 197, 107, 0.45); background: rgba(255, 197, 107, 0.08); }
   .node.person .node-kind { color: var(--amber); }
   .node.code { border-color: rgba(92, 200, 255, 0.45); background: rgba(92, 200, 255, 0.08); }
@@ -239,7 +239,7 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.4cqw; font-weight: 650;
     transition: background 0.5s, border-color 0.5s, box-shadow 0.5s;
   }
-  .tile small { font-size: 0.9cqw; font-weight: 600; margin-top: 0.15cqw; letter-spacing: 0.04em; }
+  .tile small { font-size: 1cqw; font-weight: 600; margin-top: 0.15cqw; letter-spacing: 0.04em; }
   .tile.found { background: rgba(92, 200, 255, 0.16); border-color: rgba(92, 200, 255, 0.6); }
   .tile.flagged { background: rgba(255, 111, 125, 0.17); border-color: rgba(255, 111, 125, 0.8); }
   .tile.false-alarm { background: rgba(255, 197, 107, 0.1); border-color: rgba(255, 197, 107, 0.75); }
@@ -264,7 +264,7 @@
   .stat { background: rgba(255, 111, 125, 0.07); border: 1px solid rgba(255, 111, 125, 0.3); border-radius: 1.4cqw; padding: 2cqw 2.2cqw; font-size: 1.4cqw; }
   .stat .big { color: var(--red); margin-bottom: 0.6cqw; }
   .stat-sub { color: var(--ink-2); font-size: 1.25cqw; margin-top: 0.4cqw; }
-  .stat cite, .quote-riverty cite { display: block; margin-top: 0.8cqw; font-style: normal; font-family: inherit; font-size: 0.95cqw; color: var(--ink-3); }
+  .stat cite, .quote-riverty cite { display: block; margin-top: 0.8cqw; font-style: normal; font-family: inherit; font-size: 1cqw; color: var(--ink-3); }
   .quote-riverty { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 1.45cqw; color: var(--ink-2); border-left: 0.3cqw solid var(--mint); padding-left: 1.4cqw; }
 
   .needs { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2.4cqw; }
@@ -323,7 +323,7 @@ html:has(.present) { overscroll-behavior-x: none; }
 .presenter { height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; padding: 14px 20px 18px; background: #050c0b; overflow: hidden; }
 .pv-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 20px; font-size: 14px; color: var(--ink-2); }
 .pv-clock { font-size: 32px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
-.pv-plan.late { color: var(--amber); }
+.pv-plan.late, .pv-check.late { color: var(--amber); }
 .pv-size { margin-left: auto; display: inline-flex; gap: 4px; }
 .pv-head button, .pv-buttons button { border-radius: 999px; padding: 7px 14px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
 .pv-head button:hover, .pv-buttons button:hover { background: rgba(255, 255, 255, 0.1); }

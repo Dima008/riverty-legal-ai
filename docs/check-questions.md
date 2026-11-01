@@ -344,6 +344,20 @@ the talk cannot say something the data does not say.
 liability" for the ruler, "cap on damages" for the hybrid search; < $0.0001 together). *Where:* `tools/deck_data.py`, `web/src/deck/slides/deck-data.json`,
 `web/src/deck/slides/act3.tsx`, dev-log entry "The talk built through to the close".
 
+**32. On the top-k card you measured with a keyword search (BM25), but the two cards before it
+explain embeddings. A panel member asks: "Would embeddings not have found M14?" What do you
+say?**
+
+Honestly: I measured the keyword search, not embeddings. But the point does not depend on the
+ranking: embeddings rank too. Any top-k returns the k passages that look most like the question.
+A contract with no such clause has no such passage, so it never shows up – with keywords or with
+embeddings. Only reading every contract once and storing "not found" can prove absence. I did
+not measure embedding top-k, so I do not claim a number for it.
+
+*Numbers:* keyword top-k at k = 10, 20 and 40: always 7 false alarms and M14 missed; 11 of the
+19 merchant agreements never match the keywords at all. *Where:* `eval/negative_search.py`,
+card "rag-fails".
+
 ## How I worked
 
 **17. Which step of the path "from process to platform" decides between a fixed workflow and an

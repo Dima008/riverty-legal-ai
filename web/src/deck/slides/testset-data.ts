@@ -101,13 +101,18 @@ const total = /(\d+) public contracts from SEC EDGAR/.exec(dataReadme)?.[1];
 export const CUAD_NAME = "CUAD – Contract Understanding Atticus Dataset";
 export const CUAD_SOURCE = `The Atticus Project · CC BY 4.0 · real contracts from SEC EDGAR${total ? ` · we use ${CUAD_N} of ${total}` : ""}`;
 
-// failures the real contracts revealed and that are fixed: rows of the overview table in
-// docs/failure-cases.md whose title names a C-id and whose status starts with "fixed"
+// Errors of the pipeline that the real contracts revealed and that are fixed: rows of the overview
+// table in docs/failure-cases.md (| # | Case | Layer | Caught by | Status |) whose case names a C-id,
+// whose layer is a pipeline step and whose status starts with "fixed". A bug of the Workbench that
+// hid a C-contract (F24, layer "frontend") is not an error the evaluation on real contracts showed.
+const PIPELINE_LAYERS = new Set(["ingest", "extraction", "checks", "families"]);
 export const FOUND_BY_CUAD: string[] = failuresMd.split("\n").flatMap((line) => {
   const cells = line.split("|").map((c) => c.trim());
   if (!/^F\d+$/.test(cells[1] ?? "")) return [];
   const ids = /\((C\d\d[^)]*)\)/.exec(cells[2] ?? "")?.[1];
-  return ids && (cells[5] ?? "").startsWith("fixed") ? [ids] : [];
+  const layers = (cells[3] ?? "").split("/").map((l) => l.trim());
+  const pipeline = layers.length > 0 && layers.every((l) => PIPELINE_LAYERS.has(l));
+  return ids && pipeline && (cells[5] ?? "").startsWith("fixed") ? [ids] : [];
 });
 
 // ---------------------------------------------------------------- guards (development only)

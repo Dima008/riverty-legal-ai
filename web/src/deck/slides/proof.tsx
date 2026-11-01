@@ -1,7 +1,8 @@
 // Act 4 - proof, after the trap map: how many answers were complete and how sure we can be, a
 // safeguard switched off live (the stored model answers replayed on a copy of the register), and
-// what reading costs - and whether a bigger model would help. Every number is read from a stored
-// evaluation file or from the running API - nothing is typed by hand.
+// what reading costs - whether a bigger model would help, and the release gate that decides the
+// next one (merged here from the old card 'run-it', decision 88). Every number is read from a
+// stored evaluation file, the running API or the card that said it first - nothing is typed by hand.
 import { useEffect, useRef, useState } from "react";
 import goldQueries from "../../../../data/gold_queries.json";
 import firstRun from "../../../../eval/results/2026-10-29_extract-v2.txt?raw";
@@ -16,6 +17,7 @@ import stats from "../../../../eval/results/2026-10-31_extract-v2_stats.json";
 import stored from "../../../../eval/results/2026-10-31_what_if.json";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
+import { ACT1 } from "./act1";
 import "./proof.css";
 
 const pct = (x: number) => `${Math.round(x * 100)} %`;
@@ -106,7 +108,7 @@ const WEAKEST = QS.reduce((a, q) => (q.recall_lower_95 < a.recall_lower_95 ? q :
 
 // The questions in a few words (data/gold_queries.json has them in full).
 const SHORT: Record<string, string> = {
-  Q1: "no liability cap", Q2: "a legacy company name", Q3: "no consumer terms at checkout",
+  Q1: "no liability cap", Q2: "a former company name", Q3: "no consumer terms at checkout",
   Q4: "no data processing agreement", Q5: "not German law", Q6: "processing: no audit clause",
   Q7: "processing: no sub-processors", Q8: "duplicates",
 };
@@ -149,14 +151,14 @@ function Results() {
       <div className="p-side">
         <Build at={0} className="p-fact">
           {RUNS_COMPLETE === RUNS.length
-            ? <><b>All {RUNS.length} stored runs</b>: complete, no false alarm</>
-            : <><b>{RUNS_COMPLETE} of {RUNS.length} stored runs</b> complete</>}
+            ? <><b>{RUNS.length} runs from scratch</b>, {MODELS.length} models: complete, no false alarm</>
+            : <><b>{RUNS_COMPLETE} of {RUNS.length} runs from scratch</b> complete</>}
         </Build>
         <Build at={1} className="p-fact p-amber">
           <span className="p-swatch" /><span className="p-nb">{WEAKEST.expected.length} of {WEAKEST.expected.length}</span> → <span className="p-nb">could be {pct(WEAKEST.recall_lower_95)}</span>
         </Build>
         <Build at={2} className="p-fact">
-          <b>{DISTINCT} contracts</b>, and we tuned on them → <b>sealed test set</b> <span className="p-tag">planned</span>
+          <b>{DISTINCT} contracts</b>, and I tuned on them → <b>sealed test set</b> <span className="p-tag">planned</span>
         </Build>
       </div>
     </div>
@@ -173,9 +175,10 @@ const STORED: Replay[] = stored.scenarios.map((s) => s.result);
 const SCENARIOS = stored.scenarios.map((s) => s.off);          // build 1, 2, 3
 const Q1_CLAUSE = "liability_limitation";                        // the clause Q1 asks about
 
-// The four checks on a found clause, in the words of act 3 (cards "choices" and "checks"). The
-// injection switch turns off only the pattern check: the stored answers were made with the prompt
-// that tells the model to treat the contract as untrusted data, and a replay does not change that.
+// The four checks on a found clause, in the words of act 3 (cards 'checks' and 'injection'; the
+// deep dive 'choices' has them too). The injection switch turns off only the pattern check: the
+// stored answers were made with the prompt that tells the model to treat the contract as data, not
+// orders, and a replay does not change that.
 const SWITCHES = [
   { id: "quote_found", name: "The quote is in the contract" },
   { id: "clause_vocabulary", name: "It uses the clause's words" },
@@ -283,9 +286,9 @@ function WhatIf() {
     line = <>{moved.map((c) => <span key={c.doc_id}><b>{c.doc_id}</b>: {who(c.before.triage)} → <b className="p-bad">{who(c.after.triage)}</b></span>)}</>;
   } else line = <>Q1 does not change{i === 0 ? " – the checks overlap" : ""}.</>;
 
-  const tag = i === null ? <span className="p-live p-hide" aria-hidden>replayed on the running API · 0.0 s</span>   // holds its place
-    : !view ? <span className="p-live wait">replaying on the running API …</span>
-      : view.source === "live" ? <span className="p-live">replayed on the running API · {((view.ms ?? 0) / 1000).toFixed(1)} s</span>
+  const tag = i === null ? <span className="p-live p-hide" aria-hidden>replayed live · 0.0 s</span>   // holds its place
+    : !view ? <span className="p-live wait">replaying live …</span>
+      : view.source === "live" ? <span className="p-live">replayed live · {((view.ms ?? 0) / 1000).toFixed(1)} s</span>
         : view.source === "offline" ? <span className="p-live off">API offline · stored replay</span>
           : <span className="p-live wait">stored replay</span>;
 
@@ -319,15 +322,15 @@ function WhatIf() {
         <div className={`p-count${missed.size ? " p-bad" : ""}`}>{found} of {n}<span> found</span></div>
         <div className="p-line">{line}</div>
         <div className={`p-foot p-wi-foot${off.has("injection_guard") ? "" : " p-hide"}`} aria-hidden={off.has("injection_guard") ? undefined : true}>
-          The model still read the contract as untrusted data – so this replay cannot show an injection succeeding.
+          The model was still told: the contract is data, not orders – so this replay cannot show an injection succeeding.
         </div>
       </div>
     </div>
   );
 }
 
-// ================================================================ cost: once, then free; the small model
-const COST_ALL = stats.cost.cost_usd;                       // the production register: reading, checking and the search index
+// ================================================================ cost: once, then a lookup; the small model; the gate
+const COST_ALL = stats.cost.cost_usd;                       // the register used here: reading, checking and the search index
 const DOCUMENTS = stats.config.documents;
 const MINI = stats.config.extraction[0].model;              // production
 const BIG = MODELS.find((m) => m !== MINI) ?? MINI;
@@ -347,6 +350,8 @@ const TIME_RATIO = Math.round(mean(BIG_ROW.seconds) / mean(MINI_ROW.seconds));
 const MAX_COST = Math.max(...RUNS.map((r) => r.cost));
 const TIMED = RUNS.filter((r) => r.seconds !== null).length;
 const Q1_N = Q1.expected.length;
+// The hours of one question today, as the card 'today' (act 1) said them - the lever closes here.
+const HOURS = Number(/about (\d+) hours/.exec(ACT1.find((s) => s.id === "today")?.notes.join(" ") ?? "")?.[1]);
 
 function Cost() {
   return (
@@ -354,11 +359,11 @@ function Cost() {
       <div className="p-two">
         <div className="p-num">
           <span className="p-big2">{usd(COST_ALL)}</span>read all {DOCUMENTS} contracts once
-          <small>production register, with the search index · every model call logged</small>
+          <small>the register used here, with the search index</small>
         </div>
         <div className="p-num">
           <span className="p-big2">$0</span>per question
-          <small>a lookup in the register, no model call</small>
+          <small>a lookup, no model call – not {HOURS} h of reading</small>
         </div>
       </div>
       <Build at={1} className="p-models">
@@ -375,14 +380,20 @@ function Cost() {
           </div>
         ))}
         <div className="p-ratio">{RATIO}× the cost · {TIME_RATIO}× the time{MINI_ROW.complete && BIG_ROW.complete ? " · the same contracts found" : ""}</div>
-        <span className="p-foot">cost per run: reading and checking, list price × tokens, not an invoice · time measured in {TIMED} of {RUNS.length} runs</span>
+        <span className="p-foot">cost per run: reading and checking, list price, not an invoice · time measured in {TIMED} of {RUNS.length} runs</span>
       </Build>
       <Build at={2} className="p-verdict">
-        Production stays on <b>{MINI}</b>. The test questions decide the next model.
+        The small model stays: <b>{MINI}</b>. A new model, new instructions or a new playbook go live
+        only if all <b>{QS.length} test questions</b> stay at 100 %.
       </Build>
     </div>
   );
 }
+
+// the replays the notes of 'what-if' speak about: build 1, build 2, and the injection switch
+const S1 = q1Of(STORED[0]), S2 = q1Of(STORED[1]);
+const SLIPPED = S2.missed.join(" and ");
+const M14 = STORED[2].changes.find((c) => c.clause_type === Q1_CLAUSE);
 
 // ---------------------------------------------------------------- guards (development only)
 if (import.meta.env.DEV) {
@@ -413,45 +424,46 @@ if (import.meta.env.DEV) {
       && "the notes of 'what-if' say build 1 turns off the second model call and build 2 the vocabulary check too",
     (q1Of(STORED[0]).missed.length > 0 || q1Of(STORED[1]).missed.length === 0)
       && "build 1 and note 1 of 'what-if' say the checks overlap: Q1 unchanged with the checker off, contracts lost with the vocabulary check off too",
-    RUNS_COMPLETE !== RUNS.length && "the notes of 'results' say every stored run was complete",
+    RUNS_COMPLETE !== RUNS.length && "the notes of 'results' say every run from scratch was complete",
+    !(HOURS > 0) && "card 'cost' repeats the hours of one question from the card 'today' - its note no longer says 'about N hours'",
+    !S2.missed.includes("M08") && "note 0 of 'what-if' calls back to M08 - it no longer slips through with both checks off",
+    QS.length !== goldQueries.length && "the release gate on 'cost' names every test question - stats and gold_queries.json differ",
     !(MINI_ROW.complete && BIG_ROW.complete) && "the notes of 'cost' say both models find every contract",
+    !(mean(BIG_ROW.alone) > mean(MINI_ROW.alone)) && "note 1 of 'cost' says the bigger model alone misses less",
     STORED.some((r) => r.questions.some((q) => q.recall[0] !== 1)) && "the stored replay starts from a register that is not complete",
   ].filter(Boolean);
   for (const p of problems) console.error(`act 4 proof cards: ${p}`);
 }
 
 // ---------------------------------------------------------------- the cards
-const S1 = q1Of(STORED[0]), S2 = q1Of(STORED[1]);
-const SLIPPED = S2.missed.join(" and ");
-const M14 = STORED[2].changes.find((c) => c.clause_type === Q1_CLAUSE);
-
 export const RESULTS: Slide = {
-  id: "results", act: 4, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 30, Body: Results,
+  id: "results", act: 4, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 32, Body: Results,
   notes: [
-    `Did we find them? Every expected contract, no false alarm. In all ${RUNS.length} stored runs.`,
-    `How sure are we? With only ${Q1_N} contracts, we might really find just ${Math.round(Q1.recall_lower_95 * 100)} percent. ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
-    `All ${POOLED.expected} answers together: at least ${Math.round(POOLED.recall_lower_95 * 100)} percent. But only ${DISTINCT} contracts, and we tuned on them. Next: a sealed test set.`,
+    `Did it find every contract? ${RUNS.length} runs from scratch, ${MODELS.length} models: every expected contract, no false alarm.`,
+    `How sure are we? ${Q1_N} of ${Q1_N} could still mean ${Math.round(Q1.recall_lower_95 * 100)} percent. ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
+    `All ${POOLED.expected} answers together: at least ${Math.round(POOLED.recall_lower_95 * 100)} percent. But I tuned on these ${DISTINCT} contracts. ` +
+      "Planned: a sealed test set – new contracts I never tune on.",
   ],
-  words: [{ word: "expected", say: "ik-SPEK-tid" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
+  words: [{ word: "scratch", say: "SKRATCH" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
 };
 
 export const WHAT_IF: Slide = {
-  id: "what-if", act: 4, kind: "content", title: "Switch a safeguard off – live.", steps: SCENARIOS.length, seconds: 45, Body: WhatIf,
+  id: "what-if", act: 4, kind: "content", title: "Switch a safeguard off – live.", steps: SCENARIOS.length, seconds: 46, Body: WhatIf,
   notes: [
-    "Does every check earn its place? Let's switch them off. The stored model answers run again, on a copy. No model call, no cost.",
-    `The second model call, off. Q1 still finds all ${Math.round(S1.recall[1] * S1.expected.length)}. ${SLIPPED} also fail the check on the clause's words. The checks overlap.`,
-    `Now that check off too. ${SLIPPED} slip through, ${Math.round(S2.recall[1] * S2.expected.length)} of ${S2.expected.length}. And no lawyer would look at them.`,
+    "Remember M08: the model said found, the checks said unclear. What if the checks were off? I replay the stored answers on a copy – no model call, no cost.",
+    `The second model call, off. Q1 still finds all ${Math.round(S1.recall[1] * S1.expected.length)}. The checks overlap – watch the next switch.`,
+    `Now the words check off too. ${SLIPPED} slip through: ${Math.round(S2.recall[1] * S2.expected.length)} of ${S2.expected.length} – and no lawyer would look at them.`,
     `Both checks back on. Now only the pattern check off: ${M14?.doc_id ?? "M14"} no longer goes to ${who(M14?.before.triage ?? null)}.`,
   ],
-  words: [{ word: "overlap", say: "oh-ver-LAP" }],
+  words: [{ word: "overlap", say: "oh-ver-LAP" }, { word: "replay", say: "ree-PLAY" }],
 };
 
 export const COST: Slide = {
-  id: "cost", act: 4, kind: "content", title: "A few cents to read everything – and the small model was enough on our tests.", steps: 2, seconds: 25, Body: Cost,
+  id: "cost", act: 4, kind: "content", title: "A few cents to read everything – and the small model was enough on our tests.", steps: 2, seconds: 34, Body: Cost,
   notes: [
-    `Reading all ${DOCUMENTS} contracts once cost ${Math.round(COST_ALL * 100)} cents. Each question is a lookup: no model call, zero.`,
-    `A bigger model? ${BIG.toUpperCase()} costs ${RATIO} times more. Alone, it misses less. With our checks, both find every contract.`,
-    "The small model stays. The test questions decide the next one.",
+    `And the cost? Reading all ${DOCUMENTS} once: ${Math.round(COST_ALL * 100)} cents. Then a question is a lookup: no model call – not ${HOURS} hours of reading.`,
+    `A bigger model? ${BIG.toUpperCase()} costs ${RATIO} times more. Without our checks it misses less; with them, both find every contract.`,
+    `So the small model stays. A new model, new instructions or a new playbook goes live only if all ${QS.length} test questions still find everything.`,
   ],
-  words: [{ word: "GPT-4.1", say: "G-P-T four point one" }, { word: "lookup", say: "LOOK-up" }],
+  words: [{ word: "GPT-4.1", say: "G-P-T four point one" }, { word: "lookup", say: "LOOK-up" }, { word: "playbook", say: "PLAY-book" }],
 };

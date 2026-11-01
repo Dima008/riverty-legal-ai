@@ -51,7 +51,7 @@ a second API and website on the copy, the watcher on a temporary inbox, the card
            | poor scan → a person
            | not found: Limitation of liability, Data processing agreement
            | unclear → a person: Consumer terms in checkout
-           | old company name: cannot be ruled out – a person checks
+           | former name: cannot be ruled out – a person checks
 ```
 
 The same text in two more runs, with a slower model call: the answer was on the card after 14.7 s
@@ -65,7 +65,7 @@ The same text in two more runs, with a slower model call: the answer was on the 
 | the type (merchant agreement) | `doc_type` | together with the findings (one transaction) |
 | not found: … | required findings with status ABSENT, `GET /documents/H01/findings` | once the type is there; asked again with every poll |
 | unclear → a person: … | required findings with status UNCLEAR | the same |
-| old company name: cannot be ruled out – a person checks | `GET /documents/H01` → `former_names.not_ruled_out` (F19) | the same |
+| former name: cannot be ruled out – a person checks | `GET /documents/H01` → `former_names.not_ruled_out` (F19) | the same |
 | hidden instruction → four eyes | an injection flag on the document | never for H01 - do not promise it |
 
 The box under the number keeps the height of the five lines from the start, so nothing on the card

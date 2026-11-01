@@ -1,19 +1,28 @@
-// Act 5 - running it at Riverty: the Azure target next to the prototype (bought building blocks,
-// built what is Riverty's), how a contract saved in SharePoint reaches the register, and how it is
-// run: a release gate for every change, then adoption with one team and one question. Facts about
-// Microsoft services are the ones verified against Microsoft Learn (decisions 79 and 80).
+// Act 5 - running it at Riverty, and bringing it to the lawyers: the Azure target next to the
+// prototype (bought building blocks, built what is Riverty's), how a contract saved in SharePoint
+// reaches the register, and adoption with one team and one question (docs/context/briefing.md,
+// section 8). The release gate moved to the card 'cost' (decision 88). Facts about Microsoft
+// services are the ones verified against Microsoft Learn (decisions 79 and 80); numbers of our own
+// come from deck-data.json, a stored evaluation file or the briefing (?raw).
+import briefing from "../../../../docs/context/briefing.md?raw";
+import runPy from "../../../../pipeline/run.py?raw";
+import stats from "../../../../eval/results/2026-10-31_extract-v2_stats.json";
 import { Build } from "../Build";
 import type { Slide } from "../types";
 import "./acts.css";
+import deck from "./deck-data.json";
+
+const MODEL = stats.config.extraction[0].model;             // the model that read the register used in the talk
 
 // target vs prototype, per role (web/src/story/chapters/architecture/map.ts, decisions 35, 79, 80)
 const ROLES = [
   { role: "Contracts", proto: "data/inbox folder", target: "SharePoint, via Microsoft Graph" },
   { role: "Read scans", proto: "Tesseract", target: "Content Understanding" },
-  { role: "Read and check", proto: "gpt-4.1-mini", target: "Azure OpenAI in Foundry, EU data zone" },
+  // the prototype already calls Azure OpenAI (Global Standard, synthetic data only - decision 34)
+  { role: "Read and check", proto: `${MODEL} on Azure OpenAI (Global Standard, synthetic data)`, target: "Azure OpenAI in Foundry, EU data zone" },
   { role: "Register", proto: "SQLite", target: "PostgreSQL" },
-  { role: "Search", proto: "SQLite keywords + vectors", target: "Azure AI Search" },
-  { role: "Hidden instructions", proto: "6 patterns", target: "+ Prompt Shields" },
+  { role: "Search", proto: "SQLite keywords + embeddings", target: "Azure AI Search" },
+  { role: "Hidden instructions", proto: "a pattern check", target: "+ Prompt Shields" },
   { role: "Who may decide", proto: "two simulated reviewers", target: "Entra ID roles" },
   { role: "Runs", proto: "on the laptop", target: "Container Apps" },
 ];
@@ -37,11 +46,11 @@ function Azure() {
           <p>What is Riverty's: the playbook, the evidence trail, the storage boundary.</p>
         </Build>
         <Build at={2} className="x-key">
-          The innovation is not the framework. It is the architecture: <em>a small, structured world for the AI</em>,
-          every finding with evidence – the framework stays replaceable.
+          The value is not a framework. It is the architecture: <em>a small, structured world for the AI</em> – every
+          finding with evidence.
         </Build>
-        <Build at={2} className="x-step-proof">
-          Planned, not built: tools as MCP servers, an agent framework, agentic RAG, reranking, a CI pipeline, tracing.
+        <Build at={2} className="x-az-plan">
+          Orchestration: Microsoft Agent Framework, LangGraph as fallback – replaceable · the Azure column is the target, not built yet
         </Build>
       </div>
     </div>
@@ -51,10 +60,20 @@ function Azure() {
 // Verified facts (scratchpad ms_design.json "sharepoint", decision 79): a subscription on a library
 // only says "something changed" (changeType "updated", no file); the delta query says what; lifetime
 // 42,300 minutes; Microsoft: notifications usually under a minute, at most six hours, and lost ones
-// cannot be recovered - hence the scheduled delta run and the count check.
+// cannot be recovered - hence the scheduled delta run (the design also counts files; the card leaves
+// that out, it is never explained). Read rights and renewal
+// are in the deep dive 'graph-details'. Not built (CLAUDE.md, known gaps): the card is tagged as the
+// target design and says "would"; the prototype's way in is the folder of follow-m18 and live-add.
+// The seconds for M18 are its two model calls only
+// (deck.m18.model: reading + checking) - download, OCR and indexing are not measured per document,
+// so card and note say "the model calls", never the whole pipeline.
+const M18_SECONDS = Math.round(deck.m18.model.seconds);
+const WATCH_S = Number(/"--interval", type=int, default=(\d+)/.exec(runPy)?.[1]);   // the prototype's inbox watcher
+
 function SharePoint() {
   return (
     <div>
+      <div className="x-sp-tag"><span className="x-tag planned">target design</span> not built yet · prototype today: a folder, checked every {WATCH_S} s</div>
       <div className="x-sp">
         <div className="x-st code"><span className="x-st-kind">person</span><span className="x-st-name">Saved</span><span className="x-st-fact">a lawyer saves a contract in the SharePoint library</span></div>
         <span className="x-sp-arrow">→</span>
@@ -62,71 +81,93 @@ function SharePoint() {
         <span className="x-sp-arrow">→</span>
         <Build at={1} className="x-st code"><span className="x-st-kind">our service</span><span className="x-st-name">“What changed?”</span><span className="x-st-fact">the delta query lists new, changed and deleted files</span></Build>
         <span className="x-sp-arrow">→</span>
-        <Build at={2} className="x-st store"><span className="x-st-kind">pipeline</span><span className="x-st-name">In the register</span><span className="x-st-fact">download, hash, read and check – about 7 s for M18</span></Build>
+        <Build at={2} className="x-st store"><span className="x-st-kind">pipeline</span><span className="x-st-name">In the register</span><span className="x-st-fact">download, then the fixed steps – for {deck.m18.doc_id}, the model calls took about {M18_SECONDS} s</span></Build>
       </div>
-      <Build at={3} className="x-sp-net">
+      <Build at={3} className="x-sp-net two">
         <div className="x-fact">Usually <b>under a minute</b>, at most <b>six hours</b> – Microsoft's numbers for the message.</div>
-        <div className="x-fact">Messages can get lost: a <b>scheduled delta run</b> and a count check catch every file.</div>
-        <div className="x-fact">Read rights on <b>one library</b> only · the subscription is renewed before 30 days.</div>
+        <div className="x-fact">Messages can get lost: a <b>scheduled delta run</b> would catch every file.</div>
       </Build>
     </div>
   );
 }
 
-function RunIt() {
+// Adoption (docs/context/briefing.md, section 8): co-design with a few power users and a baseline,
+// a pilot next to today's process, training in reading evidence (automation bias, AI Act Art. 4),
+// rollout team by team; Legal owns the rules, corrections flow back into the test set after
+// review; measured against the baseline: time per question, overrides, review load.
+const POWER_USERS = /co-design with (\d+)–(\d+) power users/.exec(briefing);
+const [FEW_LO, FEW_HI] = [POWER_USERS?.[1] ?? "?", POWER_USERS?.[2] ?? "?"];
+
+function Adoption() {
   return (
     <div className="x-ra">
       <div>
-        <h3>Every change is a release</h3>
+        <h3>Start small</h3>
         <ol className="x-ol">
-          <li>A new model, prompt or playbook version</li>
-          <li>The 8 test questions must stay at 100 % found</li>
-          <li>Only then it goes live – watched: cost, speed, how often lawyers overrule a finding</li>
+          <li>Measure today, with {FEW_LO}–{FEW_HI} lawyers</li>
+          <li>One question next to the old way, for a few weeks</li>
+          <li>Training: read the evidence on the page – don't trust blindly</li>
+          <li>Then the next question, the next team</li>
         </ol>
       </div>
       <Build at={1}>
-        <h3>Adoption: one team, one question</h3>
+        <h3>Legal owns it</h3>
         <ol className="x-ol">
-          <li>Measure today: minutes per contract, with Legal</li>
-          <li>One question, next to the old way, for a few weeks</li>
-          <li>Count review load and overrides</li>
-          <li>Then the next question</li>
+          <li>The playbook is Legal's – their guidelines, as data</li>
+          <li>Corrections go into the test set, after review</li>
+          <li>Measured against today: time per question · how often lawyers overrule · review load</li>
         </ol>
       </Build>
     </div>
   );
+}
+
+// ---------------------------------------------------------------- guards (development only)
+if (import.meta.env.DEV) {
+  const problems = [
+    !POWER_USERS && "card 'run-it': the briefing no longer says 'co-design with N–M power users' (section 8)",
+    !(M18_SECONDS > 0) && "card 'sharepoint': M18's model seconds are missing in deck-data.json",
+    !(WATCH_S > 0) && "card 'sharepoint': the watcher's interval is no longer in pipeline/run.py",
+    !(deck.m18.model.calls > 1) && "card 'sharepoint': the note speaks of M18's model calls (reading and checking) - deck-data.json has fewer",
+    MODEL !== (deck.m18.stations.find((s) => s.station === "extract")?.facts as Record<string, unknown> | undefined)?.model
+      && "card 'azure': the model of the stored evaluation is not the one that read M18 in the register",
+  ].filter(Boolean);
+  for (const p of problems) console.error(`act 5: ${p}`);
 }
 
 export const ACT5: Slide[] = [
   {
     id: "act-5", act: 5, kind: "opener", title: "Running it at Riverty", steps: 0, seconds: 4,
-    notes: ["How would this run at Riverty?"],
+    notes: ["How would Riverty run it – and adopt it?"],
+    words: [{ word: "adopt", say: "uh-DOPT" }],
   },
   {
-    id: "azure", act: 5, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 40, Body: Azure,
+    id: "azure", act: 5, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 41, Body: Azure,
     notes: [
-      "The prototype runs on my laptop. Every part has its Azure service: SharePoint, Content Understanding, Azure OpenAI, AI Search, Entra ID.",
-      "We buy the building blocks. We build only what is Riverty's: the playbook, the evidence, the storage boundary.",
-      "The innovation is not the framework. It is a small, structured world for the AI, with evidence for every finding. Some parts are still only planned, and I say so.",
+      "Each prototype part has its Azure service. Content Understanding reads scans. Azure OpenAI in the EU data zone keeps contract text in the EU. Entra ID decides who may approve.",
+      "We buy the building blocks. We build what is Riverty's: playbook, evidence, storage boundary.",
+      "A framework runs the steps: Agent Framework, LangGraph as fallback – replaceable. The value is the architecture: a small, structured world for the AI, with evidence for every finding. The Azure column is the target, not built yet.",
     ],
-    words: [{ word: "Azure", say: "AZH-er" }, { word: "Entra", say: "EN-truh" }, { word: "framework", say: "FRAYM-wurk" }],
+    words: [{ word: "Azure", say: "AZH-er" }, { word: "Entra", say: "EN-truh" }, { word: "LangGraph", say: "LANG-graf" }],
   },
   {
-    id: "sharepoint", act: 5, kind: "content", title: "Saved in SharePoint – how does it reach the register?", steps: 3, seconds: 40, Body: SharePoint,
+    id: "sharepoint", act: 5, kind: "content", title: "Saved in SharePoint – how does it reach the register?", steps: 3, seconds: 35, Body: SharePoint,
     notes: [
-      "A lawyer saves a contract in SharePoint.",
-      "Microsoft Graph sends us a short message: something changed. It never says which file. So we ask: what changed? That is the delta query.",
-      "Then the pipeline reads it. For M18 that took about seven seconds.",
-      "Messages usually arrive within a minute, at most six hours. They can get lost, so a scheduled run checks everything again.",
+      // the target, not built (tag on screen): what is not built says would; the pipeline and its seconds are built and measured
+      "Target design: a lawyer saves a contract in SharePoint.",
+      "We would subscribe to the library. Microsoft Graph – Microsoft's interface to SharePoint – says only: something changed. The delta query then asks: what changed?",
+      `Then the pipeline reads it – the fixed steps you saw with ${deck.m18.doc_id}. Its model calls took about ${M18_SECONDS} seconds.`,
+      "Messages usually come within a minute, at most six hours. Lost ones? A scheduled run would check again.",
     ],
-    words: [{ word: "Graph", say: "GRAF" }, { word: "delta", say: "DEL-tuh" }, { word: "scheduled", say: "SHED-yoold" }],
+    words: [{ word: "subscribe", say: "sub-SKRIBE" }, { word: "Graph", say: "GRAF" }, { word: "scheduled", say: "SHED-yoold" }],
   },
   {
-    id: "run-it", act: 5, kind: "content", title: "A release gate for every change, then one team and one question.", steps: 1, seconds: 35, Body: RunIt,
+    id: "run-it", act: 5, kind: "content", title: "Adoption: one team, one question – measured against today.", steps: 1, seconds: 40, Body: Adoption,
     notes: [
-      "A new model or prompt is a release, not a setting. It goes live only if all eight test questions still find everything. Then we watch cost, speed and how often lawyers overrule.",
-      "Adoption starts small. We measure the minutes per contract today, run one question next to the old way, count the reviews. Then the next question.",
+      `Adoption starts with a pilot: one team, one question. First we measure today, with ${FEW_LO} or ${FEW_HI} lawyers. ` +
+        "Then the question runs next to the old way, for a few weeks. Training: read the evidence on the page – don't trust it blindly. Then the next question, the next team.",
+      "Legal owns it: the playbook is their guidelines, as data. Corrections go into the test set. We measure against today: time per question, how often lawyers overrule, how much they review.",
     ],
-    words: [{ word: "release", say: "rih-LEESS" }, { word: "overrule", say: "oh-ver-ROOL" }, { word: "adoption", say: "uh-DOP-shun" }],
+    words: [{ word: "adoption", say: "uh-DOP-shun" }, { word: "guidelines", say: "GIDE-lines" }, { word: "overrule", say: "oh-ver-ROOL" }],
   },
 ];

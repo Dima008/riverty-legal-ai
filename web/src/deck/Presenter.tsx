@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { stepKeys, useDeckKeys, useDeckNav, useDeckSync, useWakeLock } from "./nav";
 import { Overview } from "./Overview";
 import { SlideView } from "./SlideView";
-import { mmss, SLIDES, TOTAL_SECONDS } from "./slides";
+import { CHECKPOINTS, mmss, plannedStart, SKIP_IF_LATE, SLIDES, TOTAL_SECONDS } from "./slides";
 import "./deck.css";
 
 const SIZES = { min: 18, max: 40, start: 26, step: 2 };
@@ -81,9 +81,15 @@ export function Presenter({ slideId, step }: { slideId: string; step: number }) 
 
   const next = current < slide.steps ? { slide, step: current + 1 }
     : SLIDES[index + 1] ? { slide: SLIDES[index + 1], step: 0 } : null;
-  const plannedHere = SLIDES.slice(0, index).reduce((sum, s) => sum + s.seconds, 0);
+  const plannedHere = plannedStart(index);
   const elapsed = started === null ? null : Math.max(0, Math.floor((now - started) / 1000));
   const behind = elapsed === null ? 0 : elapsed - plannedHere;
+  // the next checkpoint (act start, or the register); when it is already past: what can still be skipped
+  const checkpoint = slide.deep ? undefined : CHECKPOINTS.find((c) => c.index > index);
+  const late = elapsed !== null && checkpoint !== undefined && elapsed > checkpoint.at;
+  const at = (id: string) => SLIDES.findIndex((s) => s.id === id);
+  const skips = SKIP_IF_LATE.filter((k) => at(k.id) > index || (at(k.id) === index && k.build !== undefined && current < k.build))
+    .map((k) => (k.build === undefined ? k.id : `${k.id} from build ${k.build}`));
   const blur = (e: React.MouseEvent) => (e.target as HTMLElement).closest("button")?.blur();   // keys keep working after a click
 
   return (
@@ -95,6 +101,12 @@ export function Presenter({ slideId, step }: { slideId: string; step: number }) 
         ) : (
           <span className={`pv-plan${behind > 30 ? " late" : ""}`}>
             plan here {mmss(plannedHere)} of {mmss(TOTAL_SECONDS)} · {behind >= 0 ? `${mmss(behind)} behind` : `${mmss(-behind)} ahead`}
+          </span>
+        )}
+        {checkpoint && (
+          <span className={`pv-check${late ? " late" : ""}`}>
+            {checkpoint.label} by {mmss(checkpoint.at)}
+            {late && skips.length > 0 && <> · late: skip {skips.join(", then ")}</>}
           </span>
         )}
         <span className="pv-pos">card {index + 1} / {SLIDES.length} · build {current} / {slide.steps} · {slide.seconds} s</span>
