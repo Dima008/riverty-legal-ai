@@ -1,8 +1,11 @@
 // The proof at the end of part 3, the technical solution (decision 90; the trap map is a deep dive
-// now, its CUAD sentence is said here): how many answers were complete and how sure we can be, a safeguard switched off live (the
-// stored model answers replayed on a copy of the register), and what reading costs - whether a
-// bigger model would help, and the release gate that decides the next one (merged here from the old
-// card 'run-it', decision 88). Every number is read from a
+// now, its CUAD sentence is said here): how many answers were complete and how sure we can be. Two
+// deep dives since decision 96 (the main track at most 22:00 without cuts; listed in deep.tsx): a
+// safeguard switched off live (the stored model answers replayed on a copy of the register), and what
+// reading costs - whether a bigger model would help, and the release gate that decides the next one
+// (merged here from the old card 'run-it', decision 88). On the main track, 'what-we-use' says the
+// cents of a full run, 'register' "no model call", 'run-it' the task's productivity and 'azure' the
+// gate ("any model must first pass the test questions"). Every number is read from a
 // stored evaluation file, the running API or the card that said it first - nothing is typed by hand.
 import { useEffect, useRef, useState } from "react";
 import goldQueries from "../../../../data/gold_queries.json";
@@ -19,6 +22,8 @@ import stored from "../../../../eval/results/2026-10-31_what_if.json";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import { ACT1 } from "./act1";
+import deck from "./deck-data.json";
+import { say } from "./prompts-data";
 import { CUAD_AGREE, CUAD_N, FOUND_BY_CUAD } from "./testset-data";
 import "./proof.css";
 
@@ -145,7 +150,7 @@ function Results() {
             recall={q.recall} low={q.recall_lower_95} band={step >= 1} />
         ))}
         <Build at={2} className="p-pooled">
-          <Ruler id="All" name="every answer together" of={`${POOLED.found} of ${POOLED.expected}`}
+          <Ruler id="All" name={`every answer · ${DISTINCT} contracts`} of={`${POOLED.found} of ${POOLED.expected}`}
             recall={POOLED.found / POOLED.expected} low={POOLED.recall_lower_95} band />
         </Build>
         <Build at={1} className="p-foot">band: 95 % sure the true rate is at least here (one-sided, Clopper–Pearson)</Build>
@@ -396,6 +401,8 @@ function Cost() {
 // the replays the notes of 'what-if' speak about: build 1, build 2, and the injection switch
 const S1 = q1Of(STORED[0]), S2 = q1Of(STORED[1]);
 const SLIPPED = S2.missed.join(" and ");
+// Q1's unclear contracts in the register (the amber cells of the card 'register')
+const Q1_UNCLEAR = deck.register.rows.filter((r) => !r.copy_of && r.cells[0] === "UNCLEAR").map((r) => r.id);
 const M14 = STORED[2].changes.find((c) => c.clause_type === Q1_CLAUSE);
 
 // ---------------------------------------------------------------- guards (development only)
@@ -430,6 +437,7 @@ if (import.meta.env.DEV) {
     RUNS_COMPLETE !== RUNS.length && "the notes of 'results' say every run from scratch was complete",
     !(HOURS > 0) && "card 'cost' repeats the hours of one question from the card 'today' - its note no longer says 'about N hours'",
     !S2.missed.includes("M08") && "note 0 of 'what-if' calls back to M08 - it no longer slips through with both checks off",
+    !sameSet(S2.missed, Q1_UNCLEAR) && `note 2 of 'what-if' says the contracts that slip through are Q1's unclear ones (${Q1_UNCLEAR}) - the replay says ${S2.missed}`,
     QS.length !== goldQueries.length && "the release gate on 'cost' names every test question - stats and gold_queries.json differ",
     !(MINI_ROW.complete && BIG_ROW.complete) && "the notes of 'cost' say both models find every contract",
     !(mean(BIG_ROW.alone) > mean(MINI_ROW.alone)) && "note 1 of 'cost' says the bigger model alone misses less",
@@ -446,32 +454,32 @@ if (import.meta.env.DEV) {
 
 // ---------------------------------------------------------------- the cards
 export const RESULTS: Slide = {
-  id: "results", act: 3, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 39, Body: Results,
+  id: "results", act: 3, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 56, Body: Results,
   notes: [
     // 'Deliver' is the third phase of the card 'how-i-worked'; the CUAD sentence came from the card
     // 'test-set' (a deep dive since decision 90). The task: "while learning and improving ourselves".
-    `Deliver: does it work – how do I know? ${RUNS.length} runs from scratch: complete, no false alarm. ` +
+    `Deliver: does it work – how do I know? ${RUNS.length} runs from scratch: every expected contract found, no false alarm. ` +
       `Real contracts, labelled by experts: we agree on ${CUAD_AGREE} of ${CUAD_N}. They showed ${FOUND_BY_CUAD.length} errors my traps missed – all fixed.`,
-    `Sure? ${Q1_N} of ${Q1_N} could still mean ${Math.round(Q1.recall_lower_95 * 100)} percent. ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
-    `All ${POOLED.expected} answers together: at least ${Math.round(POOLED.recall_lower_95 * 100)} percent. But I tuned on these ${DISTINCT} contracts. ` +
+    `How sure? ${Q1_N} of ${Q1_N} – at 95 percent, the true rate could still be ${Math.round(Q1.recall_lower_95 * 100)} percent. ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
+    `All ${POOLED.expected} answers together: at least ${Math.round(POOLED.recall_lower_95 * 100)} percent. But the ${POOLED.expected} answers come from only ${DISTINCT} contracts, and I tuned on this test set. ` +
       "Planned: a sealed test set – new contracts I never tune on.",
   ],
   words: [{ word: "scratch", say: "SKRATCH" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
 };
 
 export const WHAT_IF: Slide = {
-  id: "what-if", act: 3, kind: "content", title: "Switch a safeguard off – live.", steps: SCENARIOS.length, seconds: 46, Body: WhatIf,
+  id: "what-if", act: 7, kind: "content", title: "Switch a safeguard off – live.", steps: SCENARIOS.length, seconds: 54, deep: true, Body: WhatIf,
   notes: [
     "Remember M08: the model said found, the checks said unclear. What if the checks were off? I replay the stored answers on a copy – no model call, no cost.",
     `The second model call, off. Q1 still finds all ${Math.round(S1.recall[1] * S1.expected.length)}. The checks overlap – watch the next switch.`,
-    `Now the words check off too. ${SLIPPED} slip through: ${Math.round(S2.recall[1] * S2.expected.length)} of ${S2.expected.length} – and no lawyer would look at them.`,
+    `Now the words check off too. ${SLIPPED}, the ${say(S2.missed.length)} unclear ones, slip through: ${Math.round(S2.recall[1] * S2.expected.length)} of ${S2.expected.length}. No lawyer would look at them.`,
     `Both checks back on. Now only the pattern check off: ${M14?.doc_id ?? "M14"} no longer goes to ${who(M14?.before.triage ?? null)}.`,
   ],
   words: [{ word: "overlap", say: "oh-ver-LAP" }, { word: "replay", say: "ree-PLAY" }],
 };
 
 export const COST: Slide = {
-  id: "cost", act: 3, kind: "content", title: "A few cents to read everything – and the small model was enough on our tests.", steps: 2, seconds: 38, Body: Cost,
+  id: "cost", act: 7, kind: "content", title: "A few cents to read everything – and the small model was enough on our tests.", steps: 2, seconds: 45, deep: true, Body: Cost,
   notes: [
     // the task: "create more with the same number of engineers" - said for Legal
     `And the cost? Reading all ${DOCUMENTS} once: ${Math.round(COST_ALL * 100)} cents. Then a question is a lookup – not ${HOURS} hours. ` +

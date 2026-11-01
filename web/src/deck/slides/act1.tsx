@@ -56,16 +56,18 @@ function TaskSnippets() {
 }
 
 // ---------------------------------------------------------------- today: one question in hours
-// The partner counts are Riverty's (the addendum of the case study); five minutes per contract is
-// my assumption, to be measured with Legal first.
+// The partner counts are Riverty's (the addendum of the case study); "over 1,100 contracts" is my
+// lower bound from them - at least one contract per partner - and the note says so (order pass #38).
+// Five minutes per contract is my assumption, to be measured with Legal first. CONTRACTS and n are
+// also used by the card 'agent' (act2.tsx), so both cards say the same number.
 const CASE = caseStudy.replace(/\s+/g, " ");
 const over = (who: string) => Number(new RegExp(`over ([\\d,]+) ${who}`).exec(CASE)?.[1].replace(/,/g, "") ?? NaN);
 const VENDORS = over("vendors");
 const MERCHANTS = over("merchants");
-const CONTRACTS = VENDORS + MERCHANTS;
+export const CONTRACTS = VENDORS + MERCHANTS;
 const MINUTES = 5;                                                   // per contract - an assumption
 const HOURS = Math.round((CONTRACTS * MINUTES) / 60 / 10) * 10;      // 91.7 h -> "≈ 90 h"
-const n = (x: number) => x.toLocaleString("en");
+export const n = (x: number) => x.toLocaleString("en");
 
 function Today() {
   return (
@@ -121,7 +123,7 @@ function Hard() {
       <Build at={3} className="card hard">
         <div className="hard-visual quotes">
           <q>total <b>liability</b> … limited to the total fees paid</q>
-          <q>neither side will have to pay the other more than … the fees</q>
+          <q>neither side will have to pay the other more than … charged in fees</q>
           <q>Gesamthaftung … auf die Summe der Entgelte begrenzt</q>
         </div>
         <div className="hard-title">Same clause, different words</div>
@@ -145,8 +147,12 @@ function Insight() {
 if (import.meta.env.DEV) {
   const problems = [
     ...SNIPPETS.filter((s) => !CASE.includes(s.quote)).map((s) => `card 'task' quotes a sentence that is not in the case study: "${s.quote}"`),
+    SNIPPETS.length !== 6 && `card 'task': the title says six sentences - the card shows ${SNIPPETS.length}`,
+    // Dima's opener note picks up the case study's "whether AI could help ... purely repetitive work"
+    !(CASE.includes("whether AI could help") && CASE.includes("purely repetitive work")) && "card 'part-1': the note picks up 'whether AI could help' and 'purely repetitive work' - the case study no longer says so",
     !(VENDORS > 0 && MERCHANTS > 0) && "card 'today': the vendor or merchant count is no longer in the case study",
     !RENAME?.contract && "card 'hard': the register has no amendment that renames a contract",
+    !(RENAME?.old.startsWith("Arvato") && RENAME?.to.startsWith("Riverty")) && "card 'hard': the note calls the old name Riverty's old name - the amendment renames something else",
     RENAME && year(RENAME.amends_date) !== year(deck.register.rows.find((r) => r.id === RENAME.contract)?.date)
       && "card 'hard': the amendment's date of the amended contract is not the contract's date",
   ].filter(Boolean);
@@ -155,27 +161,29 @@ if (import.meta.env.DEV) {
 
 export const ACT1: Slide[] = [
   {
-    // 25 s (decision 90): room for the agenda and one sentence about Dima himself.
+    // 27 s: the note needs 24 s at 115 wpm; what is left under 22:00 after decision 96 is 3 s, not
+    // the ~15 s wanted for one sentence about Dima himself (decision 90) - see the TODO.
     // TODO(Dima): write that sentence yourself - Riverty: "we want to get to know you, not only your
     // slides". Not invented for you on purpose; until then the note below (the question, then the
     // agenda along Riverty's outline) is the whole title card.
-    id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 25, Body: TitleBody,
+    id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 27, Body: TitleBody,
     notes: [
-      "Hello, I'm Dima. Riverty's lawyers keep asking one kind of question: which contracts are missing something? In under twenty minutes I show how I'd answer it – with a working prototype. " +
+      "Hello, I'm Dima. Riverty's lawyers keep asking one kind of question: which contracts are missing something? In about twenty minutes I show how I'd answer it – with a working prototype. " +
         "I follow your outline: from the problem to adoption, then it runs live.",
     ],
     words: [{ word: "Riverty's", say: "RIV-er-teez" }, { word: "prototype", say: "PROH-tuh-type" }],
   },
   {
-    id: "part-1", act: 1, kind: "opener", title: "The problem", steps: 0, seconds: 4,
+    id: "part-1", act: 1, kind: "opener", title: "The problem", steps: 0, seconds: 12,
     quote: ["One of these challenges is making our legal team more efficient."],
     notes: [
-      "First, the problem: what does Legal actually ask?",
+      // Dima's wish (Notion card 2, 1.11.); Riverty's words: "whether AI could help", "purely repetitive work"
+      "First, the problem. Legal asked whether AI could help with this purely repetitive work – so the team gets more done.",
     ],
-    words: [],
+    words: [{ word: "repetitive", say: "rih-PET-ih-tiv" }],
   },
   {
-    id: "task", act: 1, kind: "content", title: "I read Riverty's task sentence by sentence.", steps: 2, seconds: 40, Body: TaskSnippets,
+    id: "task", act: 1, kind: "content", title: "Six sentences that shaped the solution.", steps: 2, seconds: 42, Body: TaskSnippets,
     notes: [
       "I started with Riverty's own words, sentence by sentence. Two sentences are Legal's questions: contracts without a certain passage, and contracts with a former company name. Both are about every contract.",
       "Today it is done by hand: open, search, verify. And some contracts are old handwritten scans, only images.",
@@ -184,26 +192,26 @@ export const ACT1: Slide[] = [
     words: [{ word: "passage", say: "PASS-ij" }, { word: "verify", say: "VER-ih-fy" }, { word: "evidence", say: "EV-ih-dence" }],
   },
   {
-    id: "today", act: 1, kind: "content", title: "Today: open every contract, search, note it down.", steps: 2, seconds: 26, Body: Today,
+    id: "today", act: 1, kind: "content", title: "Today: open every contract, search, note it down.", steps: 2, seconds: 34, Body: Today,
     notes: [
-      `What does one question cost today? Riverty has over ${n(CONTRACTS)} contracts. Over ${n(VENDORS)} vendors, over ${n(MERCHANTS)} merchants.`,
+      `What does one question cost today? Riverty works with over ${n(VENDORS)} vendors and over ${n(MERCHANTS)} merchants – so over ${n(CONTRACTS)} contracts.`,
       `I assume ${MINUTES} minutes per contract: open, search, note. We'd measure it with Legal first.`,
-      `That's about ${HOURS} hours for one question. And again for the next one.`,
+      `That's about ${HOURS} hours for one question. And again for the next one. Repetitive work – nobody enjoys it.`,
     ],
     words: [{ word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }, { word: "measure", say: "MEZH-er" }],
   },
   {
-    id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 38, Body: Hard,
+    id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 49, Body: Hard,
     notes: [
       "Why not just search for a word?",
       "First, scans. Most are PDFs with text – we read that directly. Some are only images, like this one. OCR – text recognition – reads them. Later, a handwritten one, live.",
-      `Second, amendments. A contract from ${year(RENAME.amends_date)} names ${RENAME.old.split(" ")[0]}; its ${year(RENAME.date)} amendment says: read as ${RENAME.to.split(" ")[0]}. The answer needs both.`,
+      `Second, amendments. A contract from ${year(RENAME.amends_date)} names ${RENAME.old.split(" ")[0]}, Riverty's old name. Its ${year(RENAME.date)} amendment says: read as ${RENAME.to.split(" ")[0]}. The answer needs both.`,
       "Third, wording. All three cap liability. The second never says liability, the third is German. Keywords miss them. Remember the second one.",
     ],
     words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "amendment", say: "uh-MEND-ment" }, { word: "recognition", say: "rek-ug-NISH-un" }],
   },
   {
-    id: "insight", act: 1, kind: "statement", title: "To prove that something is missing, you have to read everything.", steps: 1, seconds: 22, Body: Insight,
+    id: "insight", act: 1, kind: "statement", title: "To prove that something is missing, you have to read everything.", steps: 1, seconds: 24, Body: Insight,
     notes: [
       "Finding is easy: you stop at the first hit. To prove something is not there, you must read every contract, every page.",
       "And today that reading starts again for every new question. That is the lever: read everything once – and prove it.",

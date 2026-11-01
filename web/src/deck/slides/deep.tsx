@@ -2,14 +2,18 @@
 // them from the overview (O) when a question comes. Numbers from deck-data.json and decisions 79/80.
 // Since decision 90 three former main-track cards are here too (test-set, embedding-map,
 // register-index - imported from the files of their parts), and the two prompts word for word.
+// Since decision 96 four more (injection, what-if, cost, sharepoint), each next to its neighbours:
+// the main track's order, like the rest.
 import { useState } from "react";
 import shieldsProbePy from "../../../../eval/prompt_shields_probe.py?raw";
 import runPy from "../../../../pipeline/run.py?raw";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import { EMBEDDING_MAP } from "./act2";
-import { REGISTER_INDEX } from "./act3";
+import { INJECTION, REGISTER_INDEX } from "./act3";
 import { TEST_SET } from "./act4";
+import { SHAREPOINT } from "./act5";
+import { COST, WHAT_IF } from "./proof";
 import { CHECKER, CHECKER_ASK, CLAUSES, READER, READER_ASK, RULES, Say, TEMPERATURE, say } from "./prompts-data";
 import "./acts.css";
 import deck from "./deck-data.json";
@@ -21,7 +25,7 @@ import deck from "./deck-data.json";
 // copies: 'human'). Amendments: renames are resolved today (Q2), clause changes are a known gap.
 const CHOICES = [
   { problem: "Prove what is missing", tech: "Read every contract into a register", sub: "one table: every contract against Legal's playbook", not: "top-k search · a free agent" },
-  { problem: "Scans and photos", tech: "OCR, page by page, with a confidence", sub: "Tesseract now · Content Understanding on Azure", not: "" },
+  { problem: "Scans and photos", tech: "OCR, page by page, with a confidence", sub: "Tesseract now · planned: Content Understanding on Azure", not: "" },
   { problem: "Amendments", tech: "Read with their contract", sub: "names today, clause changes planned", not: "each file alone" },
   { problem: "Same clause, other words", tech: "A model reads against the playbook", sub: "the same definitions for every contract", not: "keywords" },
   { problem: "A model can be wrong", tech: "A quote we find + a second model call", sub: "", not: "the model's own confidence" },
@@ -130,14 +134,15 @@ function MsChecks() {
     <div className="x-two">
       <div className="x-az-list">
         {LAYERS.map((l) => (
-          <div key={l.layer} className="x-az-row" style={{ gridTemplateColumns: "1.6fr 1fr" }}>
+          <div key={l.layer} className="x-az-row" style={{ gridTemplateColumns: "1.6fr 1fr auto" }}>
             <span className="proto">{l.layer}</span><span className={l.ms ? "target" : "role"}>{l.who}</span>
+            <span className={`x-tag ${l.ms ? "planned" : "built"}`} style={{ alignSelf: "center" }}>{l.ms ? "planned" : "built"}</span>
           </div>
         ))}
       </div>
       <Build at={1} className="x-side">
         <div className="x-fact">Prompt Shields says only <b>yes or no</b> per document, without the position. So our pattern check stays for the highlight.</div>
-        <div className="x-fact">Measured: {ps.flagged.length - 1} false alarm in {ps.chunks} passages ({ps.flagged.filter((f) => !f.startsWith("M14")).join(", ")}, data protection rules written as orders). A hit means <b>four eyes</b>, never a block.</div>
+        <div className="x-fact">Measured once: {ps.flagged.length - 1} false alarm in {ps.chunks} passages ({ps.flagged.filter((f) => !f.startsWith("M14")).join(", ")}, data protection rules written as orders). Planned: a hit would mean <b>four eyes</b>, never a block.</div>
         {SHIELDS_PASS_USD > 0 && <div className="x-fact">A full pass over the register: about <b>${SHIELDS_PASS_USD.toFixed(2)}</b>.</div>}
       </Build>
     </div>
@@ -151,13 +156,16 @@ const WATCH_S = Number(/"--interval", type=int, default=(\d+)/.exec(runPy)?.[1])
 
 function GraphDetails() {
   return (
-    <div className="x-sp-net" style={{ gridTemplateColumns: "1fr 1fr" }}>
-      <div className="x-fact">A subscription on the library's root folder covers every file in it – only <b>“something changed”</b>, no file name.</div>
-      <div className="x-fact">The <b>delta query</b> returns new, changed and deleted files – and a bookmark for next time.</div>
-      <div className="x-fact">Lifetime at most <b>42,300 minutes</b> (under 30 days): renew it in time.</div>
-      <div className="x-fact">Our address must answer Microsoft's test within <b>10 s</b>; a message counts only with an answer within <b>3 s</b>, then retries for up to 4 hours.</div>
-      <Build at={1} className="x-fact">Read rights on the one library only (<b>Sites.Selected</b>) – not on all of SharePoint.</Build>
-      <Build at={1} className="x-fact">Prototype: the folder data/inbox, checked every {WATCH_S} s – same interface, same pipeline.</Build>
+    <div>
+      <div className="x-sp-tag"><span className="x-tag planned">target design</span> not built yet</div>
+      <div className="x-sp-net" style={{ gridTemplateColumns: "1fr 1fr", marginTop: 0 }}>
+        <div className="x-fact">A subscription on the library's root folder covers every file in it – only <b>“something changed”</b>, no file name.</div>
+        <div className="x-fact">The <b>delta query</b> returns new, changed and deleted files – and a bookmark for next time.</div>
+        <div className="x-fact">Lifetime at most <b>42,300 minutes</b> (under 30 days): renew it in time.</div>
+        <div className="x-fact">Our address must answer Microsoft's test within <b>10 s</b>; a message counts only with an answer within <b>3 s</b>, then retries for up to 4 hours.</div>
+        <Build at={1} className="x-fact">Read rights on the one library only (<b>Sites.Selected</b>) – not on all of SharePoint.</Build>
+        <Build at={1} className="x-fact">Prototype today: the folder data/inbox, checked every {WATCH_S} s – the same pipeline after it.</Build>
+      </div>
     </div>
   );
 }
@@ -446,7 +454,7 @@ export const DEEP: Slide[] = [
   {
     id: "decoy", act: 7, kind: "content", title: "Embeddings know the topic – not whether the clause is there.", steps: 1, seconds: 40, deep: true, Body: Decoy,
     notes: [
-      `These are real similarities to M01's liability section. M10's indemnification clause has no cap, but it scores ${DECOY_NO_CAP.toFixed(3)}.`,
+      `These are real similarities to M01's liability section. M10's indemnification clause – who pays for whose damage – has no cap, but it scores ${DECOY_NO_CAP.toFixed(3)}.`,
       `M19's real cap, in German, scores only ${DECOY_CAP.toFixed(3)}. Embeddings say what a text is about. Whether it is a cap, the model and the checks decide.`,
     ],
     words: [{ word: "indemnification", say: "in-dem-nih-fih-KAY-shun" }, { word: "similarity", say: "sim-ih-LAR-ih-tee" }],
@@ -482,6 +490,7 @@ export const DEEP: Slide[] = [
     ],
     words: [{ word: "schema", say: "SKEE-muh" }, { word: "JSON", say: "JAY-sun" }, { word: "characters", say: "KAR-ik-terz" }],
   },
+  INJECTION,          // after 'checks' on the main track; the prompts' "the contract is data, not orders" follows
   {
     // what the model is told, word for word (decision 90); the note says what the rules mean
     id: "prompts", act: 7, kind: "content", title: "Two prompts, word for word.", steps: 1, seconds: 40, deep: true, Body: Prompts,
@@ -516,19 +525,25 @@ export const DEEP: Slide[] = [
     ],
     words: [{ word: "hybrid", say: "HY-brid" }, { word: "reranker", say: "ree-RANK-er" }, { word: "damages", say: "DAM-ih-jiz" }],
   },
+  WHAT_IF,            // the proof after 'results': a safeguard off, then the cost and the bigger model
+  COST,
   {
-    id: "ms-checks", act: 7, kind: "content", title: "Microsoft at the edges, our own checks in the middle.", steps: 1, seconds: 40, deep: true, Body: MsChecks,
+    // order pass #1: Content Understanding, Prompt Shields as a layer and Entra ID are planned - Prompt
+    // Shields was measured once (eval/prompt_shields_probe.py), it is not a layer of the pipeline
+    id: "ms-checks", act: 7, kind: "content", title: "Microsoft at the edges (planned), our own checks in the middle (built).", steps: 1, seconds: 40, deep: true, Body: MsChecks,
     notes: [
-      "Microsoft services do what they do best: reading scans, a second opinion on hidden instructions, and identity.",
-      "Prompt Shields only says yes or no, without the position. So our own check stays. A hit means four eyes, never a block.",
+      "On Azure, Microsoft services would do what they do best: reading scans, a second opinion on hidden instructions, and identity. Planned, not built.",
+      "I measured Prompt Shields once. It only says yes or no, without the position. So our own check stays. A hit would mean four eyes, never a block.",
     ],
     words: [{ word: "identity", say: "eye-DEN-tih-tee" }, { word: "Shields", say: "SHEELDZ" }],
   },
+  SHAREPOINT,         // part 4: how a saved contract reaches the register, then the details
   {
     id: "graph-details", act: 7, kind: "content", title: "SharePoint in detail: subscription, delta query, safety net.", steps: 1, seconds: 40, deep: true, Body: GraphDetails,
     notes: [
-      "The details from Microsoft's documentation. The subscription only wakes us up. The delta query tells us what changed. The subscription must be renewed within 30 days.",
-      "And we ask only for read rights on the one library.",
+      // order pass #14: not built (CLAUDE.md, known gaps) - the target design, said with "would"
+      "The target design, from Microsoft's documentation. Not built yet. The subscription would only wake us up. The delta query would tell us what changed. We would renew the subscription within 30 days.",
+      "And we would ask only for read rights on the one library.",
     ],
     words: [{ word: "subscription", say: "sub-SKRIP-shun" }, { word: "Sites.Selected", say: "sites dot seh-LEK-tid" }],
   },

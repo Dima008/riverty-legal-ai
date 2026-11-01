@@ -3,7 +3,12 @@
 // technical solution (what we use, then the proof), 4 infrastructure, 5 adoption, 6 the basic
 // implementation, live - the finale, so every outline bullet is said before the part whose timing
 // varies most. Each opener shows its line of the case study word for word (guarded below). The
-// deep dives after the close are opened only on a question. The main track stays under 20 minutes.
+// deep dives after the close are opened only on a question. Riverty asks for 15-20 minutes; since
+// 1.11. (Dima: no cuts) each card's seconds are what its notes need at about 115 words per minute,
+// and the main track may grow past 20:00 - never past 22:00. To stay under it, decision 96 moved
+// four cards to the deep dives, nothing deleted: 'injection', 'what-if', 'sharepoint' and 'cost';
+// what they said first (M14 and four eyes, Prompt Shields, the cents of a full run, productivity)
+// is said once on the main track ('human', 'what-we-use', 'run-it').
 import caseStudy from "../../../docs/context/case-study.md?raw";
 import { ACT1 } from "./slides/act1";
 import { ACT2 } from "./slides/act2";
@@ -11,7 +16,7 @@ import { ACT3 } from "./slides/act3";
 import { ADOPTION, INFRASTRUCTURE } from "./slides/act5";
 import { ACT6 } from "./slides/act6";
 import { DEEP } from "./slides/deep";
-import { COST, RESULTS, WHAT_IF } from "./slides/proof";
+import { RESULTS } from "./slides/proof";
 import type { Act, Slide } from "./types";
 
 export const ACTS: Act[] = [
@@ -27,7 +32,7 @@ export const ACTS: Act[] = [
 export const SLIDES: Slide[] = [
   ...ACT1,                              // 1 the problem
   ...ACT2,                              // 2 my approach: the roadmap, then why the usual approaches fail
-  ...ACT3, RESULTS, WHAT_IF, COST,      // 3 the technical solution, ending with the proof
+  ...ACT3, RESULTS,                     // 3 the technical solution, ending with the proof
   ...INFRASTRUCTURE,                    // 4
   ...ADOPTION,                          // 5
   ...ACT6,                              // 6 live, then the close
@@ -49,7 +54,7 @@ export const CHECKPOINTS = SLIDES.flatMap((s, index) =>
 
 /** What to skip when late, in this order - all before the demo; never 'what-we-use', 'run-it',
  *  'live-add' or 'live'. `build`: skip from this build on; none: skip the whole card. */
-export const SKIP_IF_LATE: { id: string; build?: number }[] = [{ id: "results", build: 2 }, { id: "what-if", build: 3 }, { id: "sharepoint", build: 3 }];
+export const SKIP_IF_LATE: { id: string; build?: number }[] = [{ id: "results", build: 2 }];   // 'what-if' and 'sharepoint' are deep dives (decision 96)
 
 /** 75 -> "1:15" */
 export const mmss = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
@@ -59,7 +64,7 @@ export const pad = (n: number) => String(n).padStart(2, "0");
 // ---------------------------------------------------------------- guards (development only)
 // The structure of decision 90: one opener per part, id 'part-N', titled as the part, with its line
 // from the case study word for word (whitespace-normalised, like the card 'task'); quotes on the
-// openers only; parts in order, the deep dives last; the main track at most 20 minutes.
+// openers only; parts in order, the deep dives last; the main track at most 22 minutes (Dima, 1.11.).
 if (import.meta.env.DEV) {
   const CASE = caseStudy.replace(/\s+/g, " ");
   const norm = (text: string) => text.replace(/\s+/g, " ").trim();
@@ -91,7 +96,7 @@ if (import.meta.env.DEV) {
         : k.build !== undefined && !(k.build > 0 && k.build <= s.steps) ? `SKIP_IF_LATE: "${k.id}" has no build ${k.build}`
         : index(k.id) > index("live-add") ? `SKIP_IF_LATE: "${k.id}" comes after the demo` : false;
     }),
-    TOTAL_SECONDS > 20 * 60 && `the main track is ${mmss(TOTAL_SECONDS)} - Riverty asks for 15-20 minutes (decision 90)`,
+    TOTAL_SECONDS > 22 * 60 && `the main track is ${mmss(TOTAL_SECONDS)} - the hard maximum is 22:00 (Riverty asks for 15-20 minutes, decision 90; Dima, 1.11.)`,
   ].filter(Boolean);
   for (const p of problems) console.error(`talk structure: ${p}`);
 }

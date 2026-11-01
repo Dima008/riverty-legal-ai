@@ -7,6 +7,31 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-01 · Dima's speaker notes in, every correctness fix in, and honest time: 29 cards in 22:00
+
+- **Problem:** Dima added speaker-note wishes in Notion (the intro before the task sentences, the
+  six sentences, "a missing clause has no passage", the agent that stops early unnoticed), and the
+  independent order pass of 71d5cf9 found 1 blocker and 18 should-fix items (planned shown as
+  built, terms before their explanation). Measured honestly at 115 spoken words per minute, the
+  talk then needed 24:39 – over Dima's hard maximum of 22:00 – while the cards claimed 19:53.
+- **Cause:** The card seconds were set from a 2-words-per-second budget, not from the real
+  speaking pace; every new explanation added time nobody counted.
+- **Technique and why:** No content cuts (Dima): his sentences went in word for word, the order
+  pass's correctness fixes were applied, time-only trims were skipped. Every card got honest
+  seconds (115 wpm + 1 s per build, `honest.mjs`). Decision 96: injection, what-if, sharepoint and
+  cost moved to the deep dives (nothing deleted); what they introduced first is picked up once on a
+  remaining card (four eyes for M14's hidden instruction on 'human', 12 cents and Prompt Shields
+  on 'what-we-use', "the same lawyers answer more questions" on 'run-it'). The title says "In
+  about twenty minutes".
+- **Rejected alternative:** Accepting about 25 minutes; speaking at about 130 wpm; trimming
+  sentences against Dima's rule.
+- **Metric before → after:** main track 33 cards, claimed 1193 s but honestly 1479 s → 29 cards,
+  1320 s honest (22:00), 18 deep dives; order-pass findings 19 of 19 blocker/should-fix handled
+  (time-only trims skipped by rule); `newcards.mjs` all cards without problems; `deck.mjs` 50 of 50;
+  no dev-guard console errors.
+- **Links:** decisions 90 (Nachtrag), 95, 96; `web/src/deck/slides.ts`, `slides/act1.tsx`–`act6.tsx`,
+  `proof.tsx`, `deep.tsx`
+
 ## 2026-11-01 · Keep the register on extract-v2 for the interview (law quote switched off)
 
 - **Problem:** With extract-v3 in the code, a restarted watcher or any `pipeline.run` would re-read

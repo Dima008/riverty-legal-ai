@@ -1,7 +1,8 @@
 // Parts 4 and 5 (decision 90). Infrastructure: the Azure target next to the prototype (bought
-// building blocks, built what is Riverty's) and how a contract saved in SharePoint reaches the
-// register. Adoption: one team and one question (docs/context/briefing.md, section 8). The release
-// gate moved to the card 'cost' (decision 88). Facts about Microsoft
+// building blocks, built what is Riverty's); how a contract saved in SharePoint reaches the
+// register is a deep dive since decision 96 (SHAREPOINT, below). Adoption: one team and one question
+// (docs/context/briefing.md, section 8). The release gate is said on 'azure' ("any model must first
+// pass the test questions"); the card 'cost' with the gate is a deep dive (decision 96). Facts about Microsoft
 // services are the ones verified against Microsoft Learn (decisions 79 and 80); numbers of our own
 // come from deck-data.json, a stored evaluation file or the briefing (?raw).
 import briefing from "../../../../docs/context/briefing.md?raw";
@@ -23,7 +24,8 @@ const ADAPTER = "Swapping Azure OpenAI for another provider only touches this fi
 
 // target vs prototype, per role (web/src/story/chapters/architecture/map.ts, decisions 35, 79, 80)
 const ROLES = [
-  { role: "Contracts", proto: "data/inbox folder", target: "SharePoint, via Microsoft Graph" },
+  // Microsoft Graph is introduced in the deep dive 'sharepoint' (order pass #32, decision 96)
+  { role: "Contracts", proto: "data/inbox folder", target: "SharePoint library" },
   { role: "Read scans", proto: "Tesseract", target: "Content Understanding" },
   // the prototype already calls Azure OpenAI (Global Standard, synthetic data only - decision 34)
   { role: "Read and check", proto: `${MODEL} on Azure OpenAI (Global Standard, synthetic data)`, target: "Azure OpenAI in Foundry, EU data zone" },
@@ -38,18 +40,18 @@ function Azure() {
   return (
     <div className="x-az">
       <div className="x-az-list">
-        <div className="x-az-head"><span>Job</span><span>Prototype today</span><span>On Azure</span></div>
+        <div className="x-az-head"><span>Job</span><span>Prototype today</span><span>On Azure · target</span></div>
         {ROLES.map((r) => (
           <div key={r.role} className="x-az-row"><span className="role">{r.role}</span><span className="proto">{r.proto}</span><span className="target">{r.target}</span></div>
         ))}
       </div>
       <div className="x-buy">
         <Build at={1} className="x-buy-box">
-          <h3>Bought</h3>
+          <h3>Buy</h3>
           <p>The building blocks: reading scans, search, models, identity – Azure services.</p>
         </Build>
         <Build at={1} className="x-buy-box built">
-          <h3>Built</h3>
+          <h3>Build</h3>
           <p>What is Riverty's: the playbook, the evidence trail, the storage boundary.</p>
         </Build>
         <Build at={2} className="x-key">
@@ -161,55 +163,61 @@ if (import.meta.env.DEV) {
 /** Part 4: infrastructure. */
 export const INFRASTRUCTURE: Slide[] = [
   {
-    id: "part-4", act: 4, kind: "opener", title: "Infrastructure", steps: 0, seconds: 4,
+    id: "part-4", act: 4, kind: "opener", title: "Infrastructure", steps: 0, seconds: 5,
     quote: ["A basic explanation of the infrastructure you would leverage"],
     notes: ["Where would it run at Riverty?"],
     words: [{ word: "infrastructure", say: "IN-fruh-struk-cher" }],
   },
   {
-    id: "azure", act: 4, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 60, Body: Azure,
+    id: "azure", act: 4, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 71, Body: Azure,
     notes: [
       // the task: "two guiding principles" (best of breed, then compared with Microsoft) and its stack list -
       // what is planned is said as planned: no Dockerfile, no Terraform file in the repository
-      "Riverty chooses in two steps: best of breed, then compared with Microsoft – I measured Prompt Shields and a bigger model. " +
-        "Each part has its Azure service: Content Understanding reads scans, Azure OpenAI in the EU data zone, Entra ID for approvals. " +
-        "It would run in Container Apps, set up with Terraform – planned: no Dockerfile or Terraform yet.",
+      "Riverty chooses in two steps: best of breed, then compared with Microsoft. I measured Prompt Shields and a bigger model. " +
+        "On Azure, each part would get its service: Content Understanding for scans, Azure OpenAI in the EU data zone, Entra ID for approvals. " +
+        "It would run in Container Apps, set up with Terraform. All of this is planned: no Dockerfile or Terraform yet.",
       "We buy the building blocks. We build what is Riverty's: playbook, evidence, storage boundary.",
       `Gemini? The model sits behind one small adapter file; any model must first pass the ${QUESTIONS} test questions. ` +
-        "LangChain or LangGraph? Not needed today – code fixes the order. Target: Agent Framework, LangGraph as fallback. The value is the architecture: a small, structured world for the AI.",
+        "LangChain or LangGraph? Not needed today – code fixes the order. Target: Microsoft Agent Framework, LangGraph as fallback. The value is the architecture: a small, structured world for the AI.",
     ],
     words: [{ word: "Azure", say: "AZH-er" }, { word: "Entra", say: "EN-truh" }, { word: "LangGraph", say: "LANG-graf" }, { word: "Gemini", say: "JEM-ih-nye" }],
   },
-  {
-    id: "sharepoint", act: 4, kind: "content", title: "Saved in SharePoint – how does it reach the register?", steps: 3, seconds: 35, Body: SharePoint,
-    notes: [
-      // the target, not built (tag on screen): what is not built says would; the pipeline and its seconds are built and measured
-      "Target design: a lawyer saves a contract in SharePoint.",
-      "We would subscribe to the library. Microsoft Graph – Microsoft's interface to SharePoint – says only: something changed. The delta query then asks: what changed?",
-      `Then the pipeline reads it – the fixed steps you saw with ${deck.m18.doc_id}. Its model calls took about ${M18_SECONDS} seconds.`,
-      "Messages usually come within a minute, at most six hours. Lost ones? A scheduled run would check again.",
-    ],
-    words: [{ word: "subscribe", say: "sub-SKRIBE" }, { word: "Graph", say: "GRAF" }, { word: "scheduled", say: "SHED-yoold" }],
-  },
 ];
+
+/** A deep dive since decision 96 (the main track at most 22:00 without cuts), listed in deep.tsx before
+ *  'graph-details'. On the main track SharePoint is the source on 'tomorrow', 'follow-m18', the first
+ *  row of 'azure' and 'live-add' ("our stand-in for SharePoint"). */
+export const SHAREPOINT: Slide = {
+  id: "sharepoint", act: 7, kind: "content", title: "Saved in SharePoint – how does it reach the register?", steps: 3, seconds: 44, deep: true, Body: SharePoint,
+  notes: [
+    // the target, not built (tag on screen): what is not built says would; the pipeline and its seconds are built and measured
+    "Target design: a lawyer saves a contract in SharePoint.",
+    "Microsoft Graph is Microsoft's interface to SharePoint. We would subscribe to the library. Then Graph would say only: something changed. The delta query would then ask: what changed?",
+    `Then the pipeline reads it – the fixed steps you saw with ${deck.m18.doc_id}. Its model calls took about ${M18_SECONDS} seconds.`,
+    "Messages usually come within a minute, at most six hours. Lost ones? A scheduled run would check again.",
+  ],
+  words: [{ word: "subscribe", say: "sub-SKRIBE" }, { word: "Graph", say: "GRAF" }, { word: "scheduled", say: "SHED-yoold" }],
+};
 
 /** Part 5: adoption. */
 export const ADOPTION: Slide[] = [
   {
-    id: "part-5", act: 5, kind: "opener", title: "Adoption", steps: 0, seconds: 4,
+    id: "part-5", act: 5, kind: "opener", title: "Adoption", steps: 0, seconds: 5,
     quote: ["A concept for helping our colleagues adopt the solution and ensure they get the most value out of it"],
     notes: ["How do lawyers get the most value?"],
     words: [{ word: "adoption", say: "uh-DOP-shun" }],
   },
   {
-    id: "run-it", act: 5, kind: "content", title: "Adoption: one team, one question – measured against today.", steps: 2, seconds: 56, Body: Adoption,
+    id: "run-it", act: 5, kind: "content", title: "Adoption: one team, one question – measured against today.", steps: 2, seconds: 65, Body: Adoption,
     notes: [
       // the task: "Our legal colleagues currently leverage a variety of tools"
       "Legal already has a variety of tools – this one must earn its place. " +
         `Adoption starts with a pilot: one team, one question. First we measure today, with ${FEW_LO} or ${FEW_HI} lawyers. ` +
         "Then the question runs next to the old way, for a few weeks. Training: read the evidence on the page – don't trust it blindly. Then the next question, the next team.",
       "Legal owns it: the playbook is their guidelines, as data. Corrections go into the test set.",
-      "Value, measured: time per question against today, and how often lawyers overrule – the prototype counts that already. " +
+      // the task: "create more with the same number of engineers" - said for Legal (picked up from the deep dive 'cost', decision 96)
+      "Value, measured – your definition of productivity: the same lawyers answer more questions. " +
+        "Time per question against today, and how often lawyers overrule – the prototype counts that already. " +
         "A review is stored and reused. And lawyers work in German or English.",
     ],
     words: [{ word: "adoption", say: "uh-DOP-shun" }, { word: "guidelines", say: "GIDE-lines" }, { word: "overrule", say: "oh-ver-ROOL" }],

@@ -1,5 +1,5 @@
-// A deep dive since decision 90 (it was the first proof card; the main track stays under 20
-// minutes, and its CUAD sentence moves to 'results'). The test set as a trap map: the documents I
+// A deep dive since decision 90 (it was the first proof card; moved to keep the main track short -
+// its CUAD sentence moves to 'results'). The test set as a trap map: the documents I
 // wrote, the traps hidden in them (one of three questions each: read, understand, organise), and
 // the real contracts from CUAD with the experts' labels. Colour means the question a trap asks,
 // never right or wrong. The audience met the 47 and the 8 test questions on the card 'contracts'
@@ -114,7 +114,7 @@ export const TEST_SET: Slide = {
     "One: can it read? Scans, German, a cap split across two pages.",
     "Two: does it understand? Caps in other words. Look-alike clauses without a cap. A hidden instruction.",
     "Three: is the collection in order? An old name fixed by an amendment, a copy, foreign law.",
-    `Real contracts, labelled by experts: on the cap, we agree on ${CUAD_AGREE} of ${CUAD_N}. ${[...CUAD_DIFFER].join(", ")} is a question for Legal. ` +
+    `Real contracts, labelled by experts: on the cap, we agree on ${CUAD_AGREE} of ${CUAD_N}. ${[...CUAD_DIFFER].join(", ")} has a payment on termination – is that a cap? A question for Legal. ` +
       `They showed ${FOUND_BY_CUAD.length} errors my traps missed – all fixed.`,
   ],
   words: [{ word: "Atticus", say: "AT-ih-kus" }, { word: "labelled", say: "LAY-buld" }, { word: "amendment", say: "uh-MEND-ment" }],

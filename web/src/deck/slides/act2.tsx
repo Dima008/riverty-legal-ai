@@ -10,6 +10,7 @@ import caseStudy from "../../../../docs/context/case-study.md?raw";
 import research from "../../../../docs/research.md?raw";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
+import { CONTRACTS as PORTFOLIO, n } from "./act1";
 import "./acts.css";
 import deck from "./deck-data.json";
 import { CUAD, DOCS, QUESTIONS_N } from "./testset-data";
@@ -288,6 +289,8 @@ if (import.meta.env.DEV) {
     ALL_DOCS !== deck.register.documents && `card 'contracts': ${ALL_DOCS} documents in the test-set files, ${deck.register.documents} in the register`,
     !M_IDS.includes("M18") || !A_IDS.includes("M05-A") ? "card 'contracts': the note names M18 and M05-A, the test set has no such documents" : false,
     !deck.m01.quote.startsWith(M01_CLAUSE) && "card 'rag': M01's liability quote does not start with its clause number",
+    E.near.find((x) => x.id.startsWith("M01:"))?.title !== deck.m01.section
+      && "card 'rag': the note says the search finds M01's clause - its section is no longer among the closest passages",
     measurement.contracts !== CONTRACTS.length && `card 'rag-fails': ${measurement.contracts} contracts searched, ${CONTRACTS.length} tiles`,
     COPY?.id !== "M15" && "card 'rag-fails': the note says M15 is the copy - the register says otherwise",
     AT_K.missed.join() !== "M14" && "card 'rag-fails': the notes say only M14 is missed at k = 10",
@@ -302,13 +305,14 @@ if (import.meta.env.DEV) {
     !(SKIPPED > 0 && HID_OF_5 > 0) && "card 'agent': the OverclaimBench numbers are no longer in docs/research.md",
     !STUDY_MODELS && "card 'agent': the citation gives the study's frontier and open-weight models - docs/research.md no longer has them",
     !caseStudy.replace(/\s+/g, " ").includes(RIVERTY_AGENTS) && "card 'agent': Riverty's sentence is not in the case study word for word",
+    !(PORTFOLIO > 1000) && `card 'agent': the note says over ${PORTFOLIO} contracts fit into no context window - the count of 'today' (act1.tsx, from the case study) is no longer over a thousand`,
   ].filter(Boolean);
   for (const p of problems) console.error(`act 2: ${p}`);
 }
 
 export const ACT2: Slide[] = [
   {
-    id: "part-2", act: 2, kind: "opener", title: "My approach", steps: 0, seconds: 4,
+    id: "part-2", act: 2, kind: "opener", title: "My approach", steps: 0, seconds: 6,
     quote: ["A solution explaining how you would tackle the challenge"],
     notes: [
       "How would I tackle it? Here's my roadmap.",
@@ -316,36 +320,37 @@ export const ACT2: Slide[] = [
     words: [{ word: "roadmap", say: "ROHD-map" }],
   },
   {
-    id: "how-i-worked", act: 2, kind: "content", title: "How I worked: from the problem to the platform.", steps: 3, seconds: 34, Body: HowIWorked,
+    // "How I work": steps 8 and 9 (platform, adoption) are planned, not done (order pass #6)
+    id: "how-i-worked", act: 2, kind: "content", title: "How I work: from the problem to the platform.", steps: 3, seconds: 51, Body: HowIWorked,
     notes: [
-      // part 1 walked steps 1 and 2 (the task's two questions, today's process) - the rethinking is part 3
-      "How I worked: you've seen the first steps – the pilot, our first question, and today's process. Rethinking comes next.",
+      // part 1 walked steps 1 and 2 (the task's two questions, today's process) - the rethinking is part 3 ('tomorrow')
+      "How I work. You have seen steps one and two: Legal's two questions as the pilot, and today's process. Step three, rethinking the process, comes in part three.",
       "Design: code or AI per step, as little AI freedom as works, then the architecture.",
-      "Deliver: test it, run it on Azure, bring it to the lawyers.",
-      "You encourage AI – so did I: built with Claude Code, every AI commit marked in git. I can explain every line.",
+      "Deliver: test it – that I did. Then run it on Azure and bring it to the lawyers – that is the plan.",
+      "You encourage AI. I used it too: built with Claude Code, every AI commit marked in git. I can explain every line.",
     ],
     words: [{ word: "pilot", say: "PIE-lut" }, { word: "architecture", say: "AR-kih-tek-cher" }, { word: "Claude", say: "KLAWD" }],
   },
   {
-    id: "contracts", act: 2, kind: "content", title: `Riverty cannot share contracts – so I put together ${ALL_DOCS} with known answers.`, steps: 3, seconds: 44, Body: TestSet,
+    id: "contracts", act: 2, kind: "content", title: `Riverty cannot share contracts – so I put together ${ALL_DOCS} with known answers.`, steps: 3, seconds: 58, Body: TestSet,
     notes: [
       "To test any approach, I need known answers. Riverty can't share contracts, so I built a test set.",
       // the ranges of V and C are on screen (prefix and tiles) - said only for M, to keep the card in time
       // Riverty's addendum: "These agreements cover both B2B and B2B2C business models"
-      `${M_IDS.length} merchant agreements I wrote, ${range(M_IDS)}, with traps. They are B2B – with consumer terms in the merchant's checkout, B2B2C. ` +
+      `${M_IDS.length} merchant agreements I wrote, ${range(M_IDS)}, with traps. They are B2B. And with consumer terms in the merchant's checkout, also B2B2C. ` +
         "M18: the scan you saw. M05 and its amendment M05-A: the former name. M02: a cap in other words.",
       `${V_IDS.length} data processing agreements: the vendor side.`,
       `${C_IDS.length} real public contracts from CUAD, labelled by experts. For ${QUESTIONS_N} test questions, I wrote the answers first.`,
     ],
-    words: [{ word: "amendment", say: "uh-MEND-ment" }, { word: "labelled", say: "LAY-buld" }, { word: "CUAD", say: "KWAD" }],
+    words: [{ word: "B2B2C", say: "bee-two-bee-two-SEE" }, { word: "amendment", say: "uh-MEND-ment" }, { word: "labelled", say: "LAY-buld" }, { word: "CUAD", say: "KWAD" }],
   },
   {
-    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 50, Body: Rag,
+    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 61, Body: Rag,
     notes: [
       "Most document assistants work like this. You ask, for example, about liability in the Nordlicht contract, M01.",
       // the first word on embeddings (rag-fails says "Embeddings rank too"; the map is a deep dive)
-      "A search compares your question with every passage – a short piece of a contract – and returns the most similar ones. " +
-        "It compares meaning: every passage becomes numbers – embeddings. Near means similar.",
+      "A search compares your question with every passage – a short piece of a contract. It returns the most similar ones. " +
+        "It compares meaning: every passage becomes numbers, called embeddings. Near means similar.",
       `This is called top-k. Here k is ${E.k}: the ${E.k} best passages, nothing else.`,
       `The model – the AI that writes – reads only these ${E.k} and answers. For M01 this works: the search finds clause ${M01_CLAUSE}.`,
       "This is called RAG: retrieval-augmented generation. The model only sees what the search returns.",
@@ -353,28 +358,37 @@ export const ACT2: Slide[] = [
     words: [{ word: "retrieval", say: "rih-TREE-vul" }, { word: "augmented", say: "awg-MEN-tid" }, { word: "embeddings", say: "em-BED-ingz" }],
   },
   {
-    id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 4, seconds: 62, Body: RagFails,
+    id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 4, seconds: 81, Body: RagFails,
     notes: [
       `Legal's question, our Q1: which merchant agreements lack a limitation of liability – a cap like the ones you saw? ${measurement.contracts} contracts: ${COPY.id} is a copy of ${COPY.copy_of} and counts once.`,
       `Now a keyword search over these ${measurement.contracts}: '${measurement.query}', top ${K}. The ${K} best passages come from ${AT_K.contracts_in_top_k} contracts.`,
-      `For the search, the other ${NOT_RANKED} 'lack' it.`,
+      `For the search, the other ${NOT_RANKED} seem to lack it.`,
       `${AT_K.false_alarms.length} of the ${NOT_RANKED} are false alarms: they cap liability in other words or in German, like M02. And ${AT_K.missed.join(", ")} is missed: no cap, but its hidden instruction for the AI mentions liability – so it ranks high.`,
-      `A larger k does not help: ${NEVER} contracts never match the keywords. Embeddings rank too. Top-k ranks what is there. It cannot prove what is missing.`,
+      // Dima's wish (Notion card 10, 1.11.): why top-k can never prove absence
+      `A missing clause has no passage – so it can never show up. A larger k does not help: ${NEVER} contracts never match the keywords. ` +
+        "Embeddings rank too. Top-k ranks what is there – search can't prove that something is missing.",
     ],
     words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "merchant", say: "MUR-chunt" }, { word: "instruction", say: "in-STRUK-shun" }],
   },
   {
-    id: "agent", act: 2, kind: "content", title: "And an AI agent that reads everything itself?", steps: 3, seconds: 43, Body: Agent,
+    id: "agent", act: 2, kind: "content", title: "And an AI agent that reads everything itself?", steps: 3, seconds: 74, Body: Agent,
     notes: [
       "Second idea: an agent. A model plans a step, calls a tool – open a file, search, take notes – and repeats.",
-      "The weak point: it decides when it is done. Nobody checks that it opened every file.",
-      `A ${STUDY_YEAR} study, OverclaimBench: agents told to review every file skipped files in ${SKIPPED} percent of runs – and ${HID_OF_5} in 5 reports hid it.`,
-      "Riverty's own task says agents fail on the size of the environment. A thousand contracts is exactly that.",
+      // Dima's wish (Notion card 11, 1.11.)
+      "The weak point: it decides itself when it has seen enough – so it can stop early, and nobody notices.",
+      `A ${STUDY_YEAR} study, OverclaimBench: agents told to review every file skipped files in ${SKIPPED} percent of runs – and in ${HID_OF_5} of 5 of those runs, the report hid it.`,
+      // Dima's wish (Notion cards 3 and 11, 1.11.): Riverty's sentence on agents, and why every contract is
+      // read once. The count is the one of 'today' (act1.tsx: parsed from the case study, guarded there).
+      // Riverty's sentence stays on screen too - Dima's one exception to decision 90c.
+      // "to read it": the reader is one call per contract (guarded on 'what-we-use', act3.tsx); the
+      // checker is a second call for each contract with a "found" ('checks', 'what-we-use').
+      `Riverty's task says agents fail on the size of the environment. That matches what I found: over ${n(PORTFOLIO)} contracts fit into no context window, so an agent sees only a part. ` +
+        "A missed contract never shows up – and the answer still sounds complete. That's why I read every contract once, completely: one AI call per contract to read it.",
     ],
     words: [{ word: "agent", say: "AY-junt" }, { word: "OverclaimBench", say: "OH-ver-klaym-bench" }, { word: "environment", say: "en-VY-run-ment" }],
   },
   {
-    id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 25, Body: Needs,
+    id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 24, Body: Needs,
     notes: [
       "So we need three guarantees.",
       "One: every contract is read. We prove it, not just claim it.",
@@ -385,13 +399,13 @@ export const ACT2: Slide[] = [
   },
 ];
 
-// A deep dive since decision 90 (the main track stays under 20 minutes): opened on a question,
+// A deep dive since decision 90 (to keep the main track short): opened on a question,
 // listed in deep.tsx. Its data and guard stay here, next to the RAG cards it belongs to.
 export const EMBEDDING_MAP: Slide = {
   id: "embedding-map", act: 7, kind: "content", title: "Embeddings: every passage becomes numbers, near means similar.", steps: 1, seconds: 30, deep: true, Body: EmbeddingRuler,
   notes: [
     `How does a search know what is similar? With embeddings. Every passage becomes about ${DIMS_ROUND.toLocaleString("en")} numbers. Here every dot is one of our ${E.passages} passages. Further right means closer in meaning to the question.`,
-    `Top-k takes the dots on the far right: ${NEAR_CUAD} CUAD passages, only ${NEAR_M} from a merchant agreement. So: does top-k answer Legal's question?`,
+    `Top-k takes the dots on the far right: ${NEAR_CUAD} CUAD passages, only ${NEAR_M} from a merchant agreement. Near in meaning – but it cannot tell which contract lacks a cap.`,
   ],
   words: [{ word: "embeddings", say: "em-BED-ingz" }, { word: "similar", say: "SIM-ih-ler" }],
 };

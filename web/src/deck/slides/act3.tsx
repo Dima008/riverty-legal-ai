@@ -1,9 +1,10 @@
 // Part 3 - the technical solution (decision 90), along the map of the card 'tomorrow' from left to
 // right (decision 88): the process tomorrow, one contract through the fixed steps (M18), the checks
-// on a real wrong answer (M08), the hidden instruction (M14), then the register - Q1 and Q2 become
-// lookups, and every contract it lists was met before - the lawyer deciding, and what we use (two
-// prompts, embeddings, the rest code). The proof cards (proof.tsx) close the part. The two stores
-// (register-index) and the technique table are deep dives. Every number comes from deck-data.json
+// on a real wrong answer (M08), then the register - Q1 and Q2 become lookups, and every contract it
+// lists was met before - the lawyer deciding (with M14's hidden instruction: four eyes), and what we
+// use (two prompts, embeddings, the rest code). The proof card 'results' (proof.tsx) closes the part.
+// The two stores (register-index), the technique table and, since decision 96, the hidden instruction
+// (injection) are deep dives. Every number comes from deck-data.json
 // (tools/deck_data.py reads the register), a stored evaluation file or the code (?raw) - nothing is
 // typed by hand.
 import measurement from "../../../../eval/results/2026-10-31_negative_search.json";
@@ -253,6 +254,9 @@ function TwoStores() {
 
 // ---------------------------------------------------------------- the lawyer decides
 const TRIAGE = deck.triage;
+// The contract with the hidden instruction (deck.m14; the probe's original case): named on 'rag-fails',
+// picked up on 'human' since the card 'injection' is a deep dive (decision 96), reviewed live on 'live'.
+const INJECTED = "M14";
 
 function LawyerDecides() {
   return (
@@ -275,14 +279,19 @@ function LawyerDecides() {
 // All the AI of the system on one card (talk plan, section 3): two system prompts on one small model,
 // embeddings without a prompt, everything else code. The prompts' first sentences come word for word
 // from pipeline/extract.py (prompts-data.ts), the call counts from the stored evaluation of the
-// register used in the talk; no costs here - that punchline stays on 'cost'. Every label on it was
-// said on an earlier card; the search index is introduced here (build 1), which is why the card
-// 'register-index' could become a deep dive. Built and planned are marked.
+// register used in the talk; no costs on screen - since 'cost' is a deep dive (decision 96) note 0
+// says the cents of a full run, and note 2 and the 'planned' line say what Prompt Shields is - Microsoft's
+// check for hidden instructions - since this is its first word on the main track.
+// Every label on it was said on an earlier card; the search index is introduced here (build 1), which
+// is why the card 'register-index' could become a deep dive. Built and planned are marked.
 const CALLS = (purpose: string) => stats.cost.by_purpose.find((p) => p.purpose === purpose);
 const READ_CALLS = CALLS("extract");
 const CHECK_CALLS = CALLS("check");
 const EMBED_MODEL = CALLS("embed")?.model ?? "";
 const CHAT_MODEL = stats.config.extraction[0].model;
+// What a full run cost (reading, checking, the search index) - said on the deep dive 'cost' too, from
+// the same file; picked up here since 'cost' left the main track (decision 96).
+const FULL_RUN_CENTS = Math.round(stats.cost.cost_usd * 100);
 
 function WhatWeUse() {
   return (
@@ -317,7 +326,7 @@ function WhatWeUse() {
       </div>
       <Build at={2} className="x-wu-foot">
         <span><span className="x-tag built">built</span>Python + FastAPI · React + TypeScript · SQLite · local OCR · Azure OpenAI</span>
-        <span><span className="x-tag planned">planned</span>a model that drafts the plan · Prompt Shields as a second check</span>
+        <span><span className="x-tag planned">planned</span>a model that drafts the plan · Prompt Shields: Microsoft's second check for hidden instructions</span>
         <a href="/api/documents/M18/prompt" target="_blank" rel="noreferrer" data-no-advance>M18's prompt →</a>
       </Build>
     </div>
@@ -350,6 +359,10 @@ if (import.meta.env.DEV) {
       && "card 'injection': the card says the pattern check found only M14's original - the probe says otherwise",
     !TRIAGE.four_eyes.includes("amendment_contradiction") && "card 'human': four eyes no longer covers an amendment that contradicts its contract",
     !TRIAGE.four_eyes.some((s) => s.includes("injection")) && "card 'human': four eyes no longer covers a hidden instruction",
+    !(PS_ORIGINAL?.[0].startsWith(INJECTED) && deck.m14.finding.flags.some((f) => f.includes("injection")))
+      && `card 'human': the note says the pattern check finds ${INJECTED}'s hidden instruction - the register or the probe says otherwise`,
+    !(FULL_RUN_CENTS > 0 && stats.cost.by_purpose.some((p) => p.purpose === "extract" && p.calls === stats.config.documents))
+      && `card 'what-we-use': the note says reading all ${stats.config.documents} once cost ${FULL_RUN_CENTS} cents - the stored run says otherwise`,
     // the prompts themselves are guarded in prompts-data.ts; here what the card says about the calls
     !(READ_CALLS && READ_CALLS.calls === stats.config.documents)
       && `card 'what-we-use': the reader says one call per contract - ${READ_CALLS?.calls} calls for ${stats.config.documents} documents`,
@@ -363,31 +376,33 @@ if (import.meta.env.DEV) {
     // the note of 'human': the server refuses before approval; the storage stores once per fingerprint, write once
     !reviewPy.includes("HTTPException(409, f\"tool gate: archive copy only after approval") && "card 'human': the note says the server refuses the copy before approval - api/review.py changed",
     !(storagePy.includes("hashlib.sha256(body)") && storagePy.includes('"already_stored"') && storagePy.includes("write once") && storagePy.includes('"receipt_id"'))
-      && "card 'human': the note says stored once by its fingerprint, write-once, with a receipt - api/storage_mock.py changed",
+      && "card 'human': the note says each file is kept once by its fingerprint, cannot be changed later (write once), with a receipt - api/storage_mock.py changed",
   ].filter(Boolean);
   for (const p of problems) console.error(`part 3: ${p}`);
 }
 
 export const ACT3: Slide[] = [
   {
-    id: "part-3", act: 3, kind: "opener", title: "The technical solution", steps: 0, seconds: 6,
+    id: "part-3", act: 3, kind: "opener", title: "The technical solution", steps: 0, seconds: 8,
     quote: ["An overall technical solution you would present to our team and how it could be implemented"],
     notes: ["Design: how do we deliver the three guarantees – and does it work?"],
   },
   {
-    id: "tomorrow", act: 3, kind: "content", title: "Tomorrow: the system reads, the lawyer decides.", steps: 1, seconds: 30, Body: Tomorrow,
+    id: "tomorrow", act: 3, kind: "content", title: "Tomorrow: the system reads, the lawyer decides.", steps: 1, seconds: 35, Body: Tomorrow,
     notes: [
       "Today a lawyer opens, searches, reads and notes – every contract, every question.",
-      "Tomorrow the system reads each contract once, when it is saved in SharePoint – into one table, the register. The lawyer asks; the system shows a plan – which contracts, which check – the lawyer confirms it, checks the evidence and approves the archive copy. The machine reads. The lawyer decides.",
+      "Tomorrow the system reads each contract once, when it is saved in SharePoint. The result goes into one table: the register. " +
+        "The lawyer asks. The system shows a plan: which contracts, which check. The lawyer confirms it, checks the evidence, and approves the archive copy. " +
+        "The machine reads. The lawyer decides.",
     ],
     words: [{ word: "register", say: "REJ-ih-ster" }, { word: "evidence", say: "EV-ih-dence" }, { word: "archive", say: "AR-kive" }],
   },
   {
-    id: "follow-m18", act: 3, kind: "content", title: `Follow one contract: M18, a scan from ${M18_YEAR}.`, steps: 5, seconds: 56, Body: FollowM18,
+    id: "follow-m18", act: 3, kind: "content", title: `Follow one contract: M18, a scan from ${M18_YEAR}.`, steps: 5, seconds: 71, Body: FollowM18,
     notes: [
       "Follow M18, the scan from the start. It arrives in a folder – later, SharePoint.",
       `OCR reads ${num(J.ingest.pages)} pages, ${num(J.ingest.ocr_confidence).toFixed(0)} percent average confidence. Below ${OCR_MIN}, a person looks.`,
-      `We cut at the headings: ${num(J.chunking.sections)} sections – the passages the search uses.`,
+      `We cut at the headings: ${num(J.chunking.sections)} sections. A fixed length can split a clause.`,
       `One call to a small model, ${M18_MODEL}, fills a fixed form: status and quote per clause.`,
       `The checks – next card. ${M18_CLAUSES} clauses: ${M18_FOUND.PRESENT ?? 0} found, ${M18_FOUND.ABSENT ?? 0} not found – ` +
         `${M18_DPA_ONLY} of them are required only in data processing agreements.`,
@@ -396,30 +411,19 @@ export const ACT3: Slide[] = [
     words: [{ word: "OCR", say: "oh-see-AR" }, { word: M18_MODEL, say: "G-P-T four point one mini" }, { word: "sections", say: "SEK-shunz" }],
   },
   {
-    id: "checks", act: 3, kind: "content", title: "The model is checked: M08 said “found”, the register says “unclear”.", steps: 2, seconds: 38, Body: ChecksM08,
+    id: "checks", act: 3, kind: "content", title: "The model is checked: M08 said “found”, the register says “unclear”.", steps: 2, seconds: 46, Body: ChecksM08,
     notes: [
       `But a model can be wrong. M08: the model said: limitation of liability, found. Its quote is clause ${M08_CLAUSE}.`,
       // the task: "ensuring they comply with our corporate guidelines" - the playbook is those guidelines
-      "Guarantee two: the quote is really there. But it lacks the words Legal's playbook expects – the playbook is Legal's guidelines, as data. And a second model call says: this is about data protection.",
-      `So the register says unclear, ${M08.confidence}, and a lawyer looks. Code before and after the model: the guardrail sandwich.`,
+      "Guarantee two: the quote is really there. But it lacks the words Legal's playbook expects. The playbook is Legal's guidelines, as data. And a second model call says: this is about data protection.",
+      `So the register says unclear – confidence ${M08.confidence}, from our checks – and a lawyer looks. Code before and after the model: the guardrail sandwich.`,
     ],
     words: [{ word: "playbook", say: "PLAY-book" }, { word: "guardrail", say: "GARD-rail" }, { word: "unclear", say: "un-KLEER" }],
   },
   {
-    id: "injection", act: 3, kind: "content", title: "A hidden instruction in M14 – caught, and sent to two people.", steps: 2, seconds: 31, Body: HiddenNote,
+    id: "register", act: 3, kind: "content", title: "Every contract in one table – a question becomes a lookup.", steps: 3, seconds: 70, Body: Register,
     notes: [
-      // the task: "represent the company's best interests"
-      "Second danger: M14's hidden note tells the AI to report a cap – prompt injection. A counterparty's text must not decide for Riverty.",
-      "Our pattern check finds it. The register still says: no cap. Two people look – four eyes.",
-      `Honestly: M14 and ${REWORDED} rewordings – our pattern check found only the original, ${REGEX_HITS} of ${PS_CASES.length}. ` +
-        `Microsoft's Prompt Shields: ${SHIELD_HITS} of ${PS_CASES.length} – our next step.`,
-    ],
-    words: [{ word: "injection", say: "in-JEK-shun" }, { word: "detector", say: "dih-TEK-ter" }, { word: "honestly", say: "ON-ist-lee" }],
-  },
-  {
-    id: "register", act: 3, kind: "content", title: "Every contract in one table – a question becomes a lookup.", steps: 3, seconds: 52, Body: Register,
-    notes: [
-      "Every contract, read like M18, in one table: the register. Here the merchant agreements. Green found, red not found, amber unclear.",
+      "Every contract, read like M18, in one table: the register. Organised once, compared clause by clause. Here the merchant agreements. Green found, red not found, amber unclear.",
       `Q1 is one column: ${Q1.length} contracts, no model call. Red and amber count together – one too many beats one missed. Keyword search: ${AT_K10.false_alarms.length} false alarms, ${AT_K10.missed.join(", ")} missed.`,
       // the task's "comparing them": GET /api/compare (api/register.py) - not in the tool yet (guarded)
       `Coverage: ${ROWS.length} in scope, ${CHECKED} checked, ${COPY.id} excluded – a copy of ${COPY.copy_of}. Nothing drops out silently. ` +
@@ -429,33 +433,54 @@ export const ACT3: Slide[] = [
     words: [{ word: "register", say: "REJ-ih-ster" }, { word: "coverage", say: "KUV-er-ij" }, { word: "excluded", say: "ik-SKLOO-did" }],
   },
   {
-    id: "human", act: 3, kind: "content", title: "Observations, not verdicts: a lawyer decides.", steps: 2, seconds: 40, Body: LawyerDecides,
+    id: "human", act: 3, kind: "content", title: "Observations, not verdicts: a lawyer decides.", steps: 2, seconds: 64, Body: LawyerDecides,
     notes: [
-      `Guarantee three: a lawyer decides; the system only observes. Triage sorts each finding: sure ones get a spot check; unclear, or below ${TRIAGE.review_below} confidence, one lawyer; risky ones two – four eyes.`,
+      // picked up from the deep dive 'injection' (decision 96): M14's hidden instruction (first named on
+      // 'rag-fails'), the pattern check, and the task's "represent the company's best interests"
+      `Guarantee three: a lawyer decides. The system only observes. Triage sorts each finding. Sure ones: a spot check. Unclear ones, or confidence below ${TRIAGE.review_below}: one lawyer. Risky ones: two different people – four eyes. ` +
+        `Like ${INJECTED}: our pattern check finds its hidden instruction. A counterparty's text must not decide for Riverty.`,
       "The lawyer sees the passage on the page first, then decides with a reason – stored, and reused next time.",
       // api/review.py: no approval -> 409, logged; api/storage_mock.py: PUT by SHA-256, write once, a
-      // receipt - a repeated PUT gets 200 "already_stored", so never "exactly one call"
+      // receipt - a repeated PUT gets 200 "already_stored", so never "exactly one call". The stand-in is
+      // named before its behaviour, so nothing sounds like a fact about Riverty's real storage.
       "Riverty's storage has a REST API. Our server sends the file only after approval – before, it refuses. " +
-        "Stored once, by its fingerprint, write-once, with a receipt. Here a stand-in.",
+        "Here, a stand-in plays the storage: it keeps each file once, by its fingerprint. It cannot be changed later, and there is a receipt.",
     ],
-    words: [{ word: "observes", say: "ub-ZURVZ" }, { word: "triage", say: "TREE-ahzh" }, { word: "approval", say: "uh-PROO-vul" }, { word: "receipt", say: "rih-SEET" }],
+    words: [{ word: "observes", say: "ub-ZURVZ" }, { word: "triage", say: "TREE-ahzh" }, { word: "counterparty's", say: "KOWN-ter-par-teez" }, { word: "approval", say: "uh-PROO-vul" }, { word: "receipt", say: "rih-SEET" }],
   },
   {
     // the task: "we encourage any form of AI usage, as long as we understand what is happening",
     // "Python with FastAPI", "Frontend written in React and TypeScript"
-    id: "what-we-use", act: 3, kind: "content", title: "What we use: two prompts – one reads, one checks. The rest is code.", steps: 2, seconds: 45, Body: WhatWeUse,
+    id: "what-we-use", act: 3, kind: "content", title: "What we use: two prompts – one reads, one checks. The rest is code.", steps: 2, seconds: 66, Body: WhatWeUse,
     notes: [
       `What do we use? ${Say(PROMPTS)} prompts on one small model. The reader gets ${say(RULES)} rules, Legal's playbook and one whole contract. ` +
-        "It fills the form. The checker sees only a definition and a quote. No model writes an answer.",
-      "Embeddings need no prompt. They serve only open questions. Never to say a clause is missing.",
-      "Everything else is code we can test: OCR, every check, triage, the lookups, the gate. Python and FastAPI. The tool is React and TypeScript. " +
-        "Planned: a model that drafts the plan, and Prompt Shields.",
+        `It fills the form. The checker sees only a definition and a quote. No model writes an answer. Reading all ${stats.config.documents} once: ${FULL_RUN_CENTS} cents.`,
+      // pipeline/search.py: hybrid - BM25 keywords + embedding vectors, fused with RRF; embeddings are the meaning half
+      "Embeddings need no prompt. Together with keywords, they power a search for open questions – like 'what does M01 say about liability?' Never to say a clause is missing.",
+      "Everything else is code we can test: OCR, the other checks, triage, the lookups, the gate. Python and FastAPI. The tool is React and TypeScript. " +
+        "Planned: a model that drafts the plan, and Microsoft's Prompt Shields for hidden instructions.",
     ],
-    words: [{ word: "FastAPI", say: "fast-ay-pee-EYE" }, { word: "TypeScript", say: "TYPE-script" }, { word: "embeddings", say: "em-BED-ingz" }],
+    words: [{ word: "FastAPI", say: "fast-ay-pee-EYE" }, { word: "TypeScript", say: "TYPE-script" }, { word: "embeddings", say: "em-BED-ingz" }, { word: "Shields", say: "SHEELDZ" }],
   },
 ];
 
-// A deep dive since decision 90 (the main track stays under 20 minutes; 'what-we-use' names the search
+// A deep dive since decision 96 (the main track at most 22:00 without cuts): opened on a question,
+// listed in deep.tsx. On the main track, 'human' names M14's hidden instruction, the pattern check,
+// four eyes and "must not decide for Riverty" (the task's "best interests"); 'what-we-use' names
+// Prompt Shields as planned. Its data and guards stay here, next to the cards it belongs to.
+export const INJECTION: Slide = {
+  id: "injection", act: 7, kind: "content", title: "A hidden instruction in M14 – caught, and sent to two people.", steps: 2, seconds: 39, deep: true, Body: HiddenNote,
+  notes: [
+    // the task: "represent the company's best interests"
+    "Second danger: a hidden note in M14 tells the AI to report a cap. That is prompt injection. A counterparty's text must not decide for Riverty.",
+    "Our pattern check finds it. The register still says: no cap. Two people look – four eyes.",
+    `Honestly: M14 and ${REWORDED} rewordings – our pattern check found only the original, ${REGEX_HITS} of ${PS_CASES.length}. ` +
+      `Microsoft's Prompt Shields: ${SHIELD_HITS} of ${PS_CASES.length} – our next step.`,
+  ],
+  words: [{ word: "injection", say: "in-JEK-shun" }, { word: "counterparty's", say: "KOWN-ter-par-teez" }, { word: "detector", say: "dih-TEK-ter" }, { word: "honestly", say: "ON-ist-lee" }],
+};
+
+// A deep dive since decision 90 (to keep the main track short; 'what-we-use' names the search
 // index now): opened on a question, listed in deep.tsx.
 export const REGISTER_INDEX: Slide = {
   id: "register-index", act: 7, kind: "content", title: "Two stores, two jobs: the register and the search index.", steps: 1, seconds: 25, deep: true, Body: TwoStores,

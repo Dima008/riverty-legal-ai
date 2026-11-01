@@ -118,7 +118,7 @@ if (import.meta.env.DEV) {
     !(WATCH_S > 0) && "card 'live-add': the watcher's interval is no longer in pipeline/run.py",
     !H01_YEAR && "card 'live-add': the note says when H01 was written - tools/make_handwritten.py no longer has the date",
     !makeHandwrittenPy.includes("Arvato Financial Solutions") && "card 'live-add': the note speaks of H01's former name - the page no longer has one",
-    !/phone photo/.test(makeHandwrittenPy.split("\n")[0] ?? "") && "card 'live-add': the note says H01 is rendered to look like a phone photo - tools/make_handwritten.py says otherwise",
+    !/phone photo/.test(makeHandwrittenPy.split("\n")[0] ?? "") && "card 'live-add': the note says H01 is made to look like a phone photo - tools/make_handwritten.py says otherwise",
     HANDWRITTEN.status !== "LOW_QUALITY" && `card 'live-add': the note calls ${HANDWRITTEN.doc_id} hard to read - its OCR is no longer below the threshold`,
     // the F19 rule the note relies on: no exact match on a poor scan proves nothing (decision 89)
     !queriesPy.includes('return doc_status == "LOW_QUALITY" and name_hits == 0') &&
@@ -135,7 +135,8 @@ const NUMBER = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"];
 // The click script of the card 'live' (decision 88): Q1, rehearsed, and the handwritten contract of
 // 'live-add' joins its answer. Ids from the register snapshot in deck-data.json; no scope numbers -
 // while the handwritten page is in the register they change (docs/demo.md). M08 is the passage
-// of the card 'checks', M14 the hidden instruction of 'injection' (guarded below).
+// of the card 'checks', M14 the hidden instruction named on 'rag-fails' and 'human' (the deep dive
+// 'injection' since decision 96; guarded below).
 const Q1_ROWS = deck.register.rows.filter((r) => !r.copy_of);
 const Q1_NOT_FOUND = Q1_ROWS.filter((r) => r.cells[0] === "ABSENT").map((r) => r.id);
 const Q1_UNCLEAR = Q1_ROWS.filter((r) => r.cells[0] === "UNCLEAR").map((r) => r.id);
@@ -190,26 +191,26 @@ function Close() {
 
 export const ACT6: Slide[] = [
   {
-    id: "part-6", act: 6, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 6,
+    id: "part-6", act: 6, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 11,
     quote: [
       "Basic implementation demonstrating the foundation of the concept",
       "Anything else you feel is relevant to understanding your approach to solving the challenge",
     ],
-    notes: ["Your second list: pipeline, front-end, the whole workflow – let me show you."],
+    notes: ["Your second list: pipeline, front-end, the whole workflow. Then anything else: what I learned. Let me show you."],
     words: [{ word: "implementation", say: "im-pluh-men-TAY-shun" }],
   },
   {
-    id: "live-add", act: 6, kind: "content", title: "A handwritten contract arrives – watch what is found.", steps: 1, seconds: 45, Body: LiveAdd,
+    id: "live-add", act: 6, kind: "content", title: "A handwritten contract arrives – watch what is found.", steps: 1, seconds: 54, Body: LiveAdd,
     notes: [
       // b0 fills the wait: from the drop, 48 shows after 8-12 s and the findings after 14-15 s
       // (measured in Edge on a register copy, docs/demo.md) - the words after 'I copy it' take 13-15 s
       // H01 is rendered from handwriting fonts, with photo effects (tools/make_handwritten.py) - nobody
-      // photographed it, so the note says it is rendered to look like a phone photo
-      `Now live. Riverty has handwritten contracts, only as JPEG. I made one: ${HANDWRITTEN.doc_id}, dated ${H01_YEAR} – rendered to look like a phone photo. ` +
+      // photographed it, so the note says it is made to look like a phone photo
+      `Now live. Riverty has handwritten contracts, only as JPEG. I made one: ${HANDWRITTEN.doc_id}, dated ${H01_YEAR} – made to look like a phone photo. ` +
         `I copy it into the folder – our stand-in for SharePoint. Watch the number. ` +
         `The watcher looks every ${WATCH_S} seconds. Then OCR reads the image, one model call, the checks – like M18.`,
       // F19 (decision 89): the former name is not found on this scan - the register says it cannot rule it out
-      `${deck.register.documents + 1}. Handwriting, hard to read – a person checks it. ` +
+      `${deck.register.documents + 1} documents. Handwriting, hard to read – a person checks it. ` +
         "Not found: limitation of liability, data processing agreement. Consumer terms: unclear – a person looks. " +
         "Former name: cannot be ruled out on this scan – a person reads it.",
     ],
@@ -237,12 +238,12 @@ export const ACT6: Slide[] = [
     words: [{ word: "Workbench", say: "WURK-bench" }, { word: "coverage", say: "KUV-er-ij" }, { word: "archive", say: "AR-kyv" }],
   },
   {
-    id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 30, Body: Close,
+    id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 35, Body: Close,
     notes: [
       // the task: "while learning and improving ourselves", "start a meaningful conversation"; the honest gap
       // list of CLAUDE.md (no Azure deployment, the planner has no model, handwriting needs a multimodal reader)
       "What I learned: no model is always right. So every contract is read, every answer traced to a page, and a lawyer decides. " +
-        "Not built yet: the Azure platform, a model that plans, a reader for handwriting. " +
+        "Not built yet: the Azure platform, the SharePoint connector, a model that plans, a model that reads handwriting well. " +
         "Two questions: I assumed a missed contract hurts more than a false alarm – right for Legal? And who would pilot it? Thank you.",
     ],
     words: [{ word: "traceable", say: "TRAY-suh-bul" }, { word: "accurate", say: "AK-yur-it" }],
