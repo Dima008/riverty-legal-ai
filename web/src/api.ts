@@ -58,6 +58,14 @@ export interface FindingReviewState extends ReviewState {
   earlier_reviews: number;  // reviews of an earlier version that no longer apply
 }
 
+// The legacy-name state of a document; not_ruled_out: a poor scan without an exact match (F19)
+export interface FormerNames {
+  open: number;
+  resolved: number;
+  not_ruled_out: boolean;
+  reason: string | null;
+}
+
 export interface NameHit {
   name: string;
   page: number;
@@ -77,6 +85,8 @@ export interface RunRow {
   section?: string | null;
   rationale?: string | null;
   hits?: NameHit[];
+  reason?: string | null;          // NAME_NOT_RULED_OUT: why a person has to read the page (F19)
+  ocr_mean_conf?: number | null;
   governing_law?: string | null;
   duplicate_of?: string | null;
   flags: string[];
@@ -168,6 +178,7 @@ export interface DocumentInfo {
   } | null;
   pages: PageInfo[];
   legacy_names: { name: string; page: number; snippet: string; resolved_by: string | null }[];
+  former_names: FormerNames;
 }
 
 export interface Highlight {
@@ -206,7 +217,7 @@ export interface MatrixRow {
   is_amendment: boolean;
   cells: Record<string, MatrixCell>;
   gaps: string[];
-  former_names: { open: number; resolved: number };
+  former_names: FormerNames;
 }
 
 export interface ClauseSpec {

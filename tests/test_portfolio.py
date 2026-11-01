@@ -126,3 +126,44 @@ def test_malformed_selections_are_rejected(con, scope):
 def test_a_contract_that_is_not_in_the_register_is_refused(con):
     with pytest.raises(ValueError, match="not in the register"):
         portfolio.run_check(con, {"check": "duplicates", "params": {}, "scope": {"doc_ids": ["A1", "ZZ9"]}})
+
+
+# ---------------------------------------------------------------------------- legacy names on a poor scan (F19)
+def test_a_poor_scan_without_a_name_match_goes_to_a_person(con):
+    """F19, decision 89: OCR read "Arfto" for "Arvato" on the handwritten H01, the exact match
+    found nothing and the contract was counted "without hits". Below the OCR threshold no match
+    proves nothing: the contract is a REVIEW row, and the counts still add up to "checked"."""
+    con.execute("UPDATE documents SET status='LOW_QUALITY', ocr_mean_conf=61.34 WHERE doc_id='A1'")
+    run = portfolio.run_check(con, {"check": "legacy_names", "params": {}})
+    rows = {r["doc_id"]: r for r in run["rows"]}
+    assert set(rows) == {"A1"}                    # I1: clean text, no match - nothing to report
+    assert rows["A1"]["status"] == "NAME_NOT_RULED_OUT" and rows["A1"]["triage"] == "REVIEW"
+    assert rows["A1"]["hits"] == [] and rows["A1"]["confidence"] is None and not rows["A1"]["sample"]
+    assert rows["A1"]["reason"] == ("cannot be ruled out - poor scan (OCR confidence 61 %, threshold 70 %)"
+                                    " - a person checks")
+    assert run["counts"] == {"with_open_hits": 0, "not_ruled_out_poor_scan": 1, "resolved_by_amendment": 0,
+                             "without_hits": 1}
+    assert sum(run["counts"].values()) == run["coverage"]["checked"] == 2
+
+
+def test_a_poor_scan_keeps_its_stronger_signals(con):
+    """An exact match on a poor scan is still a former name (one row, not two); text addressed to
+    AI systems still needs four eyes; the register query reports the same contracts."""
+    from pipeline import queries
+    con.execute("UPDATE documents SET status='LOW_QUALITY', ocr_mean_conf=55 WHERE doc_id IN ('A1', 'I1')")
+    con.execute("INSERT INTO name_hits VALUES ('A1', 'Arvato Financial Solutions', 1, 10, 36, '... Arvato ...', NULL)")
+    run = portfolio.run_check(con, {"check": "legacy_names", "params": {}})
+    rows = {r["doc_id"]: (r["status"], r["triage"]) for r in run["rows"]}
+    assert rows == {"A1": ("LEGACY_NAME", "CONFIRM"), "I1": ("NAME_NOT_RULED_OUT", "FOUR_EYES")}
+    legacy = queries.legacy_names(con)
+    assert [h["doc_id"] for h in legacy["open"]] == ["A1"]
+    assert [(u["doc_id"], u["status"]) for u in legacy["not_ruled_out"]] == [("I1", "NAME_NOT_RULED_OUT")]
+
+
+def test_a_former_name_resolved_by_an_amendment_is_not_a_poor_scan_row(con):
+    """A match that an amendment already resolved was read: the scan did find the name."""
+    con.execute("UPDATE documents SET status='LOW_QUALITY', ocr_mean_conf=55 WHERE doc_id='A1'")
+    con.execute("INSERT INTO name_hits VALUES ('A1', 'Arvato Financial Solutions', 1, 10, 36, '...', 'A3')")
+    run = portfolio.run_check(con, {"check": "legacy_names", "params": {}})
+    assert run["rows"] == [] and run["counts"]["resolved_by_amendment"] == 1
+    assert sum(run["counts"].values()) == run["coverage"]["checked"]

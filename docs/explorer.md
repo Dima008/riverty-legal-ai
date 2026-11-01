@@ -178,14 +178,22 @@ agree; otherwise the document stays a contract and is flagged (F10).
 F10: the model marked services agreement C11 as an amendment; register queries skip
 amendments, so C11 silently vanished from every answer although it lacks a liability cap.
 F19: the handwritten H01 (live demo) names "Arvato Financial Solutions GmbH" twice, but OCR
-wrote "Arfto financial Solutions" and "Arvafr Finanecal Solutions" - the exact-name search finds
-nothing and counts H01 as "without hits", although the scan is LOW_QUALITY (open).
+wrote "Arfto financial Solutions" and "Arvafr Finanecal Solutions" - the exact-name search found
+nothing and counted H01 as "without hits", although the scan is LOW_QUALITY. Fixed (decision 89):
+an exact match cannot prove absence on a poor scan, so a document below the OCR threshold
+without any match is a REVIEW row "cannot be ruled out - poor scan (OCR confidence 61 %,
+threshold 70 %) - a person checks" (`NAME_NOT_RULED_OUT`), never "without hits". Measured on a
+register copy with H01: the legacy-name run reports H01 plus the five gold contracts; counts 5
+with open hits, 1 cannot be ruled out, 1 resolved by amendment, 38 without hits = 45 checked.
+Fuzzy matching was not chosen (false hits on clean text).
 
 **Live.** `GET /documents/M05` (family M05, M05-A; legacy name resolved), `GET /documents/C11`
-(flag `amendment_contradiction`).
+(flag `amendment_contradiction`). Every document and every `GET /matrix` row carries
+`former_names`: `{open, resolved, not_ruled_out, reason}` - for H01 `not_ruled_out: true`.
 
 **Diagram.** Family tree: base agreement, amendments in date order, duplicates greyed out;
-legacy names crossed out where an amendment renamed the party.
+legacy names crossed out where an amendment renamed the party; a poor scan with a question mark
+("cannot be ruled out → a person").
 
 ---
 
@@ -231,7 +239,9 @@ duplicates); a plan names the check and its parameters, anything else is rejecte
 contract in scope is either checked or excluded with a reason (duplicate, amendment, type
 unknown, not extracted): the scope is read from all documents, also those never extracted, and
 each contract lands in exactly one of the two lists; the tests count it against the register. No model
-call: a question costs $0 – reading the contracts was paid once ($0.12 for 47).
+call: a question costs $0 – reading the contracts was paid once ($0.12 for 47). Inside the checked
+list nothing is "fine" by default either: in the legacy-name check a poor scan without a match is
+reported for review, not counted "without hits" (F19); its four counts add up to "checked".
 
 Legal can also choose the contracts (decision 75): filter the register (law, date, clause status,
 review state) or tick contracts, then "check these in the Workbench". The selection is then the
@@ -266,7 +276,8 @@ nothing in between.
 **What.** Review effort where errors are likely or an attack is possible – not everywhere.
 
 **In our system.** FOUR_EYES if the document contains a suspected injection or contradicting
-metadata; REVIEW if UNCLEAR or confidence below 0.8; otherwise CONFIRM, with a deterministic
+metadata; REVIEW if UNCLEAR, a former name that a poor scan cannot rule out (F19), or confidence
+below 0.8; otherwise CONFIRM, with a deterministic
 10 % spot-check sample. Only signals from the register, never the model's self-assessment.
 Q1: M14 FOUR_EYES (injected note), M08 and M10 REVIEW (unclear), M03 and M18 CONFIRM.
 
@@ -374,8 +385,8 @@ reports new, changed and deleted items, and a deleted item calls the same forget
 first: a poor scan is not reported as "clause missing" without a person. Costs are never
 deleted - the cost view must add up (core design: show costs).
 
-**What went wrong.** F19: the former company name on H01 is missed - exact match on bad OCR
-cannot prove absence. F20: the live card fetched the findings before they existed and never
+**What went wrong.** F19: the former company name on H01 was missed - exact match on bad OCR
+cannot prove absence; now H01 is a REVIEW row "cannot be ruled out - poor scan" (decision 89). F20: the live card fetched the findings before they existed and never
 again, so it showed no problem at all; its poor-scan line could never fire. With Azure
 unreachable, the watcher retries for 204 s before it gives up; the document is in the register
 after 5.5 s anyway, as "type unknown – a person checks" (engineering issue). F21: a reset during
@@ -386,7 +397,8 @@ delete a gold-set PDF, and a restored original came back as the copy of its dupl
 forget never deletes from a source folder.
 
 **Live.** `GET /documents` (count 47 → 48), `GET /documents/H01` (status LOW_QUALITY, OCR
-confidence, `own_entity_name` as read by the model; `legacy_names` stays empty - F19),
+confidence, `own_entity_name` as read by the model; `legacy_names` stays empty, so
+`former_names` says `not_ruled_out: true` with the reason - F19),
 `GET /documents/H01/findings`, `GET /documents/H01/journey`; after
 the reset `GET /documents/H01` → 404 and `GET /summary` still counts the cost.
 

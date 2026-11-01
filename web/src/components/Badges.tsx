@@ -29,6 +29,7 @@ const STATUS: Record<string, Look> = {
   ABSENT: { color: "danger", icon: <DismissCircle16Filled /> },
   UNCLEAR: { color: "warning", icon: <QuestionCircle16Filled /> },
   LEGACY_NAME: { color: "warning", icon: <Warning16Filled /> },
+  NAME_NOT_RULED_OUT: { color: "warning", icon: <QuestionCircle16Filled /> },
   OTHER_LAW: { color: "informative", icon: <Info16Regular /> },
   LAW_UNKNOWN: { color: "warning", icon: <QuestionCircle16Filled /> },
   DUPLICATE: { color: "informative", icon: <Info16Regular /> },

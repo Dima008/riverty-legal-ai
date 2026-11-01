@@ -24,6 +24,7 @@ from collections import Counter
 
 from . import catalogue
 from .extract import EXTRACTION_SCHEMA
+from .queries import NAME_NOT_RULED_OUT, name_not_ruled_out, poor_scan_reason
 
 DOC_TYPES = EXTRACTION_SCHEMA["properties"]["doc_type"]["enum"]
 UNKNOWN_TYPES = (None, "unknown")    # could be anything: always in scope, shown as excluded
@@ -37,6 +38,7 @@ REVIEW_BELOW = 0.8
 SAMPLE_PERCENT = 10                   # share of CONFIRM rows marked for a spot check
 FOUR_EYES_SIGNALS = {"prompt_injection_suspected", "document_contains_suspected_injection",
                      "quote_in_suspected_injection", "amendment_contradiction"}
+REVIEW_STATUSES = {"UNCLEAR", NAME_NOT_RULED_OUT}    # a person has to look, whatever the confidence
 
 CHECKS = {
     "missing_clause": {
@@ -111,11 +113,12 @@ def validate_scope(scope) -> dict:
 
 # ---------------------------------------------------------------------------- triage
 def triage(status: str, confidence: float | None, flags: list[str]) -> str:
-    """FOUR_EYES: injection suspected or contradicting metadata. REVIEW: unclear or below
-    REVIEW_BELOW. CONFIRM: everything else (with a spot-check sample)."""
+    """FOUR_EYES: injection suspected or contradicting metadata. REVIEW: unclear, a former name
+    that a poor scan cannot rule out (F19), or below REVIEW_BELOW. CONFIRM: everything else (with
+    a spot-check sample)."""
     if any(f.split(":")[0] in FOUR_EYES_SIGNALS for f in flags):
         return "FOUR_EYES"
-    if status == "UNCLEAR" or (confidence is not None and confidence < REVIEW_BELOW):
+    if status in REVIEW_STATUSES or (confidence is not None and confidence < REVIEW_BELOW):
         return "REVIEW"
     return "CONFIRM"
 
@@ -128,8 +131,8 @@ def sampled(run_id: str, doc_id: str) -> bool:
 # ---------------------------------------------------------------------------- scope
 def _documents(con) -> list[dict]:
     rows = con.execute(
-        "SELECT d.doc_id, d.status, d.duplicate_of, d.family_id, d.flags, m.doc_type, m.title, m.counterparty_name,"
-        " m.governing_law, m.is_amendment, m.text_sha256 AS extracted_sha256, m.prompt_version"
+        "SELECT d.doc_id, d.status, d.ocr_mean_conf, d.duplicate_of, d.family_id, d.flags, m.doc_type, m.title,"
+        " m.counterparty_name, m.governing_law, m.is_amendment, m.text_sha256 AS extracted_sha256, m.prompt_version"
         " FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id "
         "ORDER BY d.doc_id").fetchall()
     docs = [dict(r) for r in rows]
@@ -186,23 +189,34 @@ def _missing_clause(con, docs: list[dict], params: dict) -> tuple[list[dict], di
 
 
 def _legacy_names(con, docs: list[dict], params: dict) -> tuple[list[dict], dict, dict]:
+    """Exact matches of the former names (families.py). A poor scan without any match is not
+    "without hits" but a REVIEW row: the exact match cannot prove absence there (F19, decision 89)."""
     ids = {d["doc_id"] for d in docs}
     hits: dict[str, list[dict]] = {}
     resolved: dict[str, str] = {}
+    found = Counter()             # every exact match per contract, open or resolved
     for h in con.execute("SELECT doc_id, name, page, snippet, resolved_by FROM name_hits ORDER BY doc_id, char_start"):
         if h["doc_id"] not in ids:
             continue
+        found[h["doc_id"]] += 1
         if h["resolved_by"]:
             resolved[h["doc_id"]] = h["resolved_by"]
         else:
             hits.setdefault(h["doc_id"], []).append({"name": h["name"], "page": h["page"], "snippet": h["snippet"]})
-    rows = []
+    rows, unsure = [], 0
     for d in docs:
         if d["doc_id"] in hits:   # exact name match: deterministic, so no confidence needed
             rows.append(_row(d, status="LEGACY_NAME", confidence=None, hits=hits[d["doc_id"]], flags=d["flags"],
                              triage=triage("LEGACY_NAME", None, d["flags"])))
-    counts = {"with_open_hits": len(rows), "resolved_by_amendment": len(set(resolved) - set(hits)),
-              "without_hits": len(docs) - len(set(hits) | set(resolved))}
+        elif name_not_ruled_out(d["status"], found[d["doc_id"]]):
+            unsure += 1
+            rows.append(_row(d, status=NAME_NOT_RULED_OUT, confidence=None, hits=[],
+                             reason=poor_scan_reason(d["ocr_mean_conf"]), ocr_mean_conf=d["ocr_mean_conf"],
+                             flags=d["flags"], triage=triage(NAME_NOT_RULED_OUT, None, d["flags"])))
+    # every checked contract in exactly one count - the four add up to "checked"
+    counts = {"with_open_hits": len(hits), "not_ruled_out_poor_scan": unsure,
+              "resolved_by_amendment": len(set(resolved) - set(hits)),
+              "without_hits": len(docs) - len(set(hits) | set(resolved)) - unsure}
     return rows, counts, {"resolved_by_amendment": [{"doc_id": k, "resolved_by": v} for k, v in sorted(resolved.items())
                                                     if k not in hits]}
 

@@ -81,6 +81,22 @@ batches and merged (PRESENT anywhere wins, then UNCLEAR, else ABSENT).
 The confidence comes from these signals, not from the model. Every finding keeps
 `model_status` (what the model said) next to `status` (what the register says).
 
+## Former company names: no match on a poor scan proves nothing
+
+Step 5 finds every occurrence of a former name (`catalogue.OWN_ENTITY_LEGACY`) by an exact
+pattern, tolerant of case and spacing, with page and snippet. If an amendment renamed the party,
+the base agreement's occurrences are "resolved". An exact match cannot prove absence on a bad
+scan: on the handwritten H01 the OCR wrote "Arfto" and "Arvafr" for "Arvato", and the check
+counted it "without hits" (F19). So a document below the OCR threshold (status LOW_QUALITY, mean
+confidence < 70) without any match - open or resolved - is reported as `NAME_NOT_RULED_OUT`,
+triage REVIEW: "cannot be ruled out - poor scan (OCR confidence 61 %, threshold 70 %) - a person
+checks" (decision 89). The same rule (`queries.name_not_ruled_out`) answers in every place: the
+portfolio check (own count `not_ruled_out_poor_scan`, so the counts still add up to "checked"),
+the register query, the evaluation (Q2 flags it for review, like an UNCLEAR clause),
+`pipeline.show`, and the API (`former_names.not_ruled_out` and `.reason` on `GET /documents/{id}`
+and every `GET /matrix` row). Not chosen: fuzzy matching (false hits on clean text). The 47 gold
+documents are all above the threshold, so the evaluation did not change.
+
 ## Results on the gold set (2026-10-29)
 
 | | extract-v1 | extract-v2 |

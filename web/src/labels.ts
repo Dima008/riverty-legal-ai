@@ -7,6 +7,7 @@ export const STATUS_LABEL: Record<string, string> = {
   ABSENT: "Clause not found",
   UNCLEAR: "Unclear – needs a look",
   LEGACY_NAME: "Former company name",
+  NAME_NOT_RULED_OUT: "Former name cannot be ruled out",   // a poor scan without an exact match (F19)
   OTHER_LAW: "Other governing law",
   LAW_UNKNOWN: "Governing law not found",
   DUPLICATE: "Duplicate",
@@ -18,6 +19,7 @@ export const STATUS_SHORT: Record<string, string> = {
   ABSENT: "Not found",
   UNCLEAR: "Unclear",
   LEGACY_NAME: "Former name",
+  NAME_NOT_RULED_OUT: "Cannot rule out",
   OTHER_LAW: "Other law",
   LAW_UNKNOWN: "No law found",
   DUPLICATE: "Duplicate",
@@ -111,10 +113,19 @@ export const flagLabel = (flag: string) => FLAG_LABEL[flag.split(":")[0]] ?? fla
 export const warningLabels = (flags: string[], t: T = (text) => text) =>
   [...new Set(flags.filter((f) => !NOT_A_WARNING.has(f.split(":")[0])).map((f) => t(flagLabel(f))))];
 
-// Sentences the server builds from fixed templates (pipeline/portfolio.py _exclusion): they are
-// interface text, not evidence, so the tool matches the template and shows it in the chosen
-// language. Anything that matches no template is shown as it came (free text stays as it is).
-const EXCLUSION: [RegExp, string, (m: RegExpMatchArray, t: T) => Record<string, string>][] = [
+// Sentences the server builds from fixed templates (pipeline/portfolio.py _exclusion,
+// pipeline/queries.py poor_scan_reason): they are interface text, not evidence, so the tool
+// matches the template and shows it in the chosen language. Anything that matches no template is
+// shown as it came (free text stays as it is).
+type Template = [RegExp, string, (m: RegExpMatchArray, t: T) => Record<string, string>];
+const fromTemplate = (text: string, templates: Template[], t: T) => {
+  for (const [pattern, key, params] of templates) {
+    const m = text.match(pattern);
+    if (m) return t(key, params(m, t));
+  }
+  return text;
+};
+const EXCLUSION: Template[] = [
   [/^duplicate of (\S+) - the original is checked$/, "duplicate of {id} – the original is checked", (m) => ({ id: m[1] })],
   [/^amendment of (\S+) - read together with its base agreement$/, "amendment of {id} – read together with its base agreement", (m) => ({ id: m[1] })],
   [/^amendment, base agreement not in register$/, "amendment, base agreement not in register", () => ({})],
@@ -126,13 +137,16 @@ const EXCLUSION: [RegExp, string, (m: RegExpMatchArray, t: T) => Record<string, 
      return { type: t(DOC_TYPE_SINGULAR[key(m[1])] ?? m[1]), types: t(DOC_TYPE_LABEL[key(m[2])] ?? `${m[2]}s`) };
    }],
 ];
-export function exclusionReason(reason: string, t: T): string {
-  for (const [pattern, key, params] of EXCLUSION) {
-    const m = reason.match(pattern);
-    if (m) return t(key, params(m, t));
-  }
-  return reason;
-}
+export const exclusionReason = (reason: string, t: T) => fromTemplate(reason, EXCLUSION, t);
+
+// A poor scan without an exact match of a former name (F19, decision 89): not "no former name"
+const NAME_REASON: Template[] = [
+  [/^cannot be ruled out - poor scan \(OCR confidence (\d+) %, threshold (\d+) %\) - a person checks$/,
+   "cannot be ruled out – poor scan (OCR confidence {conf} %, threshold {threshold} %) – a person checks",
+   (m) => ({ conf: m[1], threshold: m[2] })],
+  [/^cannot be ruled out - poor scan - a person checks$/, "cannot be ruled out – poor scan – a person checks", () => ({})],
+];
+export const nameReason = (reason: string, t: T) => fromTemplate(reason, NAME_REASON, t);
 
 // How a selection was made in the register (decision 75), e.g. "law: DE · dated from: 2020-01-01"
 const SCOPE_FILTER: Record<string, string> = {

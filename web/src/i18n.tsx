@@ -35,6 +35,7 @@ export const DE: Record<string, string> = {
   "Clause not found": "Klausel nicht gefunden",
   "Unclear – needs a look": "Unklar – bitte prüfen",
   "Former company name": "Früherer Firmenname",
+  "Former name cannot be ruled out": "Früherer Name nicht auszuschließen",
   "Other governing law": "Anderes anwendbares Recht",
   "Governing law not found": "Keine Rechtswahl gefunden",
   "Duplicate": "Dublette",
@@ -42,6 +43,7 @@ export const DE: Record<string, string> = {
   "Not found": "Nicht gefunden",
   "Unclear": "Unklar",
   "Former name": "Alter Name",
+  "Cannot rule out": "Nicht auszuschließen",
   "Other law": "Anderes Recht",
   "No law found": "Keine Rechtswahl",
   // triage
@@ -191,6 +193,10 @@ export const DE: Record<string, string> = {
   "document type unknown – check manually": "Dokumenttyp unbekannt – bitte von Hand prüfen",
   "not extracted (status {status})": "nicht extrahiert (Status {status})",
   "selected, but another type ({type}) – the question is about {types}": "ausgewählt, aber anderer Typ ({type}) – die Frage betrifft {types}",
+  // poor scan without an exact former name: fixed templates of pipeline/queries.py (F19)
+  "cannot be ruled out – poor scan (OCR confidence {conf} %, threshold {threshold} %) – a person checks":
+    "nicht auszuschließen – schlechter Scan (OCR-Sicherheit {conf} %, Schwelle {threshold} %) – eine Person prüft",
+  "cannot be ruled out – poor scan – a person checks": "nicht auszuschließen – schlechter Scan – eine Person prüft",
 
   // ---- step 3: review list (ResultList.tsx)
   "Contracts to look at": "Zu prüfende Verträge",
@@ -257,6 +263,10 @@ export const DE: Record<string, string> = {
   "Not required for this type": "Für diesen Typ nicht erforderlich",
   "The playbook says": "Das Playbook sagt",
   "Former company names": "Frühere Firmennamen",
+  "The exact search found no former company name – but this scan is too poor to prove that none is there. Read the page: confirm if it names a former company, reject if it does not.":
+    "Die exakte Suche hat keinen früheren Firmennamen gefunden – aber dieser Scan ist zu schlecht, um zu beweisen, dass keiner darin steht. Die Seite lesen: bestätigen, wenn sie einen früheren Firmennamen nennt, sonst verwerfen.",
+  "The exact search found no former company name – but this scan is too poor to prove that none is there. A person reads the page.":
+    "Die exakte Suche hat keinen früheren Firmennamen gefunden – aber dieser Scan ist zu schlecht, um zu beweisen, dass keiner darin steht. Eine Person liest die Seite.",
   "resolved by {id}": "bereinigt durch {id}",
   "open": "offen",
 
@@ -354,6 +364,8 @@ export const DE: Record<string, string> = {
   "shown": "angezeigt",
   "with a required clause missing or unclear": "mit fehlender oder unklarer Pflichtklausel",
   "still naming a former company": "nennen noch einen früheren Firmennamen",
+  "former name cannot be ruled out (poor scan)": "früherer Name nicht auszuschließen (schlechter Scan)",
+  "cannot rule out": "nicht auszuschließen",
   "grey = not required for this type": "grau = für diesen Typ nicht erforderlich",
   "dot = checks overruled the model": "Punkt = Prüfungen haben das Modell überstimmt",
   "Contract": "Vertrag",

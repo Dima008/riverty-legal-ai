@@ -37,7 +37,9 @@ def overview(con) -> None:
     print(f"\nDuplicates: {dup_text}")
     print(f"Legacy company names: {len(legacy['open'])} open occurrences in "
           f"{len({h['doc_id'] for h in legacy['open']})} contracts, "
-          f"{len(legacy['resolved'])} already resolved by an amendment")
+          f"{len(legacy['resolved'])} already resolved by an amendment"
+          + (f"; cannot be ruled out (poor scan, a person checks): "
+             f"{', '.join(r['doc_id'] for r in legacy['not_ruled_out'])}" if legacy["not_ruled_out"] else ""))
     c = queries.costs(con)
     print(f"\nModel cost so far: ${c['cost_usd']} in {c['calls']} calls")
     for b in c["by_purpose"]:
@@ -67,6 +69,8 @@ def contract(con, doc_id: str) -> None:
     for h in hits:
         print(f"  legacy name:   '{h['name']}' on page {h['page']}"
               + (f" (resolved by {h['resolved_by']})" if h["resolved_by"] else " (open)"))
+    if queries.name_not_ruled_out(d["status"], len(hits)):     # F19: no match on a poor scan proves nothing
+        print(f"  legacy name:   {queries.poor_scan_reason(d['ocr_mean_conf'])}")
     print("\nFindings")
     for r in con.execute("SELECT * FROM clauses WHERE doc_id=? ORDER BY clause_type", (doc_id,)):
         required = m and m["doc_type"] in catalogue.CLAUSES[r["clause_type"]]["required_for"]

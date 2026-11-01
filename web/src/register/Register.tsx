@@ -20,7 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, type Matrix, type MatrixCell, type MatrixRow, type ReviewStateName } from "../api";
 import { navigate, useHashRoute } from "../routing";
 import { useT, type T } from "../i18n";
-import { CLAUSE_SHORT, DOC_TYPE_LABEL, REVIEW_LABEL, STATUS_LABEL, STATUS_SHORT, warningLabels } from "../labels";
+import { CLAUSE_SHORT, DOC_TYPE_LABEL, nameReason, REVIEW_LABEL, STATUS_LABEL, STATUS_SHORT, warningLabels } from "../labels";
 import { ContractFile } from "./ContractFile";
 
 // the filter labels and short type names are English; they are translated where they are shown
@@ -67,10 +67,12 @@ const ONLY_LABEL: Record<Only, string> = {
 const ONLY_FILTER: Record<Only, string> = {
   "": "", any: "with gaps or former names", gaps: "with a required clause missing or unclear", names: "still naming a former company",
 };
+// a poor scan without an exact match may still name a former company (F19): never filtered out
+const nameToCheck = (r: MatrixRow) => r.former_names.open > 0 || r.former_names.not_ruled_out;
 const onlyMatches = (r: MatrixRow, only: Only) =>
   only === "gaps" ? r.gaps.length > 0
-  : only === "names" ? r.former_names.open > 0
-  : only === "any" ? r.gaps.length > 0 || r.former_names.open > 0 : true;
+  : only === "names" ? nameToCheck(r)
+  : only === "any" ? r.gaps.length > 0 || nameToCheck(r) : true;
 const REVIEW_FILTER: { key: ReviewFilter; label: string }[] = [
   { key: "", label: "any" },
   { key: "open", label: "Gaps not yet reviewed" },
@@ -243,6 +245,7 @@ export function Register() {
     navigate(`/tool/workbench?scope=${encodeURIComponent(JSON.stringify({ doc_ids: docIds, filters }))}`);
   const withGaps = rows.filter((r) => r.gaps.length > 0 && !r.duplicate_of).length;
   const openNames = rows.filter((r) => r.former_names.open > 0 && !r.duplicate_of && !r.is_amendment).length;
+  const unsureNames = rows.filter((r) => r.former_names.not_ruled_out && !r.duplicate_of && !r.is_amendment).length;
 
   return (
     <div className="register">
@@ -351,6 +354,7 @@ export function Register() {
           <span><b>{rows.length}</b> {t("shown")}</span>
           <span className="s-absent"><b>{withGaps}</b> {t("with a required clause missing or unclear")}</span>
           <span className="s-unclear"><b>{openNames}</b> {t("still naming a former company")}</span>
+          {unsureNames > 0 && <span className="s-unclear"><b>{unsureNames}</b> {t("former name cannot be ruled out (poor scan)")}</span>}
           {noLaw.length > 0 && (
             <span className="mx-unjudged"><Warning16Filled /> {t("not shown, no governing law found: {ids}", { ids: noLaw.map((r) => r.doc_id).join(", ") })}</span>
           )}
@@ -454,6 +458,10 @@ export function Register() {
                     <td className="mx-name">
                       {r.former_names.open > 0 ? (
                         <span className="name-open">{t("{n} former", { n: r.former_names.open })}</span>
+                      ) : r.former_names.not_ruled_out ? (
+                        <span className="name-open" title={r.former_names.reason ? nameReason(r.former_names.reason, t) : undefined}>
+                          {t("cannot rule out")}
+                        </span>
                       ) : r.former_names.resolved > 0 ? (
                         <span className="name-resolved">{t("resolved")}</span>
                       ) : (

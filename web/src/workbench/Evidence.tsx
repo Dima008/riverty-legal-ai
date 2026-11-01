@@ -10,7 +10,7 @@ import { EvidenceSkeleton } from "../components/Loading";
 import { PageView, TextExcerpt } from "../components/PageView";
 import { ALERT_FLAGS, documentAlerts, flagName, SafetyBars, suspectHighlight, type Alert } from "../components/SafetyBar";
 import { useT } from "../i18n";
-import { STATUS_LABEL, warningLabels } from "../labels";
+import { nameReason, STATUS_LABEL, warningLabels } from "../labels";
 import { ReviewBox } from "./ReviewBox";
 
 interface Loaded {
@@ -147,7 +147,18 @@ export function Evidence({ run, row, onChanged, onOpenDoc }:
             </div>
           )}
 
-          {row.hits && (
+          {row.status === "NAME_NOT_RULED_OUT" && (
+            // a poor scan without an exact match (F19): no evidence to show - the page itself is the evidence
+            <div className="panel">
+              <div className="section-title">{t("Former company name")}</div>
+              <p><b>{row.reason ? nameReason(row.reason, t) : t(STATUS_LABEL[row.status])}</b></p>
+              <p className="note">
+                {t("The exact search found no former company name – but this scan is too poor to prove that none is there. Read the page: confirm if it names a former company, reject if it does not.")}
+              </p>
+            </div>
+          )}
+
+          {row.hits && row.hits.length > 0 && (
             <div className="panel">
               <div className="section-title">{t("Former company name")}</div>
               <ul className="hits">

@@ -103,7 +103,8 @@ def summary(con: sqlite3.Connection = Depends(get_con)) -> dict:
 @router.get("/matrix")
 def contract_matrix(con: sqlite3.Connection = Depends(get_con)) -> dict:
     """Every document against Legal's playbook: one row per document, one cell per clause type,
-    plus open and resolved former company names. The comparison standard is the catalogue
+    plus open and resolved former company names - and whether a poor scan leaves a former name
+    open (`former_names.not_ruled_out`, F19). The comparison standard is the catalogue
     (definition and the document types where a clause is required). No model call."""
     clauses = {k: {"label": c["label"], "definition": c["definition"], "required_for": c["required_for"]}
                for k, c in catalogue.CLAUSES.items()}
@@ -127,7 +128,8 @@ def contract_matrix(con: sqlite3.Connection = Depends(get_con)) -> dict:
         for key, cell in row["cells"].items():
             cell["required"] = row["doc_type"] in clauses[key]["required_for"]
         row["gaps"] = sorted(k for k, c in row["cells"].items() if c["required"] and c["status"] != "PRESENT")
-        row["former_names"] = names.get(row["doc_id"], {"open": 0, "resolved": 0})
+        n = names.get(row["doc_id"], {"open": 0, "resolved": 0})
+        row["former_names"] = queries.former_names(row["ingest_status"], row["ocr_mean_conf"], n["open"], n["resolved"])
         rows.append(row)
     return {"clauses": clauses, "rows": rows}
 
@@ -180,6 +182,9 @@ def get_document(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> dic
         meta = {k: m[k] for k in m.keys() if k not in ("raw_json", "parties_json")}
         meta["parties"] = _json(m["parties_json"], [])
         meta["is_amendment"] = bool(m["is_amendment"])
+    names = [dict(r) for r in con.execute(
+        "SELECT name, page, snippet, resolved_by FROM name_hits WHERE doc_id=? ORDER BY char_start", (doc_id,))]
+    resolved = sum(1 for h in names if h["resolved_by"])
     return {
         "doc_id": doc_id,
         "source_files": [Path(p).name for p in d["source_path"].split(";")],
@@ -193,8 +198,10 @@ def get_document(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> dic
         "family": [r[0] for r in con.execute("SELECT doc_id FROM documents WHERE family_id=? ORDER BY doc_id",
                                              (d["family_id"],))],
         "metadata": meta,
-        "legacy_names": [dict(r) for r in con.execute(
-            "SELECT name, page, snippet, resolved_by FROM name_hits WHERE doc_id=? ORDER BY char_start", (doc_id,))],
+        "legacy_names": names,
+        # the legacy-name answer for this document: on a poor scan without an exact match a former
+        # name cannot be ruled out - a person reads the page (F19, decision 89)
+        "former_names": queries.former_names(d["status"], d["ocr_mean_conf"], len(names) - resolved, resolved),
         "pages": [dict(r) for r in con.execute(
             "SELECT page_no, source, ocr_conf, width, height FROM pages WHERE doc_id=? ORDER BY page_no", (doc_id,))],
     }
@@ -233,7 +240,9 @@ def get_journey(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> dict
         {"station": "families", "facts": {
             "family_id": d["family_id"], "duplicate_of": d["duplicate_of"],
             "former_names_open": count("SELECT COUNT(*) FROM name_hits WHERE doc_id=? AND resolved_by IS NULL"),
-            "former_names_resolved": count("SELECT COUNT(*) FROM name_hits WHERE doc_id=? AND resolved_by IS NOT NULL")}},
+            "former_names_resolved": count("SELECT COUNT(*) FROM name_hits WHERE doc_id=? AND resolved_by IS NOT NULL"),
+            "former_name_not_ruled_out": queries.name_not_ruled_out(
+                d["status"], count("SELECT COUNT(*) FROM name_hits WHERE doc_id=?"))}},
         {"station": "index", "facts": {
             "search_rows": count("SELECT COUNT(*) FROM chunks_fts WHERE doc_id=?"),
             "embeddings": count("SELECT COUNT(*) FROM embeddings e JOIN chunks c ON c.chunk_id = e.chunk_id WHERE c.doc_id=?")}},

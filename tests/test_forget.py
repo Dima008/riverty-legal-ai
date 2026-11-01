@@ -305,6 +305,9 @@ def test_demo_status_and_reset_see_leftovers(register, tmp_path, monkeypatch, ca
     from tools import demo
     con = register
     monkeypatch.setattr(config, "WATCH_DIR", tmp_path / "inbox")
+    # the copied register may already hold calls of earlier rehearsals (they are kept, re-labelled)
+    forgotten = "SELECT COUNT(*) FROM llm_calls WHERE doc_id LIKE 'forgotten:H01@%'"
+    before = con.execute(forgotten).fetchone()[0]
     with transaction(con):
         con.execute("INSERT INTO clauses (doc_id, clause_type, status) VALUES ('H01', 'liability_limitation', 'ABSENT')")
         con.execute("INSERT INTO llm_calls (ts, purpose, model, doc_id, cost_usd) VALUES (?, 'extract', 'replay', 'H01', 0.001)",
@@ -313,7 +316,7 @@ def test_demo_status_and_reset_see_leftovers(register, tmp_path, monkeypatch, ca
     assert demo.status(con) is False and "leftovers  H01 rows without a document" in capsys.readouterr().out
     demo.reset(con)
     assert leftovers(con, "H01") == {}
-    assert con.execute("SELECT COUNT(*) FROM llm_calls WHERE doc_id LIKE 'forgotten:H01@%'").fetchone()[0] == 1
+    assert con.execute(forgotten).fetchone()[0] == before + 1
     assert demo.status(con) is demo.DEMO_FILE.exists()
 
 

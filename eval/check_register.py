@@ -72,7 +72,8 @@ def gold_questions(con, gold: dict) -> list[dict]:
     legacy = queries.legacy_names(con)
     answers = {
         "Q1": queries.missing_clause(con, "liability_limitation", "merchant_agreement"),
-        "Q2": legacy["open"],
+        # recall first: a poor scan without an exact match is flagged, like an UNCLEAR clause (F19)
+        "Q2": legacy["open"] + legacy["not_ruled_out"],
         "Q3": queries.missing_clause(con, "consumer_terms_checkout", "merchant_agreement"),
         "Q4": queries.missing_clause(con, "dpa_reference", "merchant_agreement"),
         "Q5": queries.by_law(con, "DE", doc_type="merchant_agreement"),
@@ -95,7 +96,8 @@ def gold_questions(con, gold: dict) -> list[dict]:
             "found": sorted(found),
             "expected": sorted(expected),
             "to_review": sorted({x["doc_id"] for x in rows
-                                 if x.get("confidence", 1) < 0.85 or x.get("status") == "UNCLEAR"}),
+                                 if x.get("confidence", 1) < 0.85
+                                 or x.get("status") in ("UNCLEAR", queries.NAME_NOT_RULED_OUT)}),
             "resolved_by_amendment": sorted({x["doc_id"] for x in legacy["resolved"]}) if qid == "Q2" else None,
         })
     return out

@@ -13,7 +13,7 @@ import { EvidenceSkeleton } from "../components/Loading";
 import { PageView, TextExcerpt } from "../components/PageView";
 import { ALERT_FLAGS, documentAlerts, flagName, SafetyBars, type Alert } from "../components/SafetyBar";
 import { useT } from "../i18n";
-import { DOC_TYPE_SINGULAR, STATUS_LABEL, warningLabels } from "../labels";
+import { DOC_TYPE_SINGULAR, nameReason, STATUS_LABEL, warningLabels } from "../labels";
 import { findingBoxes } from "../workbench/Evidence";
 import { FindingReview } from "./FindingReview";
 
@@ -209,6 +209,15 @@ export function ContractFile({ open, clauses, onClose, onReviewed, onOpen }: Pro
                       <FindingReview key={`${open.docId}-${finding.clause_type}`} docId={open.docId}
                                      clause={finding.clause_type} onChanged={onReviewed} />
                     )}
+                  </div>
+                )}
+
+                {doc.former_names?.not_ruled_out && (
+                  // a poor scan without an exact match (F19): "no hit" is not "no former name"
+                  <div className="panel">
+                    <div className="section-title">{t("Former company names")}</div>
+                    <p><b>{doc.former_names.reason ? nameReason(doc.former_names.reason, t) : t("cannot rule out")}</b></p>
+                    <p className="note">{t("The exact search found no former company name – but this scan is too poor to prove that none is there. A person reads the page.")}</p>
                   </div>
                 )}
 

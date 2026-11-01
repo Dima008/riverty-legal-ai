@@ -190,6 +190,22 @@ seed and store the model version per call, pin the model version in Azure.
 *Where:* decision 64, `eval/results/2026-10-30_extract-v2_consistency_summary.txt`, F7,
 `pipeline/llm.py` (`temperature=0`).
 
+**30. Interview question: "How many prompts does your system have, and what does the model do?"**
+
+Two system prompts, one small model. The reader gets eight rules, Legal's playbook with five
+clause definitions and one whole contract, and fills a fixed form: found, not found or unclear,
+with a quote. The checker gets only a definition and a quote, never the contract, and says yes
+or no – a no turns "found" into "unclear". Embeddings need no prompt; they only serve open
+search questions. Everything else is code: OCR, cutting the text, every check, confidence,
+triage, the lookups and the approval gate. So no model writes an answer: a pilot question like
+Q1 is a lookup and costs no model call at all. No agent, no function calling, no LangChain.
+
+*Numbers:* one full run of 47 documents = 146 calls, $0.12 – 47 reader calls ($0.10), 39 checker
+calls ($0.01), 59 embedding batches. 40,832 prompt tokens came from the cache, because the
+prompt and the playbook come first in every call. *Where:* `SYSTEM_PROMPT` and `CHECKER_PROMPT`
+in `pipeline/extract.py` (lines 43 and 71), `GET /api/documents/M18/prompt`,
+`eval/results/2026-10-31_extract-v2_stats.json`, card "what-we-use" (part 3), decision 90.
+
 **27. On the OCR card, M18 has "3 words with wrong letters". How do you know it is exactly 3?**
 
 We made M18 ourselves, so we have the text that was printed. A script puts the words OCR read next
@@ -269,6 +285,22 @@ Now it is red and says "text addressed to AI systems – not evidence", the same
 it. One signal, one meaning.
 
 *Where:* `web/src/components/SafetyBar.tsx`, `workbench/Evidence.tsx`, F23, decision 87.
+
+**31. Interview question: "Where exactly do you check against our guidelines, and where do you
+protect the company's interests?"**
+
+The guidelines are Legal's playbook, stored as data: which clauses each contract type must have,
+and which former company names must go. Every contract is checked against the playbook once,
+when it is read, and the result goes into the register: per contract and clause, found, not
+found or unclear, with the quote. So a question is a lookup in the register, not a new check.
+The company's interests are protected in the Workbench: a lawyer decides on every deviation,
+risky cases need two people, and the archive copy happens only after approval.
+
+Careful: it is not "store the guidelines in the database and check against it". The playbook is
+the yardstick, the database stores the *result* of the comparison.
+
+*Where:* `pipeline/catalogue.py` (the playbook), the register tab (one column per playbook
+clause), `api/review.py` (four eyes, approval before the archive copy).
 
 ## Running it
 

@@ -7,6 +7,31 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-01 · A poor scan cannot prove that a former name is gone (F19)
+
+- **Problem:** The handwritten H01 names "Arvato Financial Solutions", but the former-name check
+  counted it under "without hits". Legal's second pilot question would have missed a contract,
+  silently – the expensive error.
+- **Cause:** Tesseract reads the handwriting at a mean confidence of 61 (threshold 70) and spells
+  the name "Arfto" and "Arvafr". The exact name search finds nothing, and "nothing found" was read
+  as "no former name".
+- **Technique and why:** The same rule as for clauses: on a poor scan, absence is not proven. A
+  LOW_QUALITY document without an exact hit becomes a row NAME_NOT_RULED_OUT, triage REVIEW, with a
+  fixed reason ("cannot be ruled out – poor scan (OCR confidence 61 %, threshold 70 %) – a person
+  checks"). It is counted on its own, so the four counts still add up to "checked"
+  (`pipeline/queries.py`, `portfolio.py`). The API gives every document and matrix row a
+  `former_names` object; Q2 in the evaluation counts these rows as "to review", like UNCLEAR. The
+  Workbench and the register show "Former name cannot be ruled out" in EN and DE.
+- **Rejected alternative:** Fuzzy matching on the OCR text (false alarms on every scan); a fuzzy
+  match of the counterparty the model read (maybe later); only mentioning it in the talk.
+- **Metric before → after:** Q2 on a register copy with H01: 5 reported, H01 among 39 "without
+  hits" → 6 reported (H01 REVIEW), 38 without hits, 1 not ruled out. Real register (47 documents):
+  Q1–Q8 recall and precision 1.00, metadata 27/27, CUAD 19/20 – unchanged. pytest 95 → 102 passed
+  (7 new tests, no model call; one demo test no longer assumes a register without rehearsals).
+- **Links:** decision 89; F19 (and the F20 docs, whose card fix follows in the talk commit), F25
+  recorded; `pipeline/queries.py`, `pipeline/portfolio.py`, `api/register.py`,
+  `eval/check_register.py`, `tests/test_legacy_poor_scan.py`
+
 ## 2026-11-01 · The Legal Workbench redesigned: paper on a dark desk, the decision on the first screen
 
 - **Problem:** The tool looked like a different product than the talk (another green, no display

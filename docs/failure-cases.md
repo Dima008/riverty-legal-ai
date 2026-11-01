@@ -26,12 +26,13 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F16 | "Not governed by US law" reports every contract under a US state's law; the coverage assertion can never fail | queries | nobody at first - found by the repo audit, reproduced on a register copy | fixed, regression test |
 | F17 | A new file named like an existing contract (M03_copy.pdf) is merged into it, and the second contract is never read | ingest | nobody at first - found by the repo audit, reproduced in a temporary folder | fixed, regression test |
 | F18 | A reworded hidden instruction ("disregard your earlier guidance …", also in German) passes the injection guard: 3 of 4 variants not detected | checks | nobody at first - found by the research fact-check ("regex alone is brittle"), then a paraphrase test | open - fix proposed: Prompt Shields as a second detector (decision 80) |
-| F19 | A handwritten 2009 contract names the former provider twice; the legacy-name check finds nothing and counts it as "without hits" – the model's own reading says Arvato (H01, live demo) | families | nobody at first - found by measuring the live demo on a register copy | open - fix options below, decide with Dima |
-| F20 | The live-add card shows no problem at all for H01: it fetches the findings once, before they exist, and never again; its "poor scan" line can never fire; it would call an UNCLEAR clause "not found" | frontend | nobody at first - found by running the card in Edge against a register copy | open - card fix in act6.tsx |
+| F19 | A handwritten 2009 contract names the former provider twice; the legacy-name check finds nothing and counts it as "without hits" – the model's own reading says Arvato (H01, live demo) | families | nobody at first - found by measuring the live demo on a register copy | fixed - a poor scan without a match is a REVIEW row "cannot be ruled out" (decision 89) |
+| F20 | The live-add card shows no problem at all for H01: it fetches the findings once, before they exist, and never again; its "poor scan" line can never fire; it would call an UNCLEAR clause "not found" | frontend | nobody at first - found by running the card in Edge against a register copy | fixed - the card asks again once the type is there; poor scan, not found, unclear and the old-name line (F19) shown |
 | F21 | A demo reset while the watcher was still extracting H01 crashed the watcher, `status` still said "ready", and the late model calls kept the bare id, so they merged into the next rehearsal's H01 (4 calls for one extraction) | extraction | nobody at first - found by the dry-run review (reset 1.6 s after the document row appeared) | fixed - late answer dropped, calls re-labelled, watcher survives, reset waits |
 | F22 | `forget --remove-file` deleted a git-tracked gold-set PDF without asking; restoring it made the original M01 the copy of M15, Q8 recall 0.00 (M01, M15) | families | nobody at first - found by the dry-run review on a scratch copy | fixed - forget never deletes from a source folder |
 | F23 | In the redesigned Workbench the hidden instruction in M14 was drawn with the yellow evidence highlighter and labelled "the passage that hints at the clause", right under a warning bar saying it "is never used as evidence" (M14) | frontend | the design and end-to-end reviews of the redesign (before commit) | fixed |
 | F24 | The new year filter "Dated from 2004" hid C02 (effective date 2004-00-00, month unknown) without naming it in "not shown, no date found" – a filter hid a contract silently (C02) | frontend | the end-to-end review of the redesign (before commit) | fixed |
+| F25 | A finding escalated in the register drops out of the run's review counts (5 rows, counts add up to 4) and out of the monitoring's open count (M03) | api | nobody at first - found by the design review of the Workbench redesign | open |
 
 ---
 
@@ -768,22 +769,93 @@ Fuzzy scores of the two OCR lines against "arvato financial solutions" (`fuzz.pa
 
 **Layer.** Families (legacy-name occurrences), and the coverage of the portfolio check.
 
-**Fix.** Open, to decide with Dima (core design: recall first). Options, not exclusive:
+**Fix** (decision 89, option 1 below; recall first). A document below the OCR threshold
+(status LOW_QUALITY) where the exact match found no former name - open or resolved - is never
+counted "without hits". The portfolio check reports it as a row with status `NAME_NOT_RULED_OUT`,
+triage REVIEW (FOUR_EYES if the document also has an injection signal), no confidence, no hits,
+and the fixed reason "cannot be ruled out - poor scan (OCR confidence 61 %, threshold 70 %) - a
+person checks". The counts get a fourth bucket, `not_ruled_out_poor_scan`; the four add up to
+"checked". One rule for every place that answers the question (`pipeline/queries.py`
+`name_not_ruled_out`, `poor_scan_reason`): the portfolio check, the register query
+`queries.legacy_names` (new list `not_ruled_out`), the evaluation (Q2 counts it as flagged and
+"to review", like an UNCLEAR clause), `pipeline.show`, and the API - `former_names` on
+`GET /documents/{id}` and on every `GET /matrix` row (`open`, `resolved`, `not_ruled_out`,
+`reason`) and `former_name_not_ruled_out` in the journey's families station. The Workbench shows
+"Former name cannot be ruled out" / "Cannot rule out" with the reason (German: "Früherer Name
+nicht auszuschließen", "nicht auszuschließen – schlechter Scan (OCR-Sicherheit 61 %, Schwelle
+70 %) – eine Person prüft"); the register's name column says "cannot rule out", and its filter
+"still naming a former company" keeps the document.
+Options that were considered:
 1. Recall first: in the legacy-name check, a LOW_QUALITY document without hits is not
-   "without hits" but a REVIEW row "cannot rule out - poor scan" (coverage: not readable).
+   "without hits" but a REVIEW row "cannot rule out - poor scan" (coverage: not readable). **Chosen.**
 2. Compare the extracted own entity name with the legacy list (`token_set_ratio` >= 90, as
    `families._same_party` does) and report a REVIEW row "model reading, no verified quote".
+   Not now - a possible addition.
 3. Fuzzy search for the legacy names in OCR text only (one line scores 92.3, the other 88.5) -
-   risk of false hits on clean text, so only for OCR pages and only as REVIEW.
+   risk of false hits on clean text, so only for OCR pages and only as REVIEW. Not chosen.
 Long term: the multimodal fallback for LOW_QUALITY pages (decision 10) reads the page again.
 
-**Proof.** Open - after the fix: H01 is a REVIEW row of the legacy-name check, the evaluation
-on the 47 documents stays at recall 1.00.
+**Proof** (2026-11-01, register copy, watcher with `REGISTER_DB`, `INBOX_DIR` and `WORKBENCH_DB`
+pointed at the copy, `extract-v2`, gpt-4.1-mini). The drop:
 
-**Reproduce.** On a copy: set `REGISTER_DB` and `INBOX_DIR` (docs/demo.md, "Dry run"), start
+```
+dropped H01.jpg into ...\h01-proof\inbox at 05:14:09
+waiting for the watcher (`python -m pipeline.run --watch`) ...
+H01 findings in the register after 11.5 s
+```
+
+```
+ingested 1: H01
+chunks: 6
+extracting 1 with gpt-4.1-mini (extract-v2)
+  H01    merchant_agreement           liability_li=A0.50 consumer_ter=U0.35 dpa_referenc=A0.50 subprocessor=A0.50 audit_clause=A0.50
+families: duplicates={'M15': 'M01'} amendments={'M05-A': 'M05'} base agreement not in register=['C16'] legacy name hits=14
+embedded 6 chunks with text-embedding-3-small
+run cost: $0.0014 in 3 model calls
+```
+
+Still 14 hits - the OCR has not changed. The legacy-name run through the API code on the copy
+(`POST /runs`, then `GET /documents/H01`, `GET /matrix`, `GET /documents/H01/journey`):
+
+```
+register: register.sqlite (copy) | documents: 48
+POST /runs legacy_names | reported: ['H01', 'M04', 'M06', 'M10', 'M13', 'M18']
+counts: {"with_open_hits": 5, "not_ruled_out_poor_scan": 1, "resolved_by_amendment": 1, "without_hits": 38} | sum: 45 | checked: 45 | in_scope: 48 = checked + excluded 48
+H01 row: {"status": "NAME_NOT_RULED_OUT", "triage": "REVIEW", "confidence": null, "hits": [], "reason": "cannot be ruled out - poor scan (OCR confidence 61 %, threshold 70 %) - a person checks", "ocr_mean_conf": 61.3421052631579, "sample": false}
+triage: {"REVIEW": 1, "CONFIRM": 5} | review state: FOUND | required: 1
+GET /documents/H01: status LOW_QUALITY | legacy_names [] | former_names {"open": 0, "resolved": 0, "not_ruled_out": true, "reason": "cannot be ruled out - poor scan (OCR confidence 61 %, threshold 70 %) - a person checks"}
+GET /matrix H01 former_names: {"open": 0, "resolved": 0, "not_ruled_out": true, "reason": "cannot be ruled out - poor scan (OCR confidence 61 %, threshold 70 %) - a person checks"}
+GET /documents/H01/journey families: {"family_id": "H01", "duplicate_of": null, "former_names_open": 0, "former_names_resolved": 0, "former_name_not_ruled_out": true}
+```
+
+Before the fix the same run said `reported: ['M04', 'M06', 'M10', 'M13', 'M18']`,
+`{"with_open_hits": 5, "resolved_by_amendment": 1, "without_hits": 39}` - H01 was one of the 39.
+`python -m pipeline.show` on the copy:
+
+```
+Legacy company names: 10 open occurrences in 5 contracts, 2 already resolved by an amendment; cannot be ruled out (poor scan, a person checks): H01
+  legacy name:   cannot be ruled out - poor scan (OCR confidence 61 %, threshold 70 %) - a person checks
+```
+
+The evaluation on the 47 documents (real register, read only) is unchanged - none of them is
+below the OCR threshold: recall and precision 1.00 on Q1-Q8, Q2 found
+`['M04', 'M06', 'M10', 'M13', 'M18']`, metadata 27/27 on all three fields, CUAD 19/20; identical
+to `eval/results/2026-10-31_extract-v2_stats.txt` apart from the running cost total, so no new
+result file. With H01 in the copy, Q2 now flags H01 for review like Q1, Q3 and Q4 do: Q2
+precision 0.83, recall 1.00, to review `['H01']`. `python -m pytest`: 102 passed (95 before).
+
+**Reproduce.** Without a model call: `python -m pytest tests/test_legacy_poor_scan.py
+tests/test_portfolio.py` - a register copy with one clean merchant agreement marked LOW_QUALITY
+(portfolio check, coverage, evaluation, API), and H01 read by Tesseract with the metadata the model
+wrote, then the deterministic families step: H01 must be a row. Live, on a copy: set
+`REGISTER_DB`, `INBOX_DIR` and `WORKBENCH_DB` (docs/demo.md, "Dry run"), start
 `python -m pipeline.run --watch`, run `python -m tools.demo drop --wait`, then
 `python -m pipeline.show H01`; `python -m tools.demo reset` afterwards. One extraction, about
-$0.001. Automated test missing (needs a model call).
+$0.001.
+
+**Status.** Fixed (decision 89). The former name is still not *found* on H01 - the register
+says it cannot rule it out and a person reads the page. Finding it needs a better reading of the
+page (multimodal fallback, decision 10) or option 2.
 
 ---
 
@@ -836,17 +908,61 @@ GET /documents/H01/findings:
 
 **Layer.** Frontend (deck card).
 
-**Fix.** Open - in `act6.tsx`: fetch the findings again when `doc_type` arrives (dependency
-`[newest?.doc_id, newest?.doc_type]`); add `status` to the `Doc` type and show the poor-scan line
-for `status === "LOW_QUALITY"`; split the list into "not found" (ABSENT) and "unclear → a
-person" (UNCLEAR).
+**Fix** (2026-11-01, `web/src/deck/slides/act6.tsx`, `acts.css`):
+1. Nothing is fetched until `doc_type` is there; from then on the card asks for the findings and
+   the document again with every poll (dependencies `[doc_id, doc_type, tick]`, `tick` = one
+   more answer of `GET /documents`). Asking only on `[doc_id, doc_type]` would fix the empty list,
+   but the former-name check is written by the families step a moment after the findings: a poll
+   in between would keep a stale answer. Until the type is there the card says "the model is
+   reading it …" (was "type unknown – a person checks", which looked like a result).
+2. `status` is part of the `Doc` type; the poor-scan line is shown for `status === "LOW_QUALITY"`,
+   right when the document row appears (OCR is done before the model call).
+3. Required findings are split into "not found: …" (ABSENT) and "unclear → a person: …"
+   (UNCLEAR), both shown (recall first), labels in the order of the register card.
+4. New line from F19: "old company name: cannot be ruled out – a person checks" when
+   `GET /documents/{id}` → `former_names.not_ruled_out` is true.
+5. The box under the number reserves the height of the five lines (`min-height: 13.1cqw`), so the
+   card no longer jumps up when the answer arrives (title moved 177 → 158 px in the second run,
+   before this line of CSS).
+Rejected: reading the findings inside the `GET /documents` poll (a third request per poll for
+every new document, also when nothing changes) and a server push (new API surface for one card).
 
-**Proof.** Open - the same browser run shows the poor-scan line, "not found: Limitation of
-liability, Data processing agreement" and "unclear: Consumer terms in checkout".
+**Proof** (2026-11-01; register copy, a second API on port 8031 and Vite on 5231 pointed at it,
+the watcher on a temporary inbox, Edge at `#/present/live-add`, then → to build 1,
+`python -m tools.demo drop --wait`; seconds from starting the drop command, which dropped the file
+at 1.4 s). Final card, verbatim:
+
+```
+baseline (build 0): 47 | documents in the register, live | waiting for a new contract … | title y 157 | hash #/present/live-add
+after ->: 47 | documents in the register, live | waiting for a new contract … | hash #/present/live-add/1
+[drop 1.4 s] dropped H01.jpg into ...\f20_live\state\inbox at 07:25:51
+9.9 s: 48 | documents in the register, live | H01 is new · the model is reading it … | poor scan → a person | title y 157
+[drop 12.5 s] H01 findings in the register after 11.0 s
+12.8 s: 48 | documents in the register, live | H01 is new · merchant agreement | poor scan → a person | not found: Limitation of liability, Data processing agreement | unclear → a person: Consumer terms in checkout | old company name: cannot be ruled out – a person checks | title y 157
+  12.8s 200 /api/documents/H01/findings -> 5 findings
+  12.8s 200 /api/documents/H01 -> former_names {"open":0,"resolved":0,"not_ruled_out":true,"reason":"cannot be ruled out - poor scan (OCR confidence 61 %, threshold 70 %) - a person checks"}
+  15.8s 200 /api/documents/H01/findings -> 5 findings
+drop exit: 0 | errors: []
+```
+
+The run before (same card without the reserved height): the same text, findings in the register
+after 14.0 s, on the card at 16.1 s from the command (14.7 s from the drop), and the title moved
+from 177 to 158 px. Watcher, both runs: `H01 merchant_agreement liability_li=A0.50
+consumer_ter=U0.35 dpa_referenc=A0.50 …`, `run cost: $0.0014 in 3 model calls`. After each run
+`python -m tools.demo reset` on the copy: `forgot H01: documents 1, … llm_calls (kept,
+re-labelled) 2`, `ready for the live demo: yes`. The click script of the next card ("live") was
+run in the same session with H01 in the register - see docs/demo.md, "The click script". Found on
+the way: the Workbench shows no page image for H01 in a dry run (403, the API serves images only
+from `data\`, the dry-run inbox is a temporary folder) - not a fault of the talk setup, where the
+inbox is `data\inbox`; documented in docs/demo.md.
 
 **Reproduce.** On a copy (docs/demo.md, "Dry run"): API and Vite pointed at the copy, the
 watcher on the copy's inbox, the card at `#/present/live-add/1`, then `python -m tools.demo drop`.
-About $0.001. Automated test missing.
+About $0.0014. Automated test still missing: the card needs a running API and a model call.
+
+**Status.** Fixed. The note of the card reads what the screen shows (H01 is introduced as a
+handwritten phone photo from 2009; the old name "cannot be ruled out", never "found"; no hidden
+instruction is promised).
 
 ---
 
@@ -1047,6 +1163,39 @@ probe only).
 
 ---
 
+## F25 - An escalated finding drops out of the review counts (M03)
+
+**Symptom.** A finding escalated in the register ("not sure – a second person please") is
+still open, but a run's `review_states` and the monitoring's `open` count leave it out. The
+answer has 5 rows, the review counts add up to 4. The workload looks smaller than it is.
+
+**Evidence.** Register copy, scratch workbench DB, `scratchpad/escalated/repro.py` (TestClient,
+no model call): escalate M03 · liability in the register, then run Q1:
+
+```
+escalate M03: 201 ESCALATED
+rows: 5 | M03 state: ESCALATED
+review_states: {"FOUND": 4, "IN_REVIEW": 0, "CONFIRMED": 0, "REJECTED": 0, "CORRECTED": 0, "DISPUTED": 0} | sum: 4
+monitoring workflow: {"runs": 1, "rows": 5, "review_states": {"ESCALATED": 1, "FOUND": 4}, "open": 4, "disputed": 0}
+```
+
+**Root cause.** `review_state()` can return `ESCALATED` (`api/review.py` line 45, added with
+decision 73), but the list of states that `attach_reviews` counts was not extended
+(`api/review.py` lines 76-77), and monitoring computes `open` as `FOUND + IN_REVIEW` only
+(`api/quality.py` line 183).
+
+**Layer.** api.
+
+**Fix.** open.
+
+**Proof.** open.
+
+**Reproduce.** `PYTHONPATH=. REGISTER_DB=<copy> WORKBENCH_DB=<scratch> python repro.py` (script
+above). Automated test missing. Found by the design review of the Workbench redesign
+(2026-11-01), which plans the fix (spec A5).
+
+---
+
 ## Engineering issues (short)
 
 | Issue | Fix |
@@ -1061,6 +1210,7 @@ probe only).
 | Found while measuring the live-demo fallback (2026-10-31, register copy, endpoint pointed at a closed local port): a connection error counts as a server error, so the adapter retries it with backoff - `H01 extraction failed: Connection error.` only after 203.9 s; meanwhile the watcher reads no other file. H01 itself was in the register after 5.5 s (OCR is local), status LOW_QUALITY, type unknown | Accepted for the prototype: nothing is lost, the document waits for the model and is extracted at the next poll once Azure answers. docs/demo.md tells what to say. Open: fail fast on connection errors in the watcher |
 | Found by the design and end-to-end reviews of the tool redesign (before commit): the new screen-reader text "current" in the register's company column (`.sr-only`, position absolute) escaped the matrix's scroll box - 1,900 px of empty page below the footer ("All documents": scrollHeight 2986 vs footer 1059) and a sideways scroll at 1093 px (1154 > 1093) | `.mx-scroll { position: relative }`; page height = footer bottom at 1093, 1280, 1366, 1600 |
 | Found by the end-to-end review (before commit): after reviewer A's archive attempt was refused, switching to reviewer B kept A's red refusal in B's decision box ("tool gate: archive copy only after approval; M14 is IN_REVIEW") - exactly the four-eyes demo path | the decision box clears the last reviewer's refusal or receipt when the user changes |
+| Found by the full test run before the F19 commit (2026-11-01): after Dima's first live rehearsal (H01 dropped 09:01, reset 09:07) the real register keeps 2 re-labelled calls `forgotten:H01@2026-11-01T08:07:55+00:00`, by design. `test_demo_status_and_reset_see_leftovers` copies that register and expected exactly 1 such call after its own reset: `assert 3 == 1`. No wrong result in the system, the test assumed a register without rehearsals | The test counts the forgotten calls before its reset and expects one more. Proof: `tests/test_forget.py` 14 passed against the rehearsed register |
 
 ## Caveat for the presentation
 
