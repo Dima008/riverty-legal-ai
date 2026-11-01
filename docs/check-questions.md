@@ -227,7 +227,8 @@ For "not found" we look for narrow signal words of the clause; a hit makes it le
 Second, the confidence is computed from these checks – never asked from the model – and a fixed
 rule decides who looks: a hidden instruction or a contradicting amendment → two people; unclear,
 or below 0.8 → one lawyer; everything else → one click, and 10 % of those are still checked at
-random. A poor scan caps the confidence at 0.5, so it always goes to a person. Third, the whole
+random. On a poor scan every clause finding is capped at 0.5, and a former name that cannot be
+ruled out goes to a person too – for the governing law this is still open (F36). Third, the whole
 system: a test set with known answers, public contracts with lawyers' labels, and in the pilot
 every lawyer decision is counted – how often they overrule the system.
 

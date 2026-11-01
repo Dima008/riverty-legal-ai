@@ -42,6 +42,8 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F32 | Former names counted 5 on the Workbench's start strip but 6 in Q2 with the poor scan: the strip counted only contracts with a name hit, not "cannot be ruled out" (H01) | frontend | nobody at first - found by the design review of the Workbench redesign | fixed - one rule for the register and Q2, the strip is gone; regression test |
 | F33 | Raw server text reached the lawyer: "tool gate: archive copy only after approval; M14 is IN_REVIEW" (M14) | frontend | nobody at first - found by the end-to-end walkthrough of the four-eyes path | fixed - fixed sentences in lawyers' words, EN and DE |
 | F34 | A lawyer's correction of a Found clause is stored, but Q1 still answers from the register's status, so the corrected contract never appears in the answer (M01) | queries | nobody at first - found by the design review of the Workbench redesign | open - next step "human-corrected status" |
+| F35 | A finding escalated in the register ("a second person, please") can be confirmed in an answer by two people without any reason, because the run's reason rule looks only at the triage, not at the escalation (M03) | api | nobody at first - found by the review for the panel questions | open |
+| F36 | The governing-law and copy checks ignore scan quality: a poor scan whose law was read as DE drops out of Q5 silently instead of going to a person - the F19 trap in another check (M01, simulated) | queries | nobody at first - found by the review for the panel questions | open |
 
 ---
 
@@ -1550,6 +1552,73 @@ that reason - so the answer and the register agree.
 **Proof.** open.
 
 **Reproduce.** The four calls above against an API on a register copy with a scratch workbench DB.
+
+---
+
+## F35 - An escalated finding can be confirmed without a reason in an answer (M03)
+
+**Symptom.** A lawyer is unsure about a finding and escalates it in the register ("Not sure? Ask
+for a second person", a reason is required). Two people must now decide. In an answer (a run),
+both can confirm it with one click and no reason at all. In the register the same confirmation
+without a reason is refused. The escalation is meant to make the decision more careful, not less.
+
+**Evidence.** Register copy, scratch workbench DB, `scratchpad/gaps/repro.py` (TestClient, no
+model call):
+
+```
+escalate M03 in the register: ESCALATED
+M03 in the run: triage CONFIRM | state ESCALATED
+reviewer_a CONFIRMED without reason -> 201 ... 'review': {'state': 'IN_REVIEW', 'required': 2, 'done': 1, 'escalated': True, ...
+reviewer_b CONFIRMED without reason -> 201 ... 'review': {'state': 'CONFIRMED', 'required': 2, 'done': 2, 'escalated': True, ...
+```
+
+**Root cause.** `api/review.py` `add_review` asks for a reason unless the decision is CONFIRMED and
+`row["triage"] == "CONFIRM"` – it does not look at `row["review"]["escalated"]`. The register's
+endpoint (`api/findings.py`) has the escalation in its rule (`routine_confirmation = ... and not
+current["escalated"]`). Two endpoints, two versions of one rule.
+
+**Layer.** api.
+
+**Fix.** open (one rule for both endpoints: no reason only for a routine confirmation that is not
+escalated; a regression test for the run endpoint).
+
+**Proof.** open.
+
+**Reproduce.** `PYTHONPATH=. REGISTER_DB=<copy> WORKBENCH_DB=<scratch> python repro.py`. Automated
+test missing. Found by the fact check of the panel-question design (2026-11-01).
+
+---
+
+## F36 - A poor scan can drop out of the governing-law question silently (M01, simulated)
+
+**Symptom.** Q5 asks "which merchant agreements are not governed by German law?". A contract
+whose law was read as DE is skipped – also when the text came from a poor scan, where the code DE
+may be a misreading. Then the contract never appears in the answer and no person looks. This is
+the F19 trap (a poor scan cannot prove an absence) in another check. The same holds for the copy
+check (Q8).
+
+**Evidence.** Register copy with M01 marked as a poor scan (`documents.status = 'LOW_QUALITY'`,
+simulated; its law is DE), `scratchpad/gaps/repro.py`:
+
+```
+Q5 with M01 as a poor scan, law DE: reported ['M06', 'M07', 'M08', 'M11', 'M13'] | M01 reported: False | coverage {"in_scope": 20, "checked": 19}
+```
+
+**Root cause.** `pipeline/portfolio.py` `_governing_law_not` skips every document whose law equals
+the asked law (`continue`) and sends only an unknown law to a person; `_duplicates` likewise. The
+poor-scan rule exists only for clause findings (the confidence cap in `pipeline/extract.py`
+`assess`) and former names (`NAME_NOT_RULED_OUT`, decision 89). Check question 34 said "A poor
+scan ... always goes to a person" – true only for clauses and former names; corrected.
+
+**Layer.** queries.
+
+**Fix.** open – planned together with F26 (the law gets a quote): a poor scan or a law without a
+verified quote goes to a person, like decision 89.
+
+**Proof.** open.
+
+**Reproduce.** The script above. Automated test missing. Found by the fact check of the
+panel-question design (2026-11-01).
 
 ---
 
