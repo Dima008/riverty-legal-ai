@@ -240,6 +240,22 @@ complete in all 7 full runs; 19 of 20 agree with the CUAD labels. *Where:* `pipe
 (`assess`), `pipeline/portfolio.py` (`triage`, `REVIEW_BELOW`, `SAMPLE_PERCENT`); question 19
 (how the levels get calibrated).
 
+**38. The model says a contract is under German law and quotes "the German version prevails". Why
+does the register not accept that – and why is the law check not live in the demo?**
+
+That sentence names Germany, but it chooses a language, not a law. So the check asks two things
+of the passage in the contract: is there a sentence with a law word ("law", "governed", "Recht",
+"unterliegt"), and does that sentence name the country of the code? "Organized under the laws of
+Delaware" does not count either – that is where a company was founded. If the check fails, the
+law is "not confirmed" and a person reads it. It is built and tested, but not live: reading all
+47 contracts again with the new prompt changed M08 by chance (temperature 0 is not deterministic),
+and M08 is my demo example. So I keep the register stable for the interview and switch it on
+afterwards.
+
+*Numbers:* on a copy, Q1–Q8 stayed at 1.00; the check caught C05's wrong law; 4 of 4 trick quotes
+are flagged now. *Where:* `pipeline/extract.py` (`check_law`, `law_sentences`), F26, decisions 94
+and 97.
+
 ## Testing
 
 **9. The test for M08 does not check "the model says X". It only checks "the register never

@@ -102,7 +102,7 @@ interface WorkspaceProps {
 
 /** The page column and the finding column: the same for a run row and for one finding. */
 function Workspace({ data, row, standing, target, isNew, focusKey, onChanged, onOpenDoc }: WorkspaceProps) {
-  const { doc, finding, boxes, hint, suspect, text, alerts } = data;
+  const { doc, finding, boxes, span, hint, suspect, text, alerts } = data;
   const [page, setPage] = useState(data.firstPage);
   // a former name the lawyer clicked: only that name is highlighted
   const [name, setName] = useState<Record<number, number[][]> | null>(null);
@@ -116,7 +116,7 @@ function Workspace({ data, row, standing, target, isNew, focusKey, onChanged, on
       <section className="panel dk-page" aria-label={doc.doc_id}>
         <ContractHead doc={doc} isNew={isNew} />
         {text ? (
-          <TextExcerpt text={text.text} start={finding?.char_start ?? null} end={finding?.char_end ?? null} />
+          <TextExcerpt text={text.text} start={span.start} end={span.end} />
         ) : (
           <PageView doc={doc} page={page} onPage={setPage} boxes={name ?? boxes} hint={name ? "the former company name" : hint}
                     suspect={!name && suspect} fill />

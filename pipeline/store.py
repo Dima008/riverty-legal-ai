@@ -56,7 +56,11 @@ CREATE TABLE IF NOT EXISTS metadata (
     current_own_entity_name TEXT,  -- after applying amendments of the family
     counterparty_name TEXT, parties_json TEXT, effective_date TEXT, governing_law TEXT, language TEXT,
     is_amendment INTEGER, amended_agreement_date TEXT, renames_from TEXT, renames_to TEXT,
-    raw_json TEXT, text_sha256 TEXT, model TEXT, prompt_version TEXT, extracted_at TEXT
+    raw_json TEXT, text_sha256 TEXT, model TEXT, prompt_version TEXT, extracted_at TEXT,
+    -- the evidence for governing_law (decision 94, extract.check_law); all NULL = read before extract-v3
+    governing_law_quote TEXT, law_quote_verified INTEGER, law_quote_score REAL,
+    law_page INTEGER, law_char_start INTEGER, law_char_end INTEGER,
+    law_flags TEXT                 -- JSON list of failed law checks; [] = confirmed
 );
 CREATE TABLE IF NOT EXISTS name_hits (
     doc_id TEXT, name TEXT, page INTEGER, char_start INTEGER, char_end INTEGER, snippet TEXT,
@@ -82,6 +86,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
 """
 
 
+# Columns added after the first registers were built. A new register gets them from SCHEMA; connect()
+# adds them, empty, to an older one - every row stays as it was.
+ADDED_COLUMNS = {
+    "metadata": [("governing_law_quote", "TEXT"), ("law_quote_verified", "INTEGER"), ("law_quote_score", "REAL"),
+                 ("law_page", "INTEGER"), ("law_char_start", "INTEGER"), ("law_char_end", "INTEGER"),
+                 ("law_flags", "TEXT")],
+}
+
 # One lock for all writes: worker threads (model calls) and the main thread share one connection.
 DB_LOCK = threading.RLock()
 
@@ -95,7 +107,23 @@ def connect() -> sqlite3.Connection:
     con = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)
+    add_missing_columns(con)
     return con
+
+
+def add_missing_columns(con: sqlite3.Connection) -> None:
+    """Bring an older register up to SCHEMA: add each column of ADDED_COLUMNS it lacks (NULL in every row)."""
+    for table, columns in ADDED_COLUMNS.items():
+        have = {r[1] for r in con.execute(f"PRAGMA table_info({table})")}
+        for name, kind in columns:
+            if name in have:
+                continue
+            try:
+                con.execute(f"ALTER TABLE {table} ADD COLUMN {name} {kind}")
+            except sqlite3.OperationalError as exc:      # another process added it a moment ago
+                if "duplicate column" not in str(exc):
+                    raise
+    con.commit()
 
 
 @contextmanager

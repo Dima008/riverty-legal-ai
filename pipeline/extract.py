@@ -12,6 +12,8 @@ Every model answer then passes deterministic checks (guardrail sandwich):
   5. ABSENT is cross-checked with narrow absence signals; a hit lowers confidence
   6. OCR quality and suspected injection cap the confidence
 The confidence is computed from these signals, not asked from the model.
+The governing law gets a quote too (decision 94): checked like a clause quote, and a sentence of
+it that chooses a law must name the jurisdiction of the law code (check_law).
 """
 
 from __future__ import annotations
@@ -117,6 +119,9 @@ EXTRACTION_SCHEMA = {
         "governing_law": {"type": ["string", "null"],
                           "description": "ISO 3166 code of the chosen law, with subdivision for federal "
                                          "states: DE, NL, GB, US-CA, US-NY, CA-BC; null if no choice of law"},
+        "governing_law_quote": {"type": ["string", "null"],
+                                "description": "The sentence of the contract that chooses the law, word for "
+                                               "word; it names the country or state. Null if no choice of law"},
         "amendment": {
             "type": "object",
             "properties": {
@@ -136,7 +141,7 @@ EXTRACTION_SCHEMA = {
         },
     },
     "required": ["title", "doc_type", "language", "parties", "own_entity_name", "counterparty_name",
-                 "effective_date", "governing_law", "amendment", "clauses"],
+                 "effective_date", "governing_law", "governing_law_quote", "amendment", "clauses"],
     "additionalProperties": False,
 }
 
@@ -164,13 +169,17 @@ def _normalise(text: str) -> tuple[str, list[int]]:
     return "".join(out), index
 
 
-def locate_quote(quote: str, text: str) -> tuple[float, int, int]:
-    """Return (score, char_start, char_end). Quotes joined with '...' are verified part by part."""
+def quote_spans(quote: str, text: str) -> list[tuple[float, int, int]]:
+    """(score, char_start, char_end) of every part of a quote joined with '...', each located on its own;
+    a quote without '...' is one part."""
     parts = [q for q in re.split(r"\s*(?:\.\.\.|…)\s*", quote) if len(q.strip()) > 3]
-    if len(parts) > 1:
-        located = [_locate_one(q, text) for q in parts]
-        return min(x[0] for x in located), located[0][1], located[0][2]
-    return _locate_one(quote, text)
+    return [_locate_one(q, text) for q in parts] if len(parts) > 1 else [_locate_one(quote, text)]
+
+
+def locate_quote(quote: str, text: str) -> tuple[float, int, int]:
+    """Return (score, char_start, char_end): the lowest score of the parts, the span of the first part."""
+    spans = quote_spans(quote, text)
+    return min(s[0] for s in spans), spans[0][1], spans[0][2]
 
 
 def _locate_one(quote: str, text: str) -> tuple[float, int, int]:
@@ -224,8 +233,16 @@ def _batches(sections: list[dict]) -> list[list[dict]]:
 
 
 def _merge(parts: list[dict]) -> dict:
-    """Reduce step for long contracts: PRESENT anywhere wins, then UNCLEAR, else ABSENT."""
+    """Reduce step for long contracts: PRESENT anywhere wins, then UNCLEAR, else ABSENT. The law and
+    its quote come together from one part: the first that names a law and quotes it, else (an answer
+    without law quotes, extract-v2) the first that names a law - the choice of law is often near the end.
+    A quote without a law ("the parties will agree on the law later") never hides a later part's law."""
     merged = dict(parts[0])
+    law_part = (next((p for p in parts if p.get("governing_law") and p.get("governing_law_quote")), None)
+                or next((p for p in parts if p.get("governing_law")), parts[0]))
+    for key in ("governing_law", "governing_law_quote"):
+        if key in law_part:
+            merged[key] = law_part[key]
     merged["clauses"] = {}
     rank = {"PRESENT": 2, "UNCLEAR": 1, "ABSENT": 0}
     for key in catalogue.CLAUSES:
@@ -351,8 +368,115 @@ def check_metadata(result: dict) -> tuple[bool, list[str]]:
     return False, [f"amendment_contradiction: doc_type={result['doc_type']}, is_amendment={str(said).lower()}"]
 
 
-def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], text_sha: str, injected: bool,
-           actor: str = "pipeline", off: frozenset[str] = frozenset()) -> None:
+# The words that name the jurisdiction of a law code (decision 94). A sentence of the passage the law's
+# quote found in the contract that chooses a law (LAW_TERMS) must contain one of them, so a real sentence
+# about another country cannot confirm the code. A code without an entry is never confirmed - a person
+# looks, and the code gets its words here. Every code in the register has some (tests/test_law_check.py).
+JURISDICTION_WORDS = {
+    "DE": ("german", "deutsch", "bundesrepublik"),     # German law, Germany, deutsches Recht, Bundesrepublik
+    "NL": ("netherlands", "dutch", "nederland"),
+    "GB": ("england", "wales", "english", "united kingdom"),
+    "IL": ("israel",),
+    "CA-BC": ("british columbia",),
+    "US-AR": ("arkansas",),
+    "US-CA": ("california",),
+    "US-DE": ("delaware",),
+    "US-GA": ("georgia",),
+    "US-MA": ("massachusetts",),
+    "US-NJ": ("new jersey",),
+    "US-NV": ("nevada",),
+    "US-NY": ("new york",),
+    "US-TX": ("texas",),
+}
+
+# The words of a choice of law, whole words in lower case: English "governed by the laws of", German
+# "unterliegt dem Recht" / "Es gilt deutsches Recht", Dutch "wordt beheerst door Nederlands recht". Only
+# sentences with one of them count for the jurisdiction, so a place word in a sentence without one cannot
+# confirm a code: "a Massachusetts Corporation" in C05's preamble, "the German version prevails" in a
+# Dutch-law contract, an address in Germany. Small on purpose: a choice of law in other words ("deutschen
+# Rechts") is flagged and a person looks - it never passes unchecked. Known limit: a sentence with a law
+# word that names a place but chooses nothing still counts ("shall not be governed by German law", "Recht"
+# meaning "a right") - the lawyer sees the quote on the card (docs/failure-cases.md F26).
+LAW_TERMS = re.compile(r"\b(?:law|laws|governed|governing|recht|unterliegt|beheerst)\b")
+# A sentence ends at . ; ! ? and a space - not at the dot of a one-letter abbreviation ("U.S.", "N.Y.").
+_SENTENCE_END = re.compile(r"(?<!\b\w)[.;!?]\s+")
+# The law a party was formed under is not the contract's law. C06's preamble is one sentence with a law
+# word: "Apollo Endosurgery, Delaware corporation having offices at ... Texas Highway ... and (2)
+# Establishment Labs, S.A a corporation organized under the laws of Costa Rica" - it confirmed US-DE and
+# US-TX. The phrase and its place are cut out of a sentence before it counts: English "organized /
+# incorporated / (validly) existing ... under the laws of X" (up to the next comma) or "under X law",
+# German "Gesellschaft ... nach deutschem Recht" / "nach deutschem Recht gegründet", Dutch "vennootschap
+# ... naar Nederlands recht" / "naar Nederlands recht opgericht". If a real choice of law follows in the
+# same clause it is cut too: a person looks (a review row, never a wrong confirmation).
+_FORMED_UNDER = re.compile(
+    r"\b(?:organi[sz]ed|incorporated|existing|formed|registered|established)\b[^.;()]{0,60}?"
+    r"\bunder\s+(?:the\s+laws?\s+of\s+[^,;()]*|\S+\s+law\b)"
+    r"|(?:gesellschaft|vennootschap)[^.;()]{0,60}?\b(?:nach|naar)\s+\S+\s+recht\b"
+    r"|\b(?:nach|naar)\s+\S+\s+recht\s+(?:gegründet|errichtet|opgericht)")
+
+
+def law_sentences(passage: str) -> list[str]:
+    """The sentences of a passage that use a word of a choice of law (LAW_TERMS), in lower case, with the
+    law a party was formed under cut out (_FORMED_UNDER)."""
+    sentences = _SENTENCE_END.split(" ".join(passage.lower().split()))
+    return [s for s in (_FORMED_UNDER.sub(" ", s) for s in sentences) if LAW_TERMS.search(s)]
+
+
+# An answer read before extract-v3 has no law quote: nothing was checked (every law column stays NULL)
+LAW_NOT_CHECKED = {"quote": None, "verified": None, "score": None, "page": None, "start": None, "end": None,
+                   "flags": None}
+
+
+def check_law(con, doc_id: str, result: dict, text: str, off: frozenset[str] = frozenset()) -> dict:
+    """The governing law as a finding (decision 94, F26): its quote is checked like a clause quote - it
+    must be in the text and must not come from text addressed to software - and in the passage it found
+    in the contract, a sentence that chooses a law must name the jurisdiction of the code. Every failed
+    check is kept as a flag; the code stays as the model read it, and the queries decide what a flag
+    means (pipeline/queries.py law_answer, F36). `off` is the what-if demo's (eval/what_if.py), as in
+    assess: quote_found, injection_guard, and clause_vocabulary for the word checks."""
+    if "governing_law_quote" not in result:
+        return dict(LAW_NOT_CHECKED)
+    code, quote = result["governing_law"], result["governing_law_quote"]
+    if code is None:      # no choice of law: nothing to confirm, the queries report it as LAW_UNKNOWN
+        return {**LAW_NOT_CHECKED, "flags": []}
+    flags, score, start, end = [], 0.0, -1, -1
+    if not quote:
+        flags.append("law_quote_missing")
+    else:
+        spans = quote_spans(quote, text)                 # one per part of a quote joined with '...'
+        score, start, end = min(s[0] for s in spans), spans[0][1], spans[0][2]
+        found = score >= config.QUOTE_MATCH_MIN_SCORE
+        if not found and "quote_found" not in off:
+            flags.append("law_quote_not_verified")
+        if ("injection_guard" not in off and start >= 0
+                and any(s <= start < e or s < end <= e for s, e in catalogue.injection_spans(text))):
+            flags.append("law_quote_in_suspected_injection")
+        # the contract's own words, not the model's: a fuzzy match lets the model add a word
+        # ("... of Massachusetts and of Germany" matches C09 at 92.5, C09's passage names no Germany).
+        # Every part of a "..." quote counts with its own passage, not only the first.
+        chosen = [s for _, a, b in spans if a >= 0 for s in law_sentences(text[a:b])]
+        words = JURISDICTION_WORDS.get(code)
+        if "clause_vocabulary" not in off:
+            if words is None:
+                flags.append("law_code_not_in_map")
+            elif found and not chosen:          # e.g. "a Massachusetts Corporation": no choice of law
+                flags.append("law_quote_lacks_law_terms")
+            elif found and not any(w in s for s in chosen for w in words):
+                flags.append("law_quote_lacks_jurisdiction")
+    stored = con.execute("SELECT page_offsets_json FROM doc_text WHERE doc_id=?", (doc_id,)).fetchone()
+    if stored is None:
+        raise DocumentGone(doc_id)
+    return {"quote": quote, "verified": int(not flags), "score": round(score, 1),
+            "page": page_of(json.loads(stored[0]), start) if start >= 0 else None,
+            "start": start if start >= 0 else None, "end": end if end >= 0 else None, "flags": flags}
+
+
+def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], law: dict, text_sha: str,
+           injected: bool, actor: str = "pipeline", off: frozenset[str] = frozenset(),
+           version: tuple[str, str] | None = None) -> None:
+    """Write one checked answer. `version` = (model, prompt version) of the answer: a replay keeps the
+    stored one, so an answer from an older prompt is still read again by the next run (pending)."""
+    model, prompt_version = version or (config.CHAT_DEPLOYMENT, config.PROMPT_VERSION)
     a = result["amendment"]
     if "amendment_check" in off:   # what-if only: trust the model's amendment flag as it is
         is_amendment, doc_flags = bool(a["is_amendment"]), []
@@ -365,14 +489,17 @@ def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], text_
             "INSERT OR REPLACE INTO metadata (doc_id, doc_type, title, own_entity_name, current_own_entity_name,"
             " counterparty_name, parties_json, effective_date, governing_law, language, is_amendment,"
             " amended_agreement_date, renames_from, renames_to, raw_json, text_sha256, model, prompt_version,"
-            " extracted_at) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
+            " extracted_at, governing_law_quote, law_quote_verified, law_quote_score, law_page, law_char_start,"
+            " law_char_end, law_flags) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?"
             " WHERE EXISTS (SELECT 1 FROM documents WHERE doc_id=?)",
             (doc_id, result["doc_type"], result["title"], result["own_entity_name"], result["own_entity_name"],
              result["counterparty_name"], json.dumps(result["parties"], ensure_ascii=False),
              result["effective_date"], result["governing_law"], result["language"], int(is_amendment),
              a["amended_agreement_date"], a["renames_from"], a["renames_to"],
              json.dumps({"extraction": result, "checks": checks}, ensure_ascii=False), text_sha,
-             config.CHAT_DEPLOYMENT, config.PROMPT_VERSION, now(), doc_id)).rowcount
+             model, prompt_version, now(), law["quote"], law["verified"], law["score"], law["page"],
+             law["start"], law["end"], None if law["flags"] is None else json.dumps(law["flags"]),
+             doc_id)).rowcount
         if not stored:
             raise DocumentGone(doc_id)   # rolls the transaction back: nothing of it is written
         con.execute("DELETE FROM clauses WHERE doc_id=?", (doc_id,))
@@ -384,20 +511,21 @@ def _store(con, doc_id: str, result: dict, checks: dict, rows: list[dict], text_
                 (doc_id, r["clause_type"], r["status"], r["model_status"], r["quote"], r["quote_verified"],
                  r["quote_score"], r["page"], r["char_start"], r["char_end"], r["section"], r["chunk_id"],
                  r["rationale"], r["confidence"], json.dumps(r["flags"], ensure_ascii=False),
-                 config.CHAT_DEPLOYMENT, config.PROMPT_VERSION))
+                 model, prompt_version))
         flags = (["prompt_injection_suspected"] if injected else []) + doc_flags
         con.execute("UPDATE documents SET flags=? WHERE doc_id=?", (json.dumps(flags), doc_id))
-        audit(con, actor, "extracted", doc_id, model=config.CHAT_DEPLOYMENT, prompt_version=config.PROMPT_VERSION,
+        audit(con, actor, "extracted", doc_id, model=model, prompt_version=prompt_version,
               statuses={r["clause_type"]: r["status"] for r in rows}, injection_suspected=injected,
-              metadata_flags=doc_flags)
+              metadata_flags=doc_flags, law_flags=law["flags"])
 
 
 def reassess(con, log=print, off: frozenset[str] = frozenset(), only: list[str] | None = None) -> int:
     """Replay the deterministic checks on the stored model output - no model call, no cost.
     Used after tuning a check, and for documents read again with unchanged text (pipeline/run.py,
-    `only`); the model answers stay exactly as they were. `off` is for the what-if demo on a
-    copy of the register (eval/what_if.py): those layers are left out."""
-    rows = con.execute("SELECT m.doc_id, m.raw_json, m.text_sha256, t.text FROM metadata m "
+    `only`); the model answers stay exactly as they were, with their model and prompt version (an
+    answer from before extract-v3 stays "not checked" for the law). `off` is for the what-if demo on
+    a copy of the register (eval/what_if.py): those layers are left out."""
+    rows = con.execute("SELECT m.doc_id, m.raw_json, m.text_sha256, m.model, m.prompt_version, t.text FROM metadata m "
                        "JOIN doc_text t ON t.doc_id = m.doc_id").fetchall()
     rows = [r for r in rows if only is None or r["doc_id"] in only]
     for r in rows:
@@ -405,8 +533,9 @@ def reassess(con, log=print, off: frozenset[str] = frozenset(), only: list[str] 
         checks = {} if "checker" in off else raw["checks"]   # without the checker: no verdicts
         injected = "injection_guard" not in off and bool(catalogue.injection_spans(r["text"]))
         assessed = assess(con, r["doc_id"], raw["extraction"], checks, r["text"], off)
-        _store(con, r["doc_id"], raw["extraction"], raw["checks"], assessed, r["text_sha256"],
-               injected, actor="pipeline:reassess", off=off)
+        law = check_law(con, r["doc_id"], raw["extraction"], r["text"], off)
+        _store(con, r["doc_id"], raw["extraction"], raw["checks"], assessed, law, r["text_sha256"],
+               injected, actor="pipeline:reassess", off=off, version=(r["model"], r["prompt_version"]))
     log(f"reassessed {len(rows)} documents without model calls")
     return len(rows)
 
@@ -449,10 +578,11 @@ def run(con, adapter, doc_ids: list[str], workers: int = 4, log=print) -> dict:
                 continue
             try:
                 rows = assess(con, doc_id, result, checks, text)
+                law = check_law(con, doc_id, result, text)
                 text_sha = con.execute("SELECT text_sha256 FROM documents WHERE doc_id=?", (doc_id,)).fetchone()
                 if text_sha is None:
                     raise DocumentGone(doc_id)
-                _store(con, doc_id, result, checks, rows, text_sha[0], bool(catalogue.injection_spans(text)))
+                _store(con, doc_id, result, checks, rows, law, text_sha[0], bool(catalogue.injection_spans(text)))
             except DocumentGone:
                 _dropped(con, doc_id, log)
                 continue

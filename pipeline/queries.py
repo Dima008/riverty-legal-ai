@@ -28,13 +28,65 @@ def name_not_ruled_out(doc_status: str | None, name_hits: int) -> bool:
     return doc_status == "LOW_QUALITY" and name_hits == 0
 
 
-def poor_scan_reason(ocr_mean_conf: float | None) -> str:
+def poor_scan_reason(ocr_mean_conf: float | None, verdict: str = "cannot be ruled out") -> str:
     """The reason as a fixed template - the Workbench shows it in German (web/src/labels.ts).
     The confidence is rounded down, so it never reads as "70 %, threshold 70 %"."""
     if ocr_mean_conf is None:
-        return "cannot be ruled out - poor scan - a person checks"
-    return (f"cannot be ruled out - poor scan (OCR confidence {int(ocr_mean_conf)} %, "
+        return f"{verdict} - poor scan - a person checks"
+    return (f"{verdict} - poor scan (OCR confidence {int(ocr_mean_conf)} %, "
             f"threshold {config.OCR_LOW_QUALITY_CONFIDENCE:.0f} %) - a person checks")
+
+
+# F36, decision 94: the governing law is a finding like a clause. Its quote must be in the text, choose
+# a law and name the jurisdiction of the code (pipeline/extract.py check_law). Only a law confirmed that way, on
+# a good scan, may take a contract out of "not governed by X": a poor scan or a failed check cannot
+# prove the law, so the contract is reported as LAW_NOT_CONFIRMED for a person (recall first) - the
+# same idea as NAME_NOT_RULED_OUT. A law read before extract-v3 has no quote yet (law_flags NULL): it
+# keeps its old answer until the contract is read again, counted on its own as SAME_LAW_NOT_CHECKED.
+LAW_NOT_CONFIRMED = "LAW_NOT_CONFIRMED"
+LAW_UNKNOWN = "LAW_UNKNOWN"     # no governing law found: a person looks
+LAW_REPORTED = ("OTHER_LAW", LAW_UNKNOWN, LAW_NOT_CONFIRMED)   # rows of "not governed by X"; the rest is counted
+
+LAW_FLAG_REASON = {        # fixed templates, shown in German by the Workbench (web/src/labels.ts)
+    "law_quote_missing": "not confirmed - no quote for the law - a person checks",
+    "law_quote_not_verified": "not confirmed - the quote is not in the contract - a person checks",
+    "law_quote_in_suspected_injection": "not confirmed - the quote comes from text addressed to AI systems - a person checks",
+    "law_quote_lacks_law_terms": "not confirmed - the quote does not choose a law - a person checks",
+    "law_quote_lacks_jurisdiction": "not confirmed - the quote does not name the law's country or state - a person checks",
+    "law_code_not_in_map": "not confirmed - no check words for this law code yet - a person checks",
+}
+
+
+def law_flag_list(law_flags: str | None) -> list[str] | None:
+    """The stored law_flags (JSON text) as a list; None = not checked (read before extract-v3)."""
+    return None if law_flags is None else json.loads(law_flags)
+
+
+def law_answer(doc_status: str | None, law: str | None, flags: list[str] | None, asked: str) -> str:
+    """Where one contract lands in "not governed by <asked> law" - one rule for the portfolio check
+    and the evaluation. Reported: LAW_UNKNOWN, LAW_NOT_CONFIRMED, OTHER_LAW. Counted, not reported:
+    SAME_LAW (confirmed by its quote) and SAME_LAW_NOT_CHECKED (read before extract-v3).
+    The country is the first part of the code (US-NY -> US, F16)."""
+    if law is None:
+        return LAW_UNKNOWN
+    if doc_status == "LOW_QUALITY" or flags:
+        return LAW_NOT_CONFIRMED
+    if law.split("-")[0] != asked:
+        return "OTHER_LAW"
+    return "SAME_LAW" if flags == [] else "SAME_LAW_NOT_CHECKED"
+
+
+def law_reason(doc_status: str | None, ocr_mean_conf: float | None, law: str | None,
+               flags: list[str] | None) -> str | None:
+    """Why a person checks the governing law (a fixed reason), or None: the first failed check wins.
+    None also without a law: "no law found" says it by itself."""
+    if law is None:
+        return None
+    if doc_status == "LOW_QUALITY":
+        return poor_scan_reason(ocr_mean_conf, "cannot be confirmed")
+    if flags:
+        return LAW_FLAG_REASON.get(flags[0], f"not confirmed - {flags[0]} - a person checks")
+    return None
 
 
 def former_names(doc_status: str | None, ocr_mean_conf: float | None, open_hits: int, resolved_hits: int) -> dict:
@@ -84,15 +136,27 @@ def legacy_names(con) -> dict[str, list[dict]]:
 
 
 def by_law(con, law: str, equal: bool = False, doc_type: str | None = None) -> list[dict]:
-    """Contracts governed (equal=True) or not governed by a country's law, unknown law included.
-    The first two letters of an ISO 3166 code are the country (US-NY -> US, F16)."""
-    sql = f"SELECT m.doc_id, m.title, m.counterparty_name, m.governing_law {BASE} AND "
-    sql += "substr(m.governing_law, 1, 2) = ?" if equal else "COALESCE(substr(m.governing_law, 1, 2), '') != ?"
-    args = [law]
+    """Contracts governed (equal=True: read as the country's law) or not governed by a country's law.
+    "Not governed" follows law_answer, like the portfolio check: another law, no law found, or a law the
+    register cannot confirm (LAW_NOT_CONFIRMED, F36); `status` and `reason` say which."""
+    sql = (f"SELECT m.doc_id, m.title, m.counterparty_name, m.governing_law, m.law_flags, d.status AS doc_status,"
+           f" d.ocr_mean_conf {BASE}")
+    args = []
     if doc_type:
         sql += " AND m.doc_type = ?"
         args.append(doc_type)
-    return _rows(con, sql + " ORDER BY m.doc_id", args)
+    out = []
+    for r in _rows(con, sql + " ORDER BY m.doc_id", args):
+        flags = law_flag_list(r.pop("law_flags"))
+        r["status"] = law_answer(r["doc_status"], r["governing_law"], flags, law)
+        r["reason"] = law_reason(r["doc_status"], r["ocr_mean_conf"], r["governing_law"], flags)
+        if equal:
+            keep = (r["governing_law"] or "").split("-")[0] == law
+        else:
+            keep = r["status"] in LAW_REPORTED
+        if keep:
+            out.append(r)
+    return out
 
 
 def duplicates(con) -> list[dict]:

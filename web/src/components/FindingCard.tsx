@@ -15,7 +15,8 @@ import "../workbench/workbench.css";
 
 interface Props {
   doc: DocumentInfo;
-  finding: Finding | null;          // a clause finding; null for a former name, the law or a copy (then `row` says it)
+  finding: Finding | null;          // a clause finding; null for a former name, the law or a copy (then `row` says it;
+                                    // the law's quote comes from `doc`, decision 94)
   row?: RunRow | null;              // the run row: its status, the name hits, the law, the original of a copy
   standing?: Standing | null;       // where Legal's decision stands, shown as the next step (a run row is one)
   alerts?: Alert[];                 // the document's alerts from load(): the page of an injection, the worst OCR page
@@ -31,9 +32,28 @@ function title(finding: Finding | null, row: RunRow | null | undefined, t: T): s
   if (finding) return t(finding.label);
   const status = row?.status;
   if (status === "LEGACY_NAME" || status === "NAME_NOT_RULED_OUT") return t("Former company name");
-  if (status === "OTHER_LAW" || status === "LAW_UNKNOWN") return t("Governing law");
+  if (LAW_STATUSES.includes(status ?? "")) return t("Governing law");
   if (status === "DUPLICATE") return t("Copy of {id}", { id: row?.duplicate_of ?? "" });
   return "";
+}
+
+const LAW_STATUSES = ["OTHER_LAW", "LAW_UNKNOWN", "LAW_NOT_CONFIRMED"];
+
+/** What the register checked about the law's quote (decision 94), in one sentence. null: nothing to add -
+ *  a failed check is said above among the reasons why a person looks, and on a poor scan the "not
+ *  confirmed" sentence says it once (never "Checked" next to "too poor to confirm"). */
+function lawCheck(lawFlags: string[] | null | undefined, poorScan: boolean, t: T): string | null {
+  if (lawFlags == null) return t("No quote yet: this contract was read before the register asked for the law's quote.");
+  return lawFlags.length === 0 && !poorScan ? t("Checked: the quote is in the contract and names this law.") : null;
+}
+
+/** Why the law is not confirmed (F36), in the card's words: the quote failed its check (the reason is
+ *  said above), or a poor scan - whose quote may name the law all the same. */
+function notConfirmed(law: string, poorScan: boolean, quoteNamesLaw: boolean, t: T): string {
+  if (!poorScan) return t("The register read {law} law, but cannot confirm it from the contract. Read the choice of law and decide.", { law });
+  return quoteNamesLaw
+    ? t("The quote names {law} law, but this scan is too poor to confirm it. Read the choice of law and decide.", { law })
+    : t("The register read {law} law, but this scan is too poor to confirm it. Read the choice of law and decide.", { law });
 }
 
 /** Legal's decision in one line, for the contract file: "Confirmed by Legal Reviewer A and Legal Reviewer B, 1 Nov, 09:16". */
@@ -77,6 +97,10 @@ export function FindingCard({ doc, finding, row, standing, alerts = [], suspect,
   const whys = subject ? whyLines(subject, { alerts, suspect }, t, num) : [];
   const checks = finding?.layers.filter((l) => l.layer !== "model" && l.layer !== "register") ?? [];
   const failed = checks.filter((l) => l.passed === false).length;
+  // the law's evidence is the register's current one, like a clause finding (the page shows the same passage)
+  const m = doc.metadata;
+  const law = LAW_STATUSES.includes(status) && m?.governing_law ? m : null;
+  const poorScan = subject?.docStatus === "LOW_QUALITY";
   const when = (ts: string) =>
     new Date(ts).toLocaleString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
@@ -131,8 +155,24 @@ export function FindingCard({ doc, finding, row, standing, alerts = [], suspect,
           {t("The exact search found no former company name – but this scan is too poor to prove that none is there. Read the page: confirm if it names a former company, reject if it does not.")}
         </p>
       )}
+      {law?.governing_law_quote && (
+        <Quote key={`${doc.doc_id}-law`} finding={{ quote: law.governing_law_quote, section: null, page: law.law_page ?? null }} clamp />
+      )}
       {status === "OTHER_LAW" && row?.governing_law && (
         <p className="fc-text">{t("The register read: {law} law", { law: row.governing_law })}</p>
+      )}
+      {status === "LAW_NOT_CONFIRMED" && (
+        <p className="fc-text">{notConfirmed(row?.governing_law ?? "?", poorScan, law?.law_flags?.length === 0, t)}</p>
+      )}
+      {law && (
+        <p className="fc-text">
+          {lawCheck(law.law_flags, poorScan, t)}{" "}
+          {law.law_page != null && onPage && (
+            <button type="button" className="link-btn" onClick={() => onPage(law.law_page!)}>
+              {t("Show page {page}", { page: law.law_page })}
+            </button>
+          )}
+        </p>
       )}
       {status === "DUPLICATE" && row?.duplicate_of && (
         <p className="fc-text">

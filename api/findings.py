@@ -25,7 +25,7 @@ from pipeline import catalogue
 from pipeline.portfolio import triage
 
 from .deps import current_user, get_con
-from .review import FINAL, review_state
+from .review import FINAL, reason_required, review_state
 from .workbench import (FINDING_KEYS, audit, earlier_finding_reviews, finding_reviews, get_wb,
                         record_finding_review)
 
@@ -103,8 +103,8 @@ def add_finding_review(doc_id: str, clause_type: str, req: FindingReviewRequest,
     voted = any(r["reviewer"] == user and r["decision"] != "ESCALATED" for r in current["reviews"])
     if not escalating and voted:
         raise HTTPException(409, "four-eyes principle: the second review must come from a different person")
-    routine_confirmation = req.decision == "CONFIRMED" and version["triage"] == "CONFIRM" and not current["escalated"]
-    if not (req.reason or "").strip() and not routine_confirmation:
+    # ESCALATED is not CONFIRMED, so an escalation always needs a reason (the same rule as in a run)
+    if not (req.reason or "").strip() and reason_required(req.decision, version["triage"], current["escalated"]):
         raise HTTPException(422, "a reason is required for escalations, rejections, corrections "
                                  "and every finding that needs a review")
     if req.decision == "CORRECTED" and not req.corrected_status:

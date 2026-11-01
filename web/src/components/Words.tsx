@@ -3,7 +3,7 @@
 // and why a person looks. They replace the badges, the flag chips and the warning bars.
 import type { Finding, ReviewState, RunRow, Triage } from "../api";
 import { useT, type T } from "../i18n";
-import { nextStep, OPEN_STATES, overruled, statusWord, WHY, type WhyRule } from "../labels";
+import { lawReason, nextStep, OPEN_STATES, overruled, statusWord, WHY, type WhyRule } from "../labels";
 import { statusColor, StatusIcon } from "./Badges";
 import { flagName, type Alert } from "./SafetyBar";
 import "../workbench/workbench.css";
@@ -58,12 +58,13 @@ export interface WhySubject {
   sample?: boolean;
   docStatus?: string | null;    // LOW_QUALITY: a poor scan
   ocrConf?: number | null;      // the document's mean OCR confidence
+  reason?: string | null;       // the row's fixed reason, e.g. why a law is not confirmed (F36)
 }
 
 /** A run row as a why subject. */
 export const rowSubject = (r: RunRow): WhySubject => ({
   docId: r.doc_id, status: r.status, modelStatus: r.model_status, confidence: r.confidence, flags: r.flags,
-  review: r.review, sample: r.sample, docStatus: r.doc_status, ocrConf: r.ocr_mean_conf,
+  review: r.review, sample: r.sample, docStatus: r.doc_status, ocrConf: r.ocr_mean_conf, reason: r.reason,
 });
 
 /** A finding of the register as a why subject; the document's flags count too (an injection is a document flag). */
@@ -121,6 +122,12 @@ export function whyLines(s: WhySubject, ctx: WhyContext, t: T, num: (n: number) 
         add(rule, short, callout);
         break;
       }
+      case "law_not_confirmed":
+        // a poor scan says it above; this is the law whose quote failed its check (decision 94)
+        if (s.status === "LAW_NOT_CONFIRMED" && s.reason && s.docStatus !== "LOW_QUALITY") {
+          add(rule, t(rule.short), lawReason(s.reason, t));
+        }
+        break;
       case "overruled":
         if (s.modelStatus && s.modelStatus !== s.status) add(rule, t(rule.short), overruled(s.modelStatus, s.flags, t));
         break;
@@ -155,5 +162,6 @@ export function whyLines(s: WhySubject, ctx: WhyContext, t: T, num: (n: number) 
   return out;
 }
 
-/** "Not found" for a chip and a legend: OTHER_LAW without a law, the rows may name several. */
-export const statusLabel = (status: string, t: T) => (status === "OTHER_LAW" ? t("Other law") : statusWord(status, t));
+/** "Not found" for a chip and a legend: OTHER_LAW and LAW_NOT_CONFIRMED without a law, the rows may name several. */
+export const statusLabel = (status: string, t: T) =>
+  status === "OTHER_LAW" ? t("Other law") : status === "LAW_NOT_CONFIRMED" ? t("Law not confirmed") : statusWord(status, t);

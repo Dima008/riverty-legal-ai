@@ -77,6 +77,22 @@ def test_reason_required_for_review_rows_and_corrections(run):
     assert _review(rid, "M14", B, **correction).json()["review"]["state"] == "CORRECTED"
 
 
+def test_an_escalated_finding_needs_a_reason_in_a_run_too():
+    """F35: a lawyer escalated M03 in the register ("a second person, please"). In an answer both votes
+    now need a reason - one rule with the register (api/review.reason_required), not a one-click confirm."""
+    escalated = client.post("/findings/M03/liability_limitation/reviews", headers=A,
+                            json={"decision": "ESCALATED", "reason": "not sure about the annex"})
+    assert escalated.status_code == 201
+    rid = client.post("/runs", json={"plan": Q1}, headers=A).json()["run_id"]
+    row = next(r for r in client.get(f"/runs/{rid}").json()["rows"] if r["doc_id"] == "M03")
+    assert (row["triage"], row["review"]["state"]) == ("CONFIRM", "ESCALATED")   # routine, but escalated
+    for who in (A, B):
+        assert _review(rid, "M03", who, reason=None).status_code == 422
+        assert _review(rid, "M03", who, reason="  ").status_code == 422
+    assert _review(rid, "M03", A).json()["review"]["state"] == "IN_REVIEW"       # with a reason: 1 of 2
+    assert _review(rid, "M03", B).json()["review"]["state"] == "CONFIRMED"
+
+
 def test_no_bulk_confirmation_of_critical_rows(run):
     rid = run["run_id"]
     rows = {r["doc_id"]: r for r in run["rows"]}

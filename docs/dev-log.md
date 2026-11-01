@@ -7,6 +7,37 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-01 · The governing law gets a checked quote (F26), escalation needs a reason (F35), a poor scan cannot hide a contract from Q5 (F36)
+
+- **Problem:** Dima opened C09 in the Workbench: "the register read US-MA" – no quote, no page, so
+  a lawyer confirms the law blind (F26). The panel-question review found two more gaps: a finding
+  escalated in the register could be confirmed in an answer by two people without a reason (F35),
+  and a poor scan whose law was read as DE dropped out of Q5 silently (F36).
+- **Cause:** The extraction schema asked for the law as an ISO code only; the run's reason rule
+  ignored the escalation; the poor-scan rule existed only for clauses and former names.
+- **Technique and why:** Decision 94: the model returns the choice-of-law sentence word for word
+  (a schema field, the reader keeps its 8 rules), and code checks it like a clause quote: it must
+  be found in the contract, and the found passage must contain a sentence with a law word
+  ("law", "governed", "Recht", "unterliegt", "beheerst") that names the jurisdiction of the code
+  (US-MA → Massachusetts). A party's place of incorporation does not count. The page and span are
+  stored and highlighted in the Workbench. A poor scan or an unconfirmed law becomes a review row
+  (LAW_NOT_CONFIRMED), counted on its own. One helper decides when a reason is required, for runs
+  and the register. The store adds the new columns to an existing register without losing rows.
+  `tools.demo status` now says NO when the watcher would re-read contracts of an older prompt
+  version.
+- **Rejected alternative:** Finding the passage with patterns and no model (heuristic only);
+  checking the jurisdiction word in the model's quote instead of the contract (a quote can add a
+  word); a third model call just for the law (one more prompt).
+- **Metric before → after:** on a fresh extract-v3 copy of all 47 documents ($0.1225): Q1–Q8 recall
+  and precision 1.00, 45 law passages, C05's law corrected and caught (US-CA → US-MA, flagged by the
+  check); 2 of 235 clauses changed by model variance (M08, C08). Review cases that passed before and
+  are flagged now: 4 of 4 (preamble, "the German version prevails", two sentences, an address);
+  F35: 201 → 422 in both endpoints; F36: M01 as a simulated poor scan not reported → REVIEW row.
+  pytest 116 → 159 passed; eval on the real register unchanged (1.00, metadata 27/27, CUAD 19/20).
+- **Links:** decisions 94, 97; F26, F35, F36; `pipeline/extract.py` (`check_law`, `law_sentences`),
+  `pipeline/queries.py`, `pipeline/portfolio.py`, `pipeline/store.py`, `api/review.py`,
+  `tools/demo.py`, `web/src/components/FindingCard.tsx`, `tests/test_law_check.py`
+
 ## 2026-11-01 · Look up in the register, work in the Workbench: three steps, the decision always in view
 
 - **Problem:** Dima found the tool unclear: what does the register do, what the Workbench? He

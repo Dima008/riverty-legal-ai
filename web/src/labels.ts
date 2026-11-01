@@ -13,6 +13,7 @@ export const STATUS_SHORT: Record<string, string> = {
   NAME_NOT_RULED_OUT: "Cannot rule out",
   OTHER_LAW: "Other law",
   LAW_UNKNOWN: "No law found",
+  LAW_NOT_CONFIRMED: "Law not confirmed",
   DUPLICATE: "Duplicate",
 };
 
@@ -119,6 +120,26 @@ const NAME_REASON: Template[] = [
 ];
 export const nameReason = (reason: string, t: T) => fromTemplate(reason, NAME_REASON, t);
 
+// A governing law the register cannot confirm (F36, decision 94): pipeline/queries.py law_reason
+const LAW_REASON: Template[] = [
+  [/^cannot be confirmed - poor scan \(OCR confidence (\d+) %, threshold (\d+) %\) - a person checks$/,
+   "cannot be confirmed – poor scan (OCR confidence {conf} %, threshold {threshold} %) – a person checks",
+   (m) => ({ conf: m[1], threshold: m[2] })],
+  [/^cannot be confirmed - poor scan - a person checks$/, "cannot be confirmed – poor scan – a person checks", () => ({})],
+  [/^not confirmed - no quote for the law - a person checks$/, "not confirmed – no quote for the law – a person checks", () => ({})],
+  [/^not confirmed - the quote is not in the contract - a person checks$/,
+   "not confirmed – the quote is not in the contract – a person checks", () => ({})],
+  [/^not confirmed - the quote comes from text addressed to AI systems - a person checks$/,
+   "not confirmed – the quote comes from text addressed to AI systems – a person checks", () => ({})],
+  [/^not confirmed - the quote does not choose a law - a person checks$/,
+   "not confirmed – the quote does not choose a law – a person checks", () => ({})],
+  [/^not confirmed - the quote does not name the law's country or state - a person checks$/,
+   "not confirmed – the quote does not name the law's country or state – a person checks", () => ({})],
+  [/^not confirmed - no check words for this law code yet - a person checks$/,
+   "not confirmed – no check words for this law code yet – a person checks", () => ({})],
+];
+export const lawReason = (reason: string, t: T) => fromTemplate(reason, LAW_REASON, t);
+
 // How a selection was made (decision 75), e.g. "law: DE · dated from: 2020"; law "none" = no governing law found
 const SCOPE_FILTER: Record<string, string> = {
   type: "type", only: "only", law: "law", from: "dated from", to: "dated to", clause: "clause",
@@ -143,6 +164,7 @@ export const STATUS_WORD: Record<string, string> = {
   NAME_NOT_RULED_OUT: "Cannot rule out",
   OTHER_LAW: "Other law ({law})",
   LAW_UNKNOWN: "No law found",
+  LAW_NOT_CONFIRMED: "Law not confirmed ({law})",
   DUPLICATE: "Copy",
 };
 export const statusWord = (status: string, t: T, law?: string | null) =>
@@ -186,9 +208,11 @@ export function nextStep(review: ReviewState, triage: Triage, sample: boolean, t
 /** Why a person looks (3.3), in this order: a table row shows the first reason that applies, step 3 shows
  *  all of them as sentences. `flags` raise a reason by themselves; the others come from the review
  *  (escalated), the document (poor scan), the model's answer (overruled), the confidence, the check
- *  (no law) or the spot-check sample. `red`: two people approve, so the callout is red, else amber. */
+ *  (no law, a law not confirmed by its passage) or the spot-check sample. `red`: two people approve, so
+ *  the callout is red, else amber. */
 export interface WhyRule {
-  id: "injection" | "contradiction" | "escalated" | "poor_scan" | "overruled" | "hint" | "base_missing" | "unsure" | "no_law" | "sample";
+  id: "injection" | "contradiction" | "escalated" | "poor_scan" | "law_not_confirmed" | "overruled" | "hint" | "base_missing"
+    | "unsure" | "no_law" | "sample";
   flags?: string[];
   short: string;
   callout?: string;
@@ -205,6 +229,8 @@ export const WHY: WhyRule[] = [
   { id: "escalated", short: "Escalated by {user}", callout: "{user} asked for a second person: “{reason}”" },
   { id: "poor_scan", flags: ["low_ocr_quality"], short: "Poor scan (OCR {conf} %)",
     callout: "Poor scan: page {page} was read by text recognition with only {conf} % confidence. Compare with the page." },
+  // the law's quote failed its check (decision 94); the callout is the row's reason (lawReason)
+  { id: "law_not_confirmed", short: "Law not confirmed by its quote" },
   { id: "overruled", short: "The checks overruled the model" },   // the callout: overruled()
   { id: "hint", flags: ["signal_despite_absent"], short: "The text hints at the clause",
     callout: "The model found nothing, but the text mentions …{snippet}… – read the highlighted passage." },

@@ -17,7 +17,7 @@ import { PageView, TextExcerpt } from "../components/PageView";
 import { documentAlerts, type Alert } from "../components/SafetyBar";
 import { StatusWord } from "../components/Words";
 import { useLang, useT, type Lang, type T } from "../i18n";
-import { DOC_TYPE_SINGULAR, nameReason, STAGE_WORD } from "../labels";
+import { DOC_TYPE_SINGULAR, lawReason, nameReason, STAGE_WORD } from "../labels";
 import { useRegisterLive } from "../live";
 import { workbenchHref } from "../routing";
 import "./register.css";
@@ -245,7 +245,10 @@ function FileContent({ file, finding, selected, hl, page, lang, clauses, onSelec
           <>
             <span>{t(DOC_TYPE_SINGULAR[m.doc_type] ?? m.doc_type)}</span>
             <span>{m.effective_date ?? t("no date")}</span>
-            <span>{m.governing_law ? t("{law} law", { law: m.governing_law }) : t("law not found")}</span>
+            {/* on hover: why a person checks the law (F36), else the passage that chooses it (decision 94) */}
+            <span title={m.law_reason ? lawReason(m.law_reason, t) : m.governing_law_quote ?? undefined}>
+              {m.governing_law ? t("{law} law", { law: m.governing_law }) : t("law not found")}
+            </span>
           </>
         ) : (
           <span>{t("type not known yet")}</span>

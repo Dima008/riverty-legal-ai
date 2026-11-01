@@ -77,6 +77,7 @@ batches and merged (PRESENT anywhere wins, then UNCLEAR, else ABSENT).
 | OCR quality, suspected injection in document | weak evidence | confidence capped |
 | `doc_type` and `is_amendment` must agree (F10) | contract wrongly marked as amendment - queries skip amendments, so it would vanish silently (C11) | treated as contract, review flag |
 | Amendment without base agreement in the register | incomplete contract family (C16) | flag `amendment_base_not_in_register` |
+| Governing law: its quote must exist in the source (fuzzy ≥ 90), not come from a span that addresses software, and a sentence of the passage found that chooses a law (a law word) must name the jurisdiction of the code (decision 94) | a law code without evidence (C09, F26), read from the wrong sentence (C05's preamble "a Massachusetts Corporation"), or a wrong code (C05 on the v3 copy) | flag in `law_flags`, Q5 row "law not confirmed", review |
 
 The confidence comes from these signals, not from the model. Every finding keeps
 `model_status` (what the model said) next to `status` (what the register says).
@@ -96,6 +97,67 @@ the register query, the evaluation (Q2 flags it for review, like an UNCLEAR clau
 `pipeline.show`, and the API (`former_names.not_ruled_out` and `.reason` on `GET /documents/{id}`
 and every `GET /matrix` row). Not chosen: fuzzy matching (false hits on clean text). The 47 gold
 documents are all above the threshold, so the evaluation did not change.
+
+## Governing law: a finding with a checked quote
+
+Up to extract-v2 the register stored the law as a code only ("US-MA"), with no passage - nothing
+on screen proved it (F26). From extract-v3 (decision 94) the model also returns
+`governing_law_quote`, the sentence that chooses the law, word for word (asked in the JSON schema;
+the reader prompt keeps its 8 rules). `extract.check_law` checks it like a clause quote: found in
+the text, not from a span that addresses software, and in the passage it found a sentence that
+chooses a law must name the jurisdiction of the code. A sentence chooses a law if it has a law word
+(`LAW_TERMS`, whole words: law, laws, governed, governing, recht, unterliegt, beheerst - English,
+German and Dutch); sentences end at `. ; ! ?` and a space, not at "U.S.". The jurisdiction is a
+small map `JURISDICTION_WORDS` (DE → "german", "deutsch", "bundesrepublik"; NL → "netherlands",
+"dutch", "nederland"; GB → "england", "wales", "english", "united kingdom"; US-MA →
+"massachusetts"; …, one entry for every code in the register, a test guards it). Without the law
+word, any place word confirmed a code: C05's preamble ", a Massachusetts Corporation" for US-MA,
+"the German version prevails" in a Dutch-law contract for DE - now `law_quote_lacks_law_terms`. A
+choice of law in other words ("deutschen Rechts") is flagged and a person looks; it never passes.
+Before a sentence counts, the law a party was formed under is cut out (`_FORMED_UNDER`: "organized /
+incorporated / (validly) existing … under the laws of X" up to the next comma, "under X law",
+"Gesellschaft … nach deutschem Recht", "vennootschap … naar Nederlands recht", "nach deutschem Recht
+gegründet"): C06's preamble is one sentence with a law word that also names Delaware and Texas, and
+it confirmed US-DE until the verification of the build found it. A choice of law in the same clause
+as such a phrase is cut too and goes to a person (a review row, never a wrong confirmation). A quote
+joined with "…" is read part by part, each part in its own passage (`quote_spans`). Known limit: a
+sentence with a law word that names a place but chooses nothing still confirms the code - negation
+("shall not be governed by German law", "excluding German law"), carve-outs ("comply with German data
+protection law", "Mandatory provisions of German consumer protection law remain unaffected"),
+"the German version prevails as a matter of law", "Recht" / "recht" meaning "a right", and two
+sentences joined without ". " (after a one-letter abbreviation "Annex A.", at a line break or a
+colon). A scan of the 47 texts found no such sentence for DE or NL; the lawyer sees the quote on the
+card. The words are read in the contract's passage, not in the model's quote: a fuzzy match lets the
+model add a word ("… of Massachusetts and of Germany" matches C09 at 92.5). Every failed check is
+a flag in `metadata.law_flags` (`[]` = confirmed); quote, score, page and span are stored next to
+it, and `--reassess` replays the check from the stored answer (the what-if switches `quote_found`,
+`injection_guard`, `clause_vocabulary` reach it). A long contract read in parts takes the code and
+its quote from the same part (`_merge`): the first part that names a law and quotes it, so a quote
+without a law ("the parties will agree on the governing law later") never hides a later part's law.
+
+On a fresh extract-v3 register (a copy, 47 contracts, $0.1225): 44 law quotes confirmed, 2 without a
+choice of law (C12, M05-A), and one caught - the model coded C05 as US-MA (its preamble names "a
+Massachusetts Corporation"), but its own quote says "the laws of the State of California"
+(extract-v2 had US-CA). Replaying the law-word check and the formed-under cut on the 45 stored
+passages changed 0 verdicts (C05 stays caught).
+Decision 97 keeps it switched off until after the interview: the register stays on extract-v2.
+
+Q5 ("not governed by German law") follows one rule, `queries.law_answer`, in the portfolio check,
+the register query and the evaluation. Only a law confirmed by its quote on a good scan counts as
+"the same law". A poor scan (LOW_QUALITY) or a failed check is reported as `LAW_NOT_CONFIRMED`,
+triage REVIEW, with a fixed reason - "cannot be confirmed - poor scan (OCR confidence 61 %,
+threshold 70 %) - a person checks" or "not confirmed - the quote does not name the law's country or
+state - a person checks" - the same idea as former names on a poor scan (F36, decision 89). The
+counts add up to "checked": `other_law`, `law_unknown`, `law_not_confirmed`, `same_law`,
+`same_law_not_checked`.
+
+An answer read before extract-v3 has no quote (`law_flags` NULL, "not checked"). On a good scan it
+keeps its old answer and is counted as `same_law_not_checked` - not reported, not hidden: Q5 neither
+loses a contract nor fills up with review rows before the contracts are read again. A replay keeps
+the answer's prompt version, so the next run still reads it again. A poor scan is reported
+whatever its version. On the register (all extract-v2) the evaluation prints the same as before,
+byte for byte. An older register gets the seven law columns, empty, the first time it is opened
+(`store.add_missing_columns`, every row kept).
 
 ## Results on the gold set (2026-10-29)
 

@@ -88,9 +88,16 @@ export interface RunRow {
   section?: string | null;
   rationale?: string | null;
   hits?: NameHit[];
-  reason?: string | null;          // NAME_NOT_RULED_OUT: why a person has to read the page (F19)
+  reason?: string | null;          // NAME_NOT_RULED_OUT, LAW_NOT_CONFIRMED: why a person has to read the page (F19, F36)
   ocr_mean_conf?: number | null;
   governing_law?: string | null;
+  // the law's evidence (decision 94): the passage that chooses the law, its page and place in the text;
+  // law_flags: the failed checks, [] = confirmed, null = not checked (read before extract-v3); missing in older runs
+  law_quote?: string | null;
+  law_page?: number | null;
+  law_char_start?: number | null;
+  law_char_end?: number | null;
+  law_flags?: string[] | null;
   duplicate_of?: string | null;
   flags: string[];
   triage: Triage;
@@ -193,6 +200,14 @@ export interface DocumentInfo {
     current_own_entity_name: string | null;
     effective_date: string | null;
     governing_law: string | null;
+    // the law's evidence (decision 94); null = not checked (read before extract-v3)
+    governing_law_quote?: string | null;
+    law_page?: number | null;
+    law_char_start?: number | null;
+    law_char_end?: number | null;
+    law_flags?: string[] | null;
+    law_quote_verified?: boolean | null;
+    law_reason?: string | null;      // why a person checks the law (poor scan, failed check), F36
   } | null;
   pages: PageInfo[];
   legacy_names: { name: string; page: number; snippet: string; resolved_by: string | null }[];
@@ -232,6 +247,8 @@ export interface MatrixRow {
   counterparty_name: string | null;
   effective_date: string | null;
   governing_law: string | null;
+  law_quote_verified?: boolean | null;   // null: not checked yet (read before extract-v3)
+  law_reason?: string | null;            // why a person checks the law (F36)
   is_amendment: boolean;
   cells: Record<string, MatrixCell>;
   gaps: string[];
@@ -421,6 +438,7 @@ export const api = {
   document: (id: string) => request<DocumentInfo>(`/documents/${id}`),
   findings: (id: string) => request<Finding[]>(`/documents/${id}/findings`),
   highlight: (id: string, clause: string) => request<Highlight>(`/documents/${id}/findings/${clause}/highlight`),
+  lawHighlight: (id: string) => request<Highlight>(`/documents/${id}/law/highlight`),
   locate: (id: string, page: number, q: string) =>
     request<{ page: number; boxes: number[][] }>(`/documents/${id}/pages/${page}/locate?q=${encodeURIComponent(q)}`),
   text: (id: string) => request<DocText>(`/documents/${id}/text`),

@@ -44,9 +44,10 @@ export function Checks({ finding }: { finding: Finding }) {
   );
 }
 
-/** The model's quote with its section and page. `clamp`: cut to three lines with "Show all" (the
- *  finding card, where the decision below it must stay on the screen). */
-export function Quote({ finding, clamp = false }: { finding: Finding; clamp?: boolean }) {
+/** The model's quote with its section and page - of a clause, or of the governing law (decision 94).
+ *  `clamp`: cut to three lines with "Show all" (the finding card, where the decision below it must stay
+ *  on the screen). */
+export function Quote({ finding, clamp = false }: { finding: Pick<Finding, "quote" | "section" | "page">; clamp?: boolean }) {
   const t = useT();
   const [all, setAll] = useState(false);
   const [cut, setCut] = useState(false);      // the quote is longer than three lines

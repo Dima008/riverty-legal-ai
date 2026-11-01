@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 from api.deps import get_con
 from api.main import app
 from pipeline import config, families, forget
-from pipeline.store import audit, now
+from pipeline.store import add_missing_columns, audit, now
 
 
 @pytest.fixture
@@ -27,6 +27,7 @@ def register(tmp_path):
     source = sqlite3.connect(config.DB_PATH.as_uri() + "?mode=ro", uri=True)
     source.backup(con)
     source.close()
+    add_missing_columns(con)     # a copy of an older register gets today's columns
     con.row_factory = sqlite3.Row
     yield con
     con.close()

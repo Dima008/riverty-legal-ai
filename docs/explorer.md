@@ -89,6 +89,10 @@ a verbatim quote.
 the contract wrapped in `<contract>` and declared untrusted data. Strict JSON schema
 (structured output), temperature 0, prompt version `extract-v2`. Clause definitions come from
 `pipeline/catalogue.py` (Legal's playbook as data). 47 extraction calls cost $0.10.
+From `extract-v3` (decision 94) the form also asks for `governing_law_quote`, the sentence that
+chooses the law, word for word – in the JSON schema, so the reader prompt keeps its 8 rules. The
+register still holds the extract-v2 answers until the 47 contracts are read again after a
+comparison on a copy.
 
 **Why this way.** Absence can only be shown by reading everything; top-k retrieval can never
 prove that something is missing (37). Small model plus checks; bigger model only when
@@ -155,6 +159,38 @@ replayed without it on a copy of the register – no model call, 0.7 s, same res
 One layer alone changes nothing on Q1: the vocabulary check and the checker overlap (defense in
 depth). `GET /what-if?off=injection_guard` → M14 loses its four-eyes check.
 `GET /what-if/layers` → the table "each layer off on its own" (`python -m eval.what_if`).
+
+**The governing law is a finding too (decision 94).** Up to extract-v2 the register kept only the
+code ("US-MA" for C09) – nothing on screen proved it (F26). Its quote now passes the same checks as
+a clause quote (found in the text, not from text addressed to software), and in the passage found
+in the contract a sentence that chooses a law (a law word: law, governed, Recht, unterliegt,
+beheerst, …) must name the jurisdiction of the code (US-MA → "massachusetts", DE → "german",
+"deutsch", "bundesrepublik", …). A place word in a sentence without a law word confirms nothing:
+C05's preamble ", a Massachusetts Corporation" or "the German version prevails" in a Dutch-law
+contract were confirmed before the law-word check, now they are "the quote does not choose a law".
+The law a party was formed under is cut out first: C06's preamble is one sentence with a law word
+("… Delaware corporation having offices at … Texas Highway … a corporation organized under the laws
+of Costa Rica") and confirmed US-DE and US-TX until the verification of the build found it; "Riverty
+GmbH, a company incorporated under German law" or "eine Gesellschaft nach deutschem Recht" in a
+Dutch-law contract are cut the same way. A quote joined with "…" is read part by part, each in its
+own passage. Known limit: a sentence with a law word that names a place but chooses nothing still
+confirms it – "shall not be governed by German law", "excluding German law", "comply with German
+data protection law", "Recht" meaning "a right" ("Riverty hat das Recht, … in Deutschland"), or two
+sentences joined without ". " ("Annex A. This …", a line break) – the lawyer sees the quote on the
+card. None of these is in the 47 texts. The contract's words
+count, not the model's: "… of Massachusetts and of Germany" matches C09 at 92.5 – above the
+threshold – but C09's passage says nothing of Germany, so DE is not confirmed. Every failed check is
+a flag (`law_flags`), and Q5 reports such a contract as "law not confirmed" for a person (F36). On a
+fresh extract-v3 register (a copy): 44 of 47 confirmed, 2 without a choice of law, and one wrong
+code caught – C05 coded US-MA, but its quote says California. Switched off until after the
+interview (decision 97): the register stays on extract-v2, its law rows say "No quote yet". On a register copy with C09's quote filled in
+by hand: match 100, page 1, characters 32700–32818; `GET /documents/C09` → `metadata.law_flags: []`,
+`law_quote_verified: true`; `GET /documents/M06/law/highlight` → 10 word boxes on page 2. In the
+Workbench the card shows the quote, "Checked: the quote is in the contract and names this law." and
+"Show page 2"; the page highlights the passage ("the choice of law"). A quote that failed is shown
+as "the model's quote", never as the choice of law. On a poor scan the card says it in one sentence –
+"The quote names DE law, but this scan is too poor to confirm it." – never "Checked" next to "too
+poor to confirm".
 
 **Diagram.** A vertical stack: model on top, one row per check with ✓ / ✗, register result at
 the bottom. Click a contract to replay its finding through the stack. In the Workbench the finding
@@ -249,6 +285,13 @@ each contract lands in exactly one of the two lists; the tests count it against 
 call: a question costs $0 – reading the contracts was paid once ($0.12 for 47). Inside the checked
 list nothing is "fine" by default either: in the legacy-name check a poor scan without a match is
 reported for review, not counted "without hits" (F19); its four counts add up to "checked". The
+governing-law check follows the same idea (F36): only a law confirmed by its quote on a good scan
+counts as "the same law"; a poor scan or a failed quote check is a REVIEW row "law not confirmed"
+with a fixed reason ("cannot be confirmed - poor scan (OCR confidence 61 %, threshold 70 %) - a
+person checks"). A law read before extract-v3 has no quote yet: it keeps its old answer, counted as
+`same_law_not_checked`, so Q5 neither loses a contract nor fills up with review rows before the
+re-read. Its five counts add up to "checked" – on a copy with M01 as a poor scan and M02's quote
+naming no law: other law 5, law not confirmed 2, no law 0, same law 0, not checked yet 12 = 19. The
 answer also names every contract it checked (`coverage.checked_ids`, next to the excluded ones),
 and every reported row carries its document's scan quality and arrival (`doc_status`,
 `ocr_mean_conf`, `ingested_at`) – so the names, law and copy checks can say "poor scan" too.
@@ -305,8 +348,8 @@ nothing in between.
 **What.** Review effort where errors are likely or an attack is possible – not everywhere.
 
 **In our system.** FOUR_EYES if the document contains a suspected injection or contradicting
-metadata; REVIEW if UNCLEAR, a former name that a poor scan cannot rule out (F19), or confidence
-below 0.8; otherwise CONFIRM, with a deterministic
+metadata; REVIEW if UNCLEAR, a former name that a poor scan cannot rule out (F19), a governing
+law that is not confirmed (F36) or not found, or confidence below 0.8; otherwise CONFIRM, with a deterministic
 10 % spot-check sample. Only signals from the register, never the model's self-assessment.
 Q1: M14 FOUR_EYES (injected note), M08 and M10 REVIEW (unclear), M03 and M18 CONFIRM. On screen
 the triage and the decision state are one word, the **next step** (decision 91): Confirm (Spot check
@@ -367,7 +410,11 @@ for two people), one of two approvals, and disputed.
 **What went wrong.** F25: a finding escalated in the register dropped out of the counts – Q1 with
 M03 escalated had 5 rows, but the review counts added up to 4 and the monitoring said 4 open. The
 state ESCALATED existed, but nobody counted it. Fixed: the counts add up to 5, monitoring says 5
-open, and a regression test escalates M03.
+open, and a regression test escalates M03. F35: the same escalated M03 could then be confirmed in an
+answer by two people without any reason – the answer's rule looked only at the triage (CONFIRM),
+the register's also at the escalation. Now both endpoints share one rule
+(`api/review.reason_required`): only a routine confirmation that nobody escalated may go without a
+reason; both votes on M03 without a reason → 422.
 
 **Live.** `POST /runs/{run_id}/reviews` as reviewer A on M14 → `IN_REVIEW`; again as A →
 409 "the second review must come from a different person"; as B → `CONFIRMED`. In the register:

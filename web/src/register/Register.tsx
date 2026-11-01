@@ -24,7 +24,7 @@ import {
   searchMatch, year, type Only, type ReviewFilter,
 } from "../filters";
 import { useLang, useT, type T } from "../i18n";
-import { CLAUSE_SHORT, DOC_TYPE_LABEL, nameReason, planQuestion, REVIEW_MARK, STAGE_WORD, STATUS_WORD, statusWord, warningLabels } from "../labels";
+import { CLAUSE_SHORT, DOC_TYPE_LABEL, lawReason, nameReason, planQuestion, REVIEW_MARK, STAGE_WORD, STATUS_WORD, statusWord, warningLabels } from "../labels";
 import { useRegisterLive } from "../live";
 import { navigate, useHashRoute, workbenchHref } from "../routing";
 import { ContractFile } from "./ContractFile";
@@ -391,7 +391,7 @@ export function Register() {
                     </td>
                     <td className="mx-meta">{r.doc_type && SHORT_TYPE[r.doc_type] ? t(SHORT_TYPE[r.doc_type]) : t("type not known yet")}</td>
                     <td className="mx-meta num">{r.effective_date ?? "–"}</td>
-                    <td className="mx-meta">{r.governing_law ?? "–"}</td>
+                    <td className="mx-meta" title={r.law_reason ? lawReason(r.law_reason, t) : undefined}>{r.governing_law ?? "–"}</td>
                     <td className="mx-meta src">
                       {source(r, t)}
                       {r.ingest_status === "LOW_QUALITY" && <span className="mx-poor">{t("poor scan")}</span>}

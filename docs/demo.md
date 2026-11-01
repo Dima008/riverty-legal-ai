@@ -170,6 +170,11 @@ browser), **Legal Reviewer A** selected (the switch survives going back to the t
 `python -m tools.demo reset`. A forgotten H01 would be part of the card's baseline (the first
 answer it gets), so it would never appear as new; `drop` refuses in that case.
 
+`status` also says NO when the code's prompt version (`PROMPT_VERSION` in `pipeline/config.py`) is
+not the register's: "NO - 47 contracts were read with an older prompt version; the watcher would
+read them again (PROMPT_VERSION is extract-v3)". A watcher started now would re-read all 47 (minutes, about $0.12, and a model may
+answer differently, F7). Set the prompt version back to the register's (decision 97: `extract-v2`).
+
 ## The moment
 
 1. The card "live-add" is on screen and shows **47**. Only now drop - the card takes its

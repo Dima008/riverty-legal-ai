@@ -122,11 +122,16 @@ def contract_matrix(con: sqlite3.Connection = Depends(get_con)) -> dict:
     for r in con.execute(
             "SELECT d.doc_id, d.format, d.status AS ingest_status, d.ocr_mean_conf, d.family_id, d.duplicate_of,"
             " d.flags, d.ingested_at, m.doc_type, m.title, m.counterparty_name, m.effective_date, m.governing_law,"
-            " m.language, m.is_amendment FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id ORDER BY d.doc_id"):
+            " m.law_quote_verified, m.law_flags, m.language, m.is_amendment"
+            " FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id ORDER BY d.doc_id"):
         row = dict(r)
         row["stage"] = stage[row["doc_id"]]
         row["flags"] = _json(row["flags"], [])
         row["is_amendment"] = bool(row["is_amendment"])
+        # the law's evidence (decision 94): null = not checked yet (read before extract-v3)
+        law_flags = queries.law_flag_list(row.pop("law_flags"))
+        row["law_quote_verified"] = None if row["law_quote_verified"] is None else bool(row["law_quote_verified"])
+        row["law_reason"] = queries.law_reason(row["ingest_status"], row["ocr_mean_conf"], row["governing_law"], law_flags)
         row["cells"] = cells.get(row["doc_id"], {})
         for key, cell in row["cells"].items():
             cell["required"] = row["doc_type"] in clauses[key]["required_for"]
@@ -218,6 +223,10 @@ def get_document(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> dic
         meta = {k: m[k] for k in m.keys() if k not in ("raw_json", "parties_json")}
         meta["parties"] = _json(m["parties_json"], [])
         meta["is_amendment"] = bool(m["is_amendment"])
+        # the law's evidence (decision 94): quote, page, span and the failed checks; null = not checked yet
+        meta["law_flags"] = queries.law_flag_list(m["law_flags"])
+        meta["law_quote_verified"] = None if m["law_quote_verified"] is None else bool(m["law_quote_verified"])
+        meta["law_reason"] = queries.law_reason(d["status"], d["ocr_mean_conf"], m["governing_law"], meta["law_flags"])
     names = [dict(r) for r in con.execute(
         "SELECT name, page, snippet, resolved_by FROM name_hits WHERE doc_id=? ORDER BY char_start", (doc_id,))]
     resolved = sum(1 for h in names if h["resolved_by"])
@@ -343,6 +352,19 @@ def get_highlight(doc_id: str, clause_type: str, con: sqlite3.Connection = Depen
             if found["pages"]:
                 return {"kind": "signal", "char_start": None, "char_end": None, **found}
     return {"kind": "none", "char_start": None, "char_end": None, "coverage": 0.0, "pages": []}
+
+
+@router.get("/documents/{doc_id}/law/highlight")
+def get_law_highlight(doc_id: str, con: sqlite3.Connection = Depends(get_con)) -> dict:
+    """Word boxes of the governing law's quote (decision 94), the same way as a clause quote.
+    kind=none: no quote stored (no choice of law, or read before extract-v3)."""
+    _document(con, doc_id)
+    r = con.execute("SELECT governing_law_quote, law_page, law_char_start, law_char_end FROM metadata WHERE doc_id=?",
+                    (doc_id,)).fetchone()
+    if r is None or not r["governing_law_quote"]:
+        return {"kind": "none", "char_start": None, "char_end": None, "coverage": 0.0, "pages": []}
+    return {"kind": "quote", "char_start": r["law_char_start"], "char_end": r["law_char_end"],
+            **quote_boxes(con, doc_id, r["governing_law_quote"], r["law_page"])}
 
 
 @router.get("/documents/{doc_id}/text")

@@ -23,7 +23,7 @@ import sqlite3
 import sys
 import time
 
-from pipeline import config, ingest
+from pipeline import config, extract, ingest
 from pipeline.forget import ForgetRefused, forget, leftovers
 from pipeline.store import connect
 
@@ -69,11 +69,15 @@ def _workbench_reviews() -> int | None:
 
 
 def status(con) -> bool:
-    """Print the state; True if the register is ready for the live moment."""
+    """Print the state; True if the register is ready for the live moment. Not ready while the
+    watcher's next pass would read contracts other than H01 again (extract.pending: read with an
+    older prompt version, decision 97): it would take minutes, cost money, and a model may answer
+    differently on stage (F7)."""
     count = con.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
     gold = len(ingest.discover(config.SOURCE_DIRS))
     in_register, in_inbox = _in_register(con), _inbox_file().exists()
     left = leftovers(con, DEMO_ID)
+    stale = [d for d in extract.pending(con) if d != DEMO_ID]
     reviews = _workbench_reviews()
     print(f"register   {config.DB_PATH}: {count} documents (source folders hold {gold})")
     state = "IN the register" if in_register else "not in the register"
@@ -87,13 +91,17 @@ def status(con) -> bool:
     if reviews:
         print(f"reviews    {reviews} review(s) of {DEMO_ID} findings in the workflow database - "
               "they come back when the same file is added again")
-    ready = count == gold and not in_register and not in_inbox and not left and DEMO_FILE.exists()
+    ready = count == gold and not in_register and not in_inbox and not left and DEMO_FILE.exists() and not stale
     if ready:
         verdict = "yes"
     elif in_register or in_inbox or left:
         verdict = "NO - run `python -m tools.demo reset`"
     elif not DEMO_FILE.exists():
         verdict = f"NO - {DEMO_FILE} is missing (python tools/make_handwritten.py)"
+    elif stale:
+        verdict = (f"NO - {len(stale)} contract{'s were' if len(stale) != 1 else ' was'} read with an older "
+                   f"prompt version; the watcher would read {'them' if len(stale) != 1 else 'it'} again "
+                   f"(PROMPT_VERSION is {config.PROMPT_VERSION})")
     else:
         verdict = "NO - the register does not match the source folders (python -m pipeline.run)"
     print(f"ready for the live demo: {verdict}")

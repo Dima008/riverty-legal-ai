@@ -51,6 +51,13 @@ def review_state(triage: str, reviews: list[dict]) -> dict:
             "reviews": [{**r, "reviewer_name": USERS.get(r["reviewer"], r["reviewer"])} for r in reviews]}
 
 
+def reason_required(decision: str, triage: str, escalated: bool) -> bool:
+    """One rule for a run and for the register (api/findings.py, F35): only a routine confirmation -
+    a CONFIRM row that nobody escalated - may go without a reason. An escalation asks for a more
+    careful decision, so both votes on an escalated finding need a reason."""
+    return not (decision == "CONFIRMED" and triage == "CONFIRM" and not escalated)
+
+
 def finding_of(run: dict, row: dict) -> dict | None:
     """The finding version behind a row of a missing-clause run; None for other checks and for
     runs made before rows carried their version."""
@@ -108,8 +115,9 @@ def add_review(run_id: str, req: ReviewRequest, user: str = Depends(current_user
         raise HTTPException(409, f"{req.doc_id} is already {state}" + (" - escalate" if state == "DISPUTED" else ""))
     if any(r["reviewer"] == user and r["decision"] != "ESCALATED" for r in row["review"]["reviews"]):
         raise HTTPException(409, "four-eyes principle: the second review must come from a different person")
-    if not (req.reason or "").strip() and (req.decision != "CONFIRMED" or row["triage"] != "CONFIRM"):
-        raise HTTPException(422, "a reason is required for rejections, corrections and every REVIEW / FOUR_EYES row")
+    if not (req.reason or "").strip() and reason_required(req.decision, row["triage"], row["review"]["escalated"]):
+        raise HTTPException(422, "a reason is required for rejections, corrections, escalated findings "
+                                 "and every REVIEW / FOUR_EYES row")
     if req.decision == "CORRECTED":
         if run["plan"]["check"] != "missing_clause" or not req.corrected_status:
             raise HTTPException(422, "CORRECTED needs corrected_status (missing-clause checks); otherwise use REJECTED")

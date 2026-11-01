@@ -15,7 +15,7 @@ import pytest
 
 from pipeline import chunking, config, extract, ingest
 from pipeline.forget import ForgetRefused, forget, leftovers
-from pipeline.store import now, transaction
+from pipeline.store import add_missing_columns, now, transaction
 
 QUIET = dict(log=lambda *_: None)
 LOGS = ("audit_log", "sqlite_sequence")     # append-only history and SQLite's counters
@@ -29,6 +29,7 @@ def register(tmp_path):
     source = sqlite3.connect(config.DB_PATH.as_uri() + "?mode=ro", uri=True)
     source.backup(con)
     source.close()
+    add_missing_columns(con)     # a copy of an older register gets today's columns
     con.row_factory = sqlite3.Row
     yield con
     con.close()
@@ -231,7 +232,8 @@ def test_a_late_model_answer_is_dropped(register, no_sources):
     assert con.execute("SELECT COUNT(*) FROM audit_log WHERE action='extraction_dropped' AND target='M04'").fetchone()[0] == 1
     # the last line of defence: the write itself refuses a document that is gone (one statement)
     with pytest.raises(extract.DocumentGone):
-        extract._store(con, "M04", adapter.raw["extraction"], adapter.raw["checks"], [], "sha", False)
+        extract._store(con, "M04", adapter.raw["extraction"], adapter.raw["checks"], [], extract.LAW_NOT_CHECKED,
+                       "sha", False)
     assert _references(con, "M04", chunks) == {}
 
 
@@ -305,6 +307,7 @@ def test_demo_status_and_reset_see_leftovers(register, tmp_path, monkeypatch, ca
     from tools import demo
     con = register
     monkeypatch.setattr(config, "WATCH_DIR", tmp_path / "inbox")
+    _code_reads_like_the_copy(con, monkeypatch)
     # the copied register may already hold calls of earlier rehearsals (they are kept, re-labelled)
     forgotten = "SELECT COUNT(*) FROM llm_calls WHERE doc_id LIKE 'forgotten:H01@%'"
     before = con.execute(forgotten).fetchone()[0]
@@ -318,6 +321,41 @@ def test_demo_status_and_reset_see_leftovers(register, tmp_path, monkeypatch, ca
     assert leftovers(con, "H01") == {}
     assert con.execute(forgotten).fetchone()[0] == before + 1
     assert demo.status(con) is demo.DEMO_FILE.exists()
+
+
+def _code_reads_like_the_copy(con, monkeypatch) -> None:
+    """The code's prompt version = the copy's, so the watcher would read nothing again (decision 97
+    keeps the real register on extract-v2 while the working tree may say extract-v3)."""
+    versions = {r[0] for r in con.execute("SELECT DISTINCT prompt_version FROM metadata")}
+    assert len(versions) == 1
+    monkeypatch.setattr(config, "PROMPT_VERSION", versions.pop())
+
+
+def test_demo_status_says_no_while_the_watcher_would_read_contracts_again(register, tmp_path, monkeypatch, capsys):
+    """A register read with an older prompt version is not ready: the watcher's next pass would read
+    those contracts again - minutes, money, and model answers that may change on stage (F7). H01 itself
+    does not count: it is the contract the demo adds."""
+    from tools import demo
+    if not demo.DEMO_FILE.exists():
+        pytest.skip("data/demo/H01.jpg missing: python tools/make_handwritten.py")
+    con = register
+    monkeypatch.setattr(config, "WATCH_DIR", tmp_path / "inbox")
+    _code_reads_like_the_copy(con, monkeypatch)
+    assert demo.status(con) is True and capsys.readouterr().out.endswith("ready for the live demo: yes\n")
+
+    monkeypatch.setattr(config, "PROMPT_VERSION", "extract-v99")       # the code moved on, the register did not
+    n = con.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+    assert demo.status(con) is False
+    assert capsys.readouterr().out.endswith(
+        f"ready for the live demo: NO - {n} contracts were read with an older prompt version; the watcher would "
+        "read them again (PROMPT_VERSION is extract-v99)\n")
+
+    _code_reads_like_the_copy(con, monkeypatch)                           # one contract left behind
+    con.execute("UPDATE metadata SET prompt_version='extract-v1' WHERE doc_id='M01'")
+    assert demo.status(con) is False
+    assert capsys.readouterr().out.endswith(
+        "ready for the live demo: NO - 1 contract was read with an older prompt version; the watcher would "
+        "read it again (PROMPT_VERSION is " + config.PROMPT_VERSION + ")\n")
 
 
 def test_inbox_dir_overrides_the_watch_folder(tmp_path):

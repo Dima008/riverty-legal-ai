@@ -16,6 +16,7 @@ from api.deps import get_con
 from api.main import app
 from eval import check_register
 from pipeline import chunking, config, families, ingest, portfolio
+from pipeline.store import add_missing_columns
 
 Q2 = {"check": "legacy_names", "params": {}}
 REASON = "cannot be ruled out - poor scan (OCR confidence 61 %, threshold 70 %) - a person checks"
@@ -29,6 +30,7 @@ def register(tmp_path):
     source = sqlite3.connect(config.DB_PATH.as_uri() + "?mode=ro", uri=True)
     source.backup(con)
     source.close()
+    add_missing_columns(con)     # a copy of an older register gets today's columns
     con.row_factory = sqlite3.Row
     yield con
     con.close()

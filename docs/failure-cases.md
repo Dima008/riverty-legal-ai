@@ -33,7 +33,7 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F23 | In the redesigned Workbench the hidden instruction in M14 was drawn with the yellow evidence highlighter and labelled "the passage that hints at the clause", right under a warning bar saying it "is never used as evidence" (M14) | frontend | the design and end-to-end reviews of the redesign (before commit) | fixed |
 | F24 | The new year filter "Dated from 2004" hid C02 (effective date 2004-00-00, month unknown) without naming it in "not shown, no date found" – a filter hid a contract silently (C02) | frontend | the end-to-end review of the redesign (before commit) | fixed |
 | F25 | A finding escalated in the register drops out of the run's review counts (5 rows, counts add up to 4) and out of the monitoring's open count (M03) | api | nobody at first - found by the design review of the Workbench redesign | fixed, regression test |
-| F26 | The governing law has no evidence: the register stores only the code ("US-MA"), no quote and no page, so the Workbench cannot show or highlight the passage and a lawyer confirms Q5 rows blind (C09) | definition | nobody at first - found by Dima in the Workbench | open |
+| F26 | The governing law has no evidence: the register stores only the code ("US-MA"), no quote and no page, so the Workbench cannot show or highlight the passage and a lawyer confirms Q5 rows blind (C09) | definition | nobody at first - found by Dima in the Workbench | built, switched off for the interview (decision 97) - the law gets a checked quote (extract-v3, decision 94); on a copy the check caught a wrong code (C05) |
 | F27 | The decision was below the fold: after Q1 "Confirm finding" sat at y 1067 (1366x768) and 1106 (1600x900), in the contract file at y 1697 - the click script needed about 5 window scrolls (M08, M14) | frontend | nobody at first - found by measuring the tool for the talk's click script | fixed - step 3 "Decide" is one screen with the decision pinned (decision 91) |
 | F28 | The header scrolled away during four eyes: once the page scrolled, the reviewer switch was off screen, while the tool told the lawyer to "switch the reviewer at the top" (M14) | frontend | nobody at first - found by the end-to-end walkthrough of the four-eyes path | fixed - sticky header at 0, "Continue as Legal Reviewer B" in the decision panel |
 | F29 | An answer was lost on a tab switch: the run lived only in memory, so Register → Workbench showed an empty step 1 | frontend | nobody at first - found by the screen map of the tool | fixed - the run is in the address (`?run=`), the Workbench tab returns to it |
@@ -42,8 +42,8 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F32 | Former names counted 5 on the Workbench's start strip but 6 in Q2 with the poor scan: the strip counted only contracts with a name hit, not "cannot be ruled out" (H01) | frontend | nobody at first - found by the design review of the Workbench redesign | fixed - one rule for the register and Q2, the strip is gone; regression test |
 | F33 | Raw server text reached the lawyer: "tool gate: archive copy only after approval; M14 is IN_REVIEW" (M14) | frontend | nobody at first - found by the end-to-end walkthrough of the four-eyes path | fixed - fixed sentences in lawyers' words, EN and DE |
 | F34 | A lawyer's correction of a Found clause is stored, but Q1 still answers from the register's status, so the corrected contract never appears in the answer (M01) | queries | nobody at first - found by the design review of the Workbench redesign | open - next step "human-corrected status" |
-| F35 | A finding escalated in the register ("a second person, please") can be confirmed in an answer by two people without any reason, because the run's reason rule looks only at the triage, not at the escalation (M03) | api | nobody at first - found by the review for the panel questions | open |
-| F36 | The governing-law and copy checks ignore scan quality: a poor scan whose law was read as DE drops out of Q5 silently instead of going to a person - the F19 trap in another check (M01, simulated) | queries | nobody at first - found by the review for the panel questions | open |
+| F35 | A finding escalated in the register ("a second person, please") can be confirmed in an answer by two people without any reason, because the run's reason rule looks only at the triage, not at the escalation (M03) | api | nobody at first - found by the review for the panel questions | fixed - one reason rule for both endpoints, regression test |
+| F36 | The governing-law and copy checks ignore scan quality: a poor scan whose law was read as DE drops out of Q5 silently instead of going to a person - the F19 trap in another check (M01, simulated) | queries | nobody at first - found by the review for the panel questions | fixed - a poor scan or an unconfirmed law is a REVIEW row "law not confirmed"; copy check unchanged (reasoned in the entry), regression test |
 
 ---
 
@@ -1256,16 +1256,86 @@ as findings. Q5 reports them as findings all the same. The values themselves are
 
 **Layer.** definition (extraction schema) – shown in the frontend.
 
-**Fix.** open. Options: (a) a quote for the governing law in the extraction schema, checked like a
-clause quote – needs a new prompt version and a full re-extraction, which can change other
-findings (F7) right before the talk; (b) a deterministic locator without a model call: find the
-choice-of-law passage ("governed by", "laws of", "Recht", ...) that names the jurisdiction of the
-code (US-MA → Massachusetts), store its page and span, highlight it; no passage → a person looks.
+**Fix.** Option (a), decision 94. The extraction schema asks for `governing_law_quote` ("the
+sentence of the contract that chooses the law, word for word"; the reader prompt keeps its 8
+rules), prompt version `extract-v3`. `extract.check_law` checks it like a clause quote: found in
+the text (fuzzy ≥ 90), not from text addressed to software, and in the passage it found in the
+contract a sentence that chooses a law must name the jurisdiction of the code. "Chooses a law" =
+it has a law word (`LAW_TERMS`: law, laws, governed, governing, recht, unterliegt, beheerst – whole
+words); the jurisdiction words are a small map (`JURISDICTION_WORDS`: US-MA → "massachusetts", DE →
+"german", "deutsch", "bundesrepublik", …; every code in the register has words, a test guards it).
+The contract's words count, not the model's: the quote "… of Massachusetts and of Germany" matches
+C09 at 92.5 and would have confirmed DE. Every failed check is a flag (`metadata.law_flags`:
+`law_quote_missing`, `law_quote_not_verified`, `law_quote_in_suspected_injection`,
+`law_quote_lacks_law_terms`, `law_quote_lacks_jurisdiction`, `law_code_not_in_map`), page and span
+are stored, `--reassess` replays it without a model call (the what-if switches `quote_found`,
+`injection_guard` and `clause_vocabulary` reach it too). A long contract read in parts takes the
+code and its quote from the same part – the first part that names a law and quotes it, so a quote
+without a law ("the parties will agree on the governing law later") cannot hide a later part's law.
+A quote joined with "…" is read part by part, each part in its own passage (`quote_spans`; before,
+only the first part's passage counted, so "Governing Law; Jurisdiction … will be governed by the
+laws of the Commonwealth of Massachusetts" for C09 was flagged). The Workbench shows the quote with
+"Show page n" and highlights the passage. Option (b) was not chosen (heuristic passage).
 
-**Proof.** open.
+The law-term check came from the review of the build (2026-11-01). Before it, any place word in the
+passage confirmed the code: C05's preamble quote `, a Massachusetts Corporation ("Zanotti")` with
+US-MA, and "the German version prevails" in a Dutch-law contract with DE, were both confirmed – the
+second would have dropped out of Q5 ("not governed by German law") silently. Now both are
+`law_quote_lacks_law_terms`, a REVIEW row "not confirmed - the quote does not choose a law - a
+person checks"; an address in Germany and a place of jurisdiction ("Ausschließlicher Gerichtsstand
+ist Frankfurt am Main") too.
+
+The verification of that fix (2026-11-01) found the same error one step further, in our own data:
+C06's preamble is one sentence with a law word – "Apollo Endosurgery, Delaware corporation having
+offices at 1120 S Capital of Texas Highway #300, Austin, TX 78746 ("APOLLO"), and (2) Establishment
+Labs, S.A a corporation organized under the laws of Costa Rica" (found at score 100) – and with
+code US-DE (or US-TX) it was confirmed with no flag. "Riverty GmbH, a company incorporated under
+German law" in a Dutch-law contract confirmed DE the same way. Fix: before a sentence counts, the
+law a party was formed under is cut out (`_FORMED_UNDER`: "organized / incorporated / (validly)
+existing … under the laws of X" up to the next comma, "under X law", "Gesellschaft … nach deutschem
+Recht", "vennootschap … naar Nederlands recht", "nach deutschem Recht gegründet"). C06's preamble,
+the made-up preambles and "eine Gesellschaft nach deutschem Recht" are now
+`law_quote_lacks_law_terms`; "organized and existing under the laws of Delaware, agrees that this
+Agreement is governed by the laws of New York" confirms US-NY and not US-DE. Of 47 made-up attack
+quotes (18 with a wrong code, 29 genuine choices of law), 3 wrong codes went from confirmed to
+flagged and no genuine choice of law changed.
+
+Known limit: a sentence with a law word that names a place but chooses nothing still confirms the
+code – negation ("shall not be governed by German law", "(excluding German law)", "conflict-of-law
+rules of German law are excluded"), carve-outs ("comply with German data protection law",
+"Mandatory provisions of German consumer protection law remain unaffected"), "the German version
+prevails as a matter of law", "Recht" / "recht" meaning "a right" ("Riverty hat das Recht, … in
+Deutschland abzutreten", "Riverty Nederland B.V. heeft het recht …"), and two sentences joined
+without ". " (after "Annex A.", at a line break, at a colon). A scan of the 47 texts found no such
+sentence for DE or NL (after the cut, the only sentence that names another code's place is C05's
+own California choice of law). The lawyer sees the quote on the card.
+
+**Proof.** A fresh extract-v3 register on a copy (47 contracts, $0.1225 in 145 calls; the real
+register was never written): 44 of 47 law quotes confirmed (score 100, page and span stored), 2
+without a choice of law (C12, M05-A: no law found, as in extract-v2), and **1 caught: C05**. The
+model coded US-MA – C05 calls Zanotti "a Massachusetts Corporation" in its preamble and signature
+block – but its own quote, found verbatim on page 1, reads "… in accordance with the laws of the
+State of California …"; extract-v2 had US-CA. Flag `law_quote_lacks_jurisdiction`, a REVIEW row.
+The evaluation cannot see this error: CUAD has no law labels, the metadata check covers our own
+contracts only. Q1–Q8 on the v3 copy: recall and precision 1.00. The law-term check and the
+formed-under cut replayed on the 45 stored v3 passages: 0 verdicts changed (C05 stays caught); the
+review's and the verification's cases above went from confirmed to flagged. Tests:
+`tests/test_law_check.py` (found / not found / wrong jurisdiction / word added by the model / no
+choice of law / preambles: C05, C06, "incorporated under German law", "Gesellschaft nach deutschem
+Recht", "vennootschap naar Nederlands recht" / a "…" quote / `_merge` / Dutch and German choices of
+law, no model call).
+
+**Status.** Built, switched off for the interview (decision 97). A swap would re-read all 47
+contracts, and on the v3 copy the model answered M08's limitation of liability differently (ABSENT
+instead of "found, overruled by the checks" – temperature-0 variance, F7), which the talk's story
+uses. The code is kept; the prompt version stays `extract-v2` and the schema field is off until
+after the interview. The register's law rows stay "not checked" (`law_flags` NULL) and keep their
+old answer in Q5 (F36); the card says "No quote yet: …". `tools.demo status` says NO while the
+working tree's prompt version would make the watcher read the 47 contracts again. After the
+interview: switch extract-v3 back on (revert), move the "overruled" example to M10, read again.
 
 **Reproduce.** Workbench → "Which merchant agreements are not governed by German law?" or the
-register filter on law → open C09. Automated test missing.
+register filter on law → open C09. `python -m pytest tests/test_law_check.py`.
 
 ---
 
@@ -1579,13 +1649,25 @@ current["escalated"]`). Two endpoints, two versions of one rule.
 
 **Layer.** api.
 
-**Fix.** open (one rule for both endpoints: no reason only for a routine confirmation that is not
-escalated; a regression test for the run endpoint).
+**Fix.** One rule for both endpoints: `api/review.reason_required(decision, triage, escalated)` –
+only a routine confirmation (CONFIRMED, triage CONFIRM, nobody escalated) may go without a reason.
+`add_review` (answers) and `add_finding_review` (register) both call it. The Workbench's decision
+panel already asked for the reason (`!!review.escalated`); only the server let it through. Batch
+confirmation was never open to it: it takes only rows in state FOUND.
 
-**Proof.** open.
+**Proof.** The same script on a fresh register copy (2026-11-01):
 
-**Reproduce.** `PYTHONPATH=. REGISTER_DB=<copy> WORKBENCH_DB=<scratch> python repro.py`. Automated
-test missing. Found by the fact check of the panel-question design (2026-11-01).
+```
+escalate M03 in the register: ESCALATED
+M03 in the run: triage CONFIRM | state ESCALATED
+reviewer_a CONFIRMED without reason -> 422 {'detail': 'a reason is required for rejections, corrections, escalated findings and every REVIEW / FOUR_EYES row'}
+reviewer_b CONFIRMED without reason -> 422 {'detail': 'a reason is required for rejections, corrections, escalated findings and every REVIEW / FOUR_EYES row'}
+same in the register without reason -> 422
+```
+
+**Reproduce.** `PYTHONPATH=. REGISTER_DB=<copy> WORKBENCH_DB=<scratch> python repro.py`.
+Regression test: `tests/test_api_review.py::test_an_escalated_finding_needs_a_reason_in_a_run_too`.
+Found by the fact check of the panel-question design (2026-11-01).
 
 ---
 
@@ -1612,12 +1694,36 @@ scan ... always goes to a person" – true only for clauses and former names; co
 
 **Layer.** queries.
 
-**Fix.** open – planned together with F26 (the law gets a quote): a poor scan or a law without a
-verified quote goes to a person, like decision 89.
+**Fix.** Together with F26 (decision 94). One rule, `queries.law_answer`, for the portfolio
+check, the register query and the evaluation: only a law confirmed by its quote, on a good scan,
+counts as "the same law". A poor scan (status LOW_QUALITY) or a failed quote check is reported as
+`LAW_NOT_CONFIRMED`, triage REVIEW, with a fixed reason ("cannot be confirmed - poor scan (OCR
+confidence 61 %, threshold 70 %) - a person checks", or "not confirmed - the quote does not name
+the law's country or state - a person checks", …), counted on its own (`law_not_confirmed`) – like
+`NAME_NOT_RULED_OUT` (decision 89). A law read before extract-v3 has no quote yet: on a good scan
+it keeps its old answer and is counted as `same_law_not_checked`, so Q5 neither loses a contract
+nor fills up with review rows before the re-read; a poor scan is reported all the same. The
+evaluation counts `LAW_NOT_CONFIRMED` (and "no law found") as "to review" for Q5, like UNCLEAR.
+The copy check (Q8) keeps its rule: on a poor scan OCR noise pushes a copy below the 98 %
+similarity, so the copy stays in scope and is checked as its own contract (counted twice, its
+clause findings capped and sent to a person) – nothing drops out of an answer; only Q8 may
+under-report it.
 
-**Proof.** open.
+**Proof.** The same script on a fresh register copy (2026-11-01), then the M01 row and the counts:
 
-**Reproduce.** The script above. Automated test missing. Found by the fact check of the
+```
+Q5 with M01 as a poor scan, law DE: reported ['M01', 'M06', 'M07', 'M08', 'M11', 'M13'] | M01 reported: True | coverage {"in_scope": 20, "checked": 19}
+M01: {"status": "LAW_NOT_CONFIRMED", "governing_law": "DE", "triage": "REVIEW", "reason": "cannot be confirmed - poor scan - a person checks", "law_quote": null, "law_flags": null}
+counts: {"other_law": 5, "law_unknown": 0, "law_not_confirmed": 1, "same_law": 0, "same_law_not_checked": 13} | sum 19 = checked 19
+```
+
+On the real register (copy, all extract-v2) `python -m eval.check_register` prints the same as
+before the change, byte for byte: recall and precision 1.00 on Q1–Q8, Q5 `['M06', 'M07', 'M08',
+'M11', 'M13']`, nothing to review.
+
+**Reproduce.** The script above. Tests: `tests/test_law_check.py`
+(`test_a_poor_scan_or_a_failed_quote_is_reported_for_review`,
+`test_a_register_read_before_v3_keeps_its_q5_answer`). Found by the fact check of the
 panel-question design (2026-11-01).
 
 ---

@@ -40,6 +40,7 @@ export const DE: Record<string, string> = {
   "Cannot rule out": "Nicht auszuschließen",
   "Other law": "Anderes Recht",
   "No law found": "Keine Rechtswahl gefunden",
+  "Law not confirmed": "Recht nicht bestätigt",
   // triage (TRIAGE_LABEL: the old story chapters only)
   "Routine": "Routine",
   "Review": "Prüfen",
@@ -147,6 +148,21 @@ export const DE: Record<string, string> = {
   "cannot be ruled out – poor scan (OCR confidence {conf} %, threshold {threshold} %) – a person checks":
     "nicht auszuschließen – schlechter Scan (OCR-Sicherheit {conf} %, Schwelle {threshold} %) – eine Person prüft",
   "cannot be ruled out – poor scan – a person checks": "nicht auszuschließen – schlechter Scan – eine Person prüft",
+  // a governing law the register cannot confirm: fixed templates of pipeline/queries.py law_reason (F36, decision 94)
+  "cannot be confirmed – poor scan (OCR confidence {conf} %, threshold {threshold} %) – a person checks":
+    "nicht zu bestätigen – schlechter Scan (OCR-Sicherheit {conf} %, Schwelle {threshold} %) – eine Person prüft",
+  "cannot be confirmed – poor scan – a person checks": "nicht zu bestätigen – schlechter Scan – eine Person prüft",
+  "not confirmed – no quote for the law – a person checks": "nicht bestätigt – kein Zitat zum Recht – eine Person prüft",
+  "not confirmed – the quote is not in the contract – a person checks":
+    "nicht bestätigt – das Zitat steht nicht im Vertrag – eine Person prüft",
+  "not confirmed – the quote comes from text addressed to AI systems – a person checks":
+    "nicht bestätigt – das Zitat stammt aus Text an KI-Systeme – eine Person prüft",
+  "not confirmed – the quote does not choose a law – a person checks":
+    "nicht bestätigt – das Zitat trifft keine Rechtswahl – eine Person prüft",
+  "not confirmed – the quote does not name the law's country or state – a person checks":
+    "nicht bestätigt – das Zitat nennt weder das Land noch den Bundesstaat des Rechts – eine Person prüft",
+  "not confirmed – no check words for this law code yet – a person checks":
+    "nicht bestätigt – für diesen Rechtscode gibt es noch keine Prüfwörter – eine Person prüft",
 
   // ---- the list "To look at" (ToLookAt.tsx)
   "No contract in scope has this issue.": "Kein Vertrag im Prüfumfang ist betroffen.",
@@ -166,6 +182,7 @@ export const DE: Record<string, string> = {
   "the passage that hints at the clause": "Textstelle, die auf die Klausel hindeutet",
   "text addressed to AI systems – not evidence": "an KI-Systeme gerichteter Text – kein Beleg",
   "the former company name": "früherer Firmenname",
+  "the choice of law": "die Rechtswahl",
   "highlighted": "markiert",
   "and": "und",
   "Previous page": "Vorherige Seite",
@@ -324,6 +341,8 @@ export const DE: Record<string, string> = {
   // the guardrails "Kontrollen"; a run is a "Frage" with an "Antwort".
   // ---- labels.ts: what the text says, the next step, why a person looks
   "Other law ({law})": "Anderes Recht ({law})",
+  "Law not confirmed ({law})": "Recht nicht bestätigt ({law})",
+  "Law not confirmed by its quote": "Recht nicht durch sein Zitat bestätigt",
   "Copy": "Kopie",
   "A second model call agrees": "Ein zweiter Modellaufruf stimmt zu",
   "Confirm": "Bestätigen",
@@ -490,6 +509,15 @@ export const DE: Record<string, string> = {
   "No passage: the model read the whole contract and found no such clause.":
     "Keine Textstelle: Das Modell hat den ganzen Vertrag gelesen und keine solche Klausel gefunden.",
   "The register read: {law} law": "Das Register hat gelesen: Recht {law}",
+  "The register read {law} law, but cannot confirm it from the contract. Read the choice of law and decide.":
+    "Das Register hat Recht {law} gelesen, kann es aber nicht am Vertrag bestätigen. Die Rechtswahl lesen und entscheiden.",
+  "The quote names {law} law, but this scan is too poor to confirm it. Read the choice of law and decide.":
+    "Das Zitat nennt Recht {law}, aber dieser Scan ist zu schlecht, um es zu bestätigen. Die Rechtswahl lesen und entscheiden.",
+  "The register read {law} law, but this scan is too poor to confirm it. Read the choice of law and decide.":
+    "Das Register hat Recht {law} gelesen, aber dieser Scan ist zu schlecht, um es zu bestätigen. Die Rechtswahl lesen und entscheiden.",
+  "Checked: the quote is in the contract and names this law.": "Geprüft: Das Zitat steht im Vertrag und nennt dieses Recht.",
+  "No quote yet: this contract was read before the register asked for the law's quote.":
+    "Noch kein Zitat: Dieser Vertrag wurde gelesen, bevor das Register ein Zitat zum Recht verlangt hat.",
   "Copy of {id}": "Kopie von {id}",
   "Copy of {id} – the original is checked; this copy is not counted twice.":
     "Kopie von {id} – geprüft wird das Original; diese Kopie wird nicht doppelt gezählt.",

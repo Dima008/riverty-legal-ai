@@ -26,7 +26,7 @@ OCR_DPI = 200
 OCR_LANGUAGES = "deu+eng"
 QUOTE_MATCH_MIN_SCORE = 90          # fuzzy match score (0-100) for citation verification
 
-PROMPT_VERSION = "extract-v2"   # v2: doc type definitions, one quote per clause type, checker
+PROMPT_VERSION = "extract-v3"   # v2: doc type definitions, one quote per clause type, checker; v3: a quote for the governing law (decision 94)
 
 # Prices in USD per 1M tokens (Azure Global Standard), keyed by deployment name. Source:
 # azurespeed.com, checked 2026-10-29 (gpt-4.1: 2026-10-30) - verify against the Azure price

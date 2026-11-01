@@ -24,7 +24,8 @@ from collections import Counter
 
 from . import catalogue
 from .extract import EXTRACTION_SCHEMA
-from .queries import NAME_NOT_RULED_OUT, name_not_ruled_out, poor_scan_reason
+from .queries import (LAW_NOT_CONFIRMED, LAW_REPORTED, LAW_UNKNOWN, NAME_NOT_RULED_OUT, law_answer, law_flag_list,
+                      law_reason, name_not_ruled_out, poor_scan_reason)
 
 DOC_TYPES = EXTRACTION_SCHEMA["properties"]["doc_type"]["enum"]
 UNKNOWN_TYPES = (None, "unknown")    # could be anything: always in scope, shown as excluded
@@ -38,7 +39,9 @@ REVIEW_BELOW = 0.8
 SAMPLE_PERCENT = 10                   # share of CONFIRM rows marked for a spot check
 FOUR_EYES_SIGNALS = {"prompt_injection_suspected", "document_contains_suspected_injection",
                      "quote_in_suspected_injection", "amendment_contradiction"}
-REVIEW_STATUSES = {"UNCLEAR", NAME_NOT_RULED_OUT}    # a person has to look, whatever the confidence
+# a person has to look, whatever the confidence: unclear, a former name or a law a poor scan cannot settle (F19,
+# F36), a law whose quote failed its check (decision 94), no governing law found
+REVIEW_STATUSES = {"UNCLEAR", NAME_NOT_RULED_OUT, LAW_NOT_CONFIRMED, LAW_UNKNOWN}
 
 CHECKS = {
     "missing_clause": {
@@ -113,9 +116,8 @@ def validate_scope(scope) -> dict:
 
 # ---------------------------------------------------------------------------- triage
 def triage(status: str, confidence: float | None, flags: list[str]) -> str:
-    """FOUR_EYES: injection suspected or contradicting metadata. REVIEW: unclear, a former name
-    that a poor scan cannot rule out (F19), or below REVIEW_BELOW. CONFIRM: everything else (with
-    a spot-check sample)."""
+    """FOUR_EYES: injection suspected or contradicting metadata. REVIEW: a status in REVIEW_STATUSES,
+    or below REVIEW_BELOW. CONFIRM: everything else (with a spot-check sample)."""
     if any(f.split(":")[0] in FOUR_EYES_SIGNALS for f in flags):
         return "FOUR_EYES"
     if status in REVIEW_STATUSES or (confidence is not None and confidence < REVIEW_BELOW):
@@ -133,11 +135,12 @@ def _documents(con) -> list[dict]:
     rows = con.execute(
         "SELECT d.doc_id, d.status, d.ocr_mean_conf, d.duplicate_of, d.family_id, d.flags, d.ingested_at, m.doc_type,"
         " m.title, m.counterparty_name, m.governing_law, m.is_amendment, m.text_sha256 AS extracted_sha256,"
-        " m.prompt_version FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id "
-        "ORDER BY d.doc_id").fetchall()
+        " m.prompt_version, m.governing_law_quote, m.law_page, m.law_char_start, m.law_char_end, m.law_flags"
+        " FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id ORDER BY d.doc_id").fetchall()
     docs = [dict(r) for r in rows]
     for d in docs:
         d["flags"] = json.loads(d["flags"] or "[]")
+        d["law_flags"] = law_flag_list(d["law_flags"])     # None: read before extract-v3, not checked
     return docs
 
 
@@ -225,21 +228,26 @@ def _legacy_names(con, docs: list[dict], params: dict) -> tuple[list[dict], dict
 
 
 def _governing_law_not(con, docs: list[dict], params: dict) -> tuple[list[dict], dict, dict]:
-    """Laws are stored as ISO 3166 codes, with the state for federal countries (US-NY, CA-BC);
-    the check compares the country (F16)."""
-    rows = []
+    """Laws are stored as ISO 3166 codes, with the state for federal countries (US-NY, CA-BC); the
+    check compares the country (F16). Where a contract lands is queries.law_answer: the same law counts
+    only when its quote confirmed it on a good scan (decision 94); a poor scan or a failed quote check is
+    a REVIEW row with a fixed reason (F36). Every row carries the law's quote, page and span as evidence.
+    The five counts add up to "checked"."""
+    rows, counts = [], Counter()
     for d in docs:
-        law = d["governing_law"]
-        if law and law.split("-")[0] == params["law"]:
+        status = law_answer(d["status"], d["governing_law"], d["law_flags"], params["law"])
+        counts[status] += 1
+        if status not in LAW_REPORTED:     # the same law: SAME_LAW or SAME_LAW_NOT_CHECKED
             continue
-        status = "LAW_UNKNOWN" if law is None else "OTHER_LAW"
-        level = triage(status, None, d["flags"])
-        if level == "CONFIRM" and law is None:     # no governing law found: a person has to look
-            level = "REVIEW"
-        rows.append(_row(d, status=status, governing_law=law, confidence=None, flags=d["flags"], triage=level))
-    return rows, {"other_law": sum(r["status"] == "OTHER_LAW" for r in rows),
-                  "law_unknown": sum(r["status"] == "LAW_UNKNOWN" for r in rows),
-                  "same_law": len(docs) - len(rows)}, {}
+        rows.append(_row(d, status=status, governing_law=d["governing_law"], confidence=None,
+                         law_quote=d["governing_law_quote"], law_page=d["law_page"],
+                         law_char_start=d["law_char_start"], law_char_end=d["law_char_end"], law_flags=d["law_flags"],
+                         reason=law_reason(d["status"], d["ocr_mean_conf"], d["governing_law"], d["law_flags"]),
+                         flags=d["flags"], triage=triage(status, None, d["flags"])))
+    return rows, {"other_law": counts["OTHER_LAW"], "law_unknown": counts[LAW_UNKNOWN],
+                  "law_not_confirmed": counts[LAW_NOT_CONFIRMED], "same_law": counts["SAME_LAW"],
+                  # read before extract-v3: no quote yet, the old answer stands until the contract is read again
+                  "same_law_not_checked": counts["SAME_LAW_NOT_CHECKED"]}, {}
 
 
 def _duplicates(con, docs: list[dict], params: dict) -> tuple[list[dict], dict, dict]:

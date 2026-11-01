@@ -10,6 +10,7 @@ import pytest
 
 from pipeline import config, families, ingest
 from pipeline.run import run_once
+from pipeline.store import add_missing_columns
 
 
 def _touch(folder, *names):
@@ -54,6 +55,7 @@ def register_copy(tmp_path):
     source = sqlite3.connect(config.DB_PATH.as_uri() + "?mode=ro", uri=True)
     source.backup(con)
     source.close()
+    add_missing_columns(con)     # a copy of an older register gets today's columns
     con.row_factory = sqlite3.Row
     yield con
     con.close()

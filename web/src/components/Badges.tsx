@@ -21,6 +21,7 @@ const STATUS: Record<string, Look> = {
   NAME_NOT_RULED_OUT: { color: "warning", icon: <QuestionCircle16Filled /> },
   OTHER_LAW: { color: "informative", icon: <Info16Regular /> },
   LAW_UNKNOWN: { color: "warning", icon: <QuestionCircle16Filled /> },
+  LAW_NOT_CONFIRMED: { color: "warning", icon: <QuestionCircle16Filled /> },
   DUPLICATE: { color: "informative", icon: <DocumentCopy16Regular /> },
 };
 
