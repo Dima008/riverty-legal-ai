@@ -119,9 +119,8 @@ EXTRACTION_SCHEMA = {
         "governing_law": {"type": ["string", "null"],
                           "description": "ISO 3166 code of the chosen law, with subdivision for federal "
                                          "states: DE, NL, GB, US-CA, US-NY, CA-BC; null if no choice of law"},
-        "governing_law_quote": {"type": ["string", "null"],
-                                "description": "The sentence of the contract that chooses the law, word for "
-                                               "word; it names the country or state. Null if no choice of law"},
+        # extract-v3 adds "governing_law_quote" here (decision 94, commit 4d71122); switched off for the
+        # interview (decision 97) - without it check_law returns LAW_NOT_CHECKED, as for every v2 answer
         "amendment": {
             "type": "object",
             "properties": {
@@ -141,7 +140,7 @@ EXTRACTION_SCHEMA = {
         },
     },
     "required": ["title", "doc_type", "language", "parties", "own_entity_name", "counterparty_name",
-                 "effective_date", "governing_law", "governing_law_quote", "amendment", "clauses"],
+                 "effective_date", "governing_law", "amendment", "clauses"],
     "additionalProperties": False,
 }
 

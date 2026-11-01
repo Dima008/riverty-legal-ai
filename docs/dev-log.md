@@ -7,6 +7,23 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-01 · Keep the register on extract-v2 for the interview (law quote switched off)
+
+- **Problem:** With extract-v3 in the code, a restarted watcher or any `pipeline.run` would re-read
+  all 47 contracts before the talk – and on the copy, model variance turned M08 from "found,
+  overruled by the checks" into "not found", the example three cards and the live demo use.
+- **Cause:** The idempotency key is the prompt version; a new version means a full re-read.
+- **Technique and why:** Decision 97: `PROMPT_VERSION` back to extract-v2 and the
+  `governing_law_quote` schema field out, in one small commit that a revert switches on again.
+  Everything else of F26/F35/F36 stays live: v2 answers have no law quote, so `check_law` returns
+  "not checked", a good scan keeps its old answer, a poor scan is still reported (F36).
+- **Rejected alternative:** Swapping now and moving the demo example to M10 (more change right
+  before the interview; M10 can flip as well).
+- **Metric before → after:** `tools.demo status` on a copy of the real register: "NO – 47 contracts
+  … would read them again" → "ready for the live demo: yes"; pytest 159 passed; eval Q1–Q8 1.00,
+  CUAD 19/20, unchanged.
+- **Links:** decision 97; F26; `pipeline/config.py`, `pipeline/extract.py`
+
 ## 2026-11-01 · The governing law gets a checked quote (F26), escalation needs a reason (F35), a poor scan cannot hide a contract from Q5 (F36)
 
 - **Problem:** Dima opened C09 in the Workbench: "the register read US-MA" – no quote, no page, so
