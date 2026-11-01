@@ -465,3 +465,13 @@ Verworfen: Eine Oberfläche (Register als Startseite, Workbench-Reiter entfällt
 Präsentation · Entschieden · Nur auf Nachfrage
 Begründung: Das neue Tool zeigt jeden Schritt auf einem Bildschirm: 0 statt ca. 5 Mal scrollen, aber ein Klick mehr und zwei getippte Begründungen (Vier-Augen bei M14). Neuer erster Satz: „It has seen the new contract too: H01, new, a poor scan.“ Mit Entscheidung 90 (19:34) liegt der Haupttrack bei ca. 19:49, unter Rivertys 20 Minuten; 22 Minuten bleiben die harte Grenze. Nach 3 Proben wird gemessen; liegt der Median über 115 s, wird Sprechtext gekürzt, nicht der Puffer.
 Verworfen: Bei 100 s bleiben und eine Station des Klick-Skripts streichen; 125 s (Entwurf „Juristin zuerst“).
+
+### 93. Workbench Schritt 1: alle Fragen in einem Kästchen – alle 8 sichtbar, nach Thema gruppiert, Q1/Q2 mit Etikett „Pilot“, „Eigene Frage bauen“ im selben Kasten
+Prozess · Entschieden · Nur auf Nachfrage
+Begründung: Dima (1.11.): „Bitte alle möglichen Abfragen in ein Kästchen packen bei der Workbench.“ Der Entwurf zu Entscheidung 91 hatte Q1/Q2 als große Pilotkarten und die anderen sechs Fragen in einer zugeklappten Falte (D15) – damit sieht man nicht, was das Tool alles kann. Eine Liste in einem Kasten zeigt alles auf einen Blick; ein Klick wählt, rechts steht der Plan. Ändert D15 aus der Spezifikation zu Entscheidung 91.
+Verworfen: Ein Auswahlfeld (Dropdown) mit allen Fragen – kompakt, aber die Fragen sind erst nach einem Klick sichtbar; Pilotkarten plus zugeklappte Falte (D15).
+
+### 94. Das Modell liefert für das anwendbare Recht ein Zitat mit, geprüft wie bei Klauseln (Zitat muss im Text stehen und das Land des Codes nennen); neue Prompt-Version, Neueinlesen erst nach einem Vergleich auf einer Kopie (F26)
+Architektur · Entschieden · Kurz erwähnen
+Begründung: F26: Das Register speicherte beim anwendbaren Recht nur den Code (z. B. C09 „US-MA“), kein Zitat und keine Seite – der Workbench konnte die Stelle nicht zeigen, eine Juristin bestätigt Q5-Zeilen blind. Das widerspricht dem Grundsatz „jeder Befund trägt ein geprüftes Zitat“. Dima wählte die saubere Lösung: das Modell liefert das Zitat, der Code prüft es. Risiko: neue Prompt-Version = alle 47 Verträge neu (~$0.12), andere Befunde können sich ändern (F7: M08 ist in 4 von 5 Wiederholungen ABSENT). Deshalb zuerst ein neues Register auf einer Kopie, Vergleich Befund für Befund; getauscht wird nur, wenn Q1–Q8 vollständig bleiben und die Demo-Verträge (M08, M10 unklar, M14 vier Augen) stabil sind – sonst entscheidet Dima.
+Verworfen: Fundstelle ohne Modell per Code suchen (Rechtswahl-Muster + Land des Codes): kein Neueinlesen, aber die Stelle wäre nur heuristisch gefunden; ein dritter, eigener Modellaufruf nur für das Recht (ein weiterer Prompt).

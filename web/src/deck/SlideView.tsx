@@ -35,6 +35,8 @@ export function SlideView({ slide, step, label }: { slide: Slide; step: number; 
             <div className="s-opener">
               <div className="s-num">{pad(act.n)}</div>
               <h1 className="s-title">{slide.title}</h1>
+              {/* the part's line from Riverty's task, word for word (decision 90) */}
+              {slide.quote?.map((q) => <q key={q} className="s-quote">{q}</q>)}
             </div>
           )}
           {slide.kind === "statement" && (

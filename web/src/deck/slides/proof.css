@@ -8,6 +8,7 @@
   .p-fact { padding: 1.2cqw 1.5cqw; border-radius: 1cqw; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.09); font-size: 1.55cqw; line-height: 1.35; color: var(--ink-2); }
   .p-fact b { color: var(--ink); font-weight: 750; }
   .p-fact.p-amber { color: var(--amber); font-weight: 750; font-size: 1.8cqw; }
+  .p-cuad { display: block; margin-top: 0.5cqw; padding-top: 0.5cqw; border-top: 1px solid rgba(255, 255, 255, 0.09); font-size: 1.3cqw; }   /* the CUAD sentence of note 0 (decision 90) */
   .p-nb { white-space: nowrap; }
   .p-bad { color: var(--red); }
   .p-hide { visibility: hidden; }   /* holds its place, so nothing jumps between builds */
@@ -40,7 +41,8 @@
   .p-rows > .p-foot { margin-top: 0.6cqw; }
   .p-pooled { margin-top: 0.5cqw; padding-top: 0.7cqw; border-top: 1px dashed rgba(255, 255, 255, 0.2); }
   .p-pooled .p-qid, .p-pooled .p-qname { color: var(--ink); }
-  .p-side { display: flex; flex-direction: column; gap: 1.2cqw; }
+  .p-side { display: flex; flex-direction: column; gap: 0.9cqw; }
+  .p-side .p-fact { padding-block: 1cqw; }        /* with the CUAD line: room for the small views too */
   .p-swatch { display: inline-block; width: 1.8cqw; height: 0.9cqw; border-radius: 0.45cqw; background: rgba(255, 197, 107, 0.4); border-left: 0.2cqw solid var(--amber); vertical-align: 0.2cqw; margin-right: 0.6cqw; }
 
   /* --- what-if: the switches and Q1 */

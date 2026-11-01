@@ -43,6 +43,9 @@
   .x-step { display: grid; grid-template-columns: 3.2cqw 1fr; gap: 1.2cqw; align-items: center; min-height: 6.6cqw; padding: 1.2cqw 1.4cqw; border-radius: 1cqw; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); }
   .x-step-n { width: 3.2cqw; height: 3.2cqw; border-radius: 50%; display: grid; place-items: center; background: var(--grad); color: #03110d; font-weight: 800; font-size: 1.5cqw; }
   .x-step-name { font-size: 1.65cqw; font-weight: 650; line-height: 1.2; }
+  /* the AI line under the roadmap (build 3): the task's "we encourage you to do the same" */
+  .x-ai { margin-top: 2.2cqw; padding: 0.9cqw 1.6cqw; border-left: 0.35cqw solid var(--mint); font-size: 1.5cqw; line-height: 1.35; color: var(--ink-2); }
+  .x-ai b { color: var(--ink); }
   /* small grey line under a status (cards 'checks' and 'human') */
   .x-step-proof { font-size: 1.05cqw; color: var(--ink-2); margin-top: 0.3cqw; line-height: 1.3; }
 
@@ -166,6 +169,38 @@
   .x-gate { padding: 1cqw 1.4cqw; border-radius: 0.9cqw; border: 0.15cqw solid var(--amber); font-size: 1.3cqw; font-weight: 650; }
   .x-box-sub { display: block; margin-top: 0.3cqw; font-size: 1.25cqw; line-height: 1.3; color: var(--ink-2); }
 
+  /* --- what we use (part 3): two prompts, embeddings, code - violet = a model, cyan = code */
+  .x-wu { display: flex; flex-direction: column; gap: 0.8cqw; }
+  .x-wu-prompts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6cqw 1.4cqw; }
+  .x-wu-rest { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 1.4cqw; }
+  .x-wu-box { padding: 0.85cqw 1.4cqw; border-radius: 1cqw; border: 1px solid; display: flex; flex-direction: column; gap: 0.4cqw; font-size: 1.3cqw; line-height: 1.3; color: var(--ink-2); }
+  .x-wu-box.model { border-color: rgba(181, 157, 255, 0.55); background: rgba(181, 157, 255, 0.09); }
+  .x-wu-box.emb { border-style: dashed; border-color: rgba(181, 157, 255, 0.55); background: rgba(181, 157, 255, 0.04); }
+  .x-wu-box.code { border-color: rgba(92, 200, 255, 0.45); background: rgba(92, 200, 255, 0.06); }
+  .x-wu-k { font-size: 1cqw; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: var(--violet); }
+  .x-wu-box.code .x-wu-k { color: var(--cyan); }
+  .x-wu-box q { quotes: none; font-family: Georgia, "Times New Roman", serif; font-size: 1.35cqw; line-height: 1.35; color: var(--ink); }
+  .x-wu-box q::before { content: "“"; color: var(--violet); }
+  .x-wu-box q::after { content: "”"; color: var(--violet); }
+  .x-wu-calls { color: var(--ink); font-weight: 650; }
+  .x-wu-never { color: var(--amber); }
+  .x-wu-box i { font-style: normal; display: inline-block; width: 5.4cqw; font-size: 1cqw; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--ink-3); }
+  .x-wu-both { grid-column: 1 / -1; font-size: 1.25cqw; color: var(--ink-2); padding-left: 0.2cqw; }
+  .x-wu-both b { color: var(--ink); }
+  .x-wu-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5cqw 2.2cqw; font-size: 1.25cqw; color: var(--ink-2); }
+  .x-wu-foot .x-tag { margin-right: 0.6cqw; vertical-align: 0.12cqw; }
+  .x-wu-foot a { margin-left: auto; color: var(--mint); font-weight: 650; text-decoration: none; white-space: nowrap; }
+
+  /* --- deep dive: the two prompts, word for word (the reader in two columns) */
+  .x-pr { display: grid; grid-template-columns: 2.1fr 1fr; gap: 1.4cqw; align-items: stretch; }
+  .x-pr-box { padding: 1cqw 1.3cqw; border-radius: 1cqw; border: 1px solid rgba(181, 157, 255, 0.55); background: rgba(181, 157, 255, 0.07); display: flex; flex-direction: column; gap: 0.6cqw; }
+  .x-pr-text { white-space: pre-line; font-family: Georgia, "Times New Roman", serif; font-size: 1.05cqw; line-height: 1.3; color: var(--ink); }
+  .x-pr-text.cols { column-count: 2; column-gap: 1.6cqw; }
+  .x-pr-user { font-size: 1.05cqw; line-height: 1.35; color: var(--ink-2); border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 0.5cqw; }
+  .x-pr-user q { quotes: none; font-family: Georgia, "Times New Roman", serif; color: var(--ink); }
+  .x-pr-user q::before { content: "“"; }
+  .x-pr-user q::after { content: "”"; }
+
   /* --- Azure: target and prototype (act 5) */
   .x-az { display: grid; grid-template-columns: 1.3fr 1fr; gap: 2cqw; }   /* the table gets the room: body size 1.3cqw */
   .x-az-list { display: flex; flex-direction: column; gap: 0.3cqw; }
@@ -195,10 +230,11 @@
   .x-sp-net.two { grid-template-columns: repeat(2, 1fr); }
 
   /* --- adoption (act 5) */
-  .x-ra { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4cqw; }
+  .x-ra { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 2.2cqw; }   /* start small · Legal owns it · value, measured */
   .x-ra h3 { margin: 0 0 1cqw; font-size: 1.8cqw; line-height: 1.15; }
   .x-ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.8cqw; counter-reset: x; }
   .x-ol li { display: grid; grid-template-columns: 2.6cqw 1fr; gap: 0.8cqw; font-size: 1.3cqw; line-height: 1.35; counter-increment: x; }
+  .x-ra-tag { display: inline-block; margin-left: 0.4cqw; font-size: 1cqw; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.1cqw 0.6cqw; border-radius: 0.4cqw; background: rgba(68, 226, 176, 0.18); color: var(--mint); vertical-align: 0.1cqw; white-space: nowrap; }
   .x-ol li::before { content: counter(x); width: 2.6cqw; height: 2.6cqw; border-radius: 50%; display: grid; place-items: center; background: rgba(68, 226, 176, 0.18); color: var(--mint); font-weight: 800; font-size: 1.2cqw; }
 
   /* --- live (act 6) */
@@ -279,7 +315,7 @@
   .x-form-foot b { color: var(--ink); }
 
   /* --- deep dive: agent patterns */
-  .x-pats { display: flex; flex-direction: column; gap: 1cqw; }
+  .x-pats { display: flex; flex-direction: column; gap: 0.8cqw; }
   .x-pats .x-key { padding-block: 0.9cqw; }
   .x-pat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1cqw; }
   .x-pat { display: grid; grid-template-columns: 3cqw 1fr auto; grid-template-rows: auto 1fr; align-items: center; column-gap: 1.1cqw; row-gap: 0.6cqw; padding: 0.9cqw 1.6cqw; border-radius: 1.2cqw; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.045); }

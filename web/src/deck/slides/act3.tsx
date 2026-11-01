@@ -1,18 +1,25 @@
-// Act 3 - our solution, along the map of the card 'tomorrow' from left to right (decision 88): the
-// process tomorrow, one contract through the fixed steps (M18), the checks on a real wrong answer
-// (M08), the hidden instruction (M14), then the register - Q1 and Q2 become lookups, and every
-// contract it lists was met before - the two stores, and the lawyer deciding. The method card moved
-// to act 1 (roadmap), the technique table to the deep dives. Every number comes from deck-data.json
+// Part 3 - the technical solution (decision 90), along the map of the card 'tomorrow' from left to
+// right (decision 88): the process tomorrow, one contract through the fixed steps (M18), the checks
+// on a real wrong answer (M08), the hidden instruction (M14), then the register - Q1 and Q2 become
+// lookups, and every contract it lists was met before - the lawyer deciding, and what we use (two
+// prompts, embeddings, the rest code). The proof cards (proof.tsx) close the part. The two stores
+// (register-index) and the technique table are deep dives. Every number comes from deck-data.json
 // (tools/deck_data.py reads the register), a stored evaluation file or the code (?raw) - nothing is
 // typed by hand.
 import measurement from "../../../../eval/results/2026-10-31_negative_search.json";
 import goldQueries from "../../../../data/gold_queries.json";
+import stats from "../../../../eval/results/2026-10-31_extract-v2_stats.json";
 import runPy from "../../../../pipeline/run.py?raw";
 import catalogueRaw from "../../../../pipeline/catalogue.py?raw";
+import registerApiPy from "../../../../api/register.py?raw";
+import reviewPy from "../../../../api/review.py?raw";
+import storagePy from "../../../../api/storage_mock.py?raw";
+import toolApi from "../../api.ts?raw";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import "./acts.css";
 import deck from "./deck-data.json";
+import { CHECKER, CLAUSES, PROMPTS, READER, RULES, Say, TEMPERATURE, opening, say } from "./prompts-data";
 
 const AT_K10 = measurement.top_k.find((r) => r.k === 10)!;
 const short = (name: string) => name.split(" ")[0];                   // "Arvato Financial Solutions" -> "Arvato"
@@ -264,6 +271,59 @@ function LawyerDecides() {
   );
 }
 
+// ---------------------------------------------------------------- what we use (decision 90)
+// All the AI of the system on one card (talk plan, section 3): two system prompts on one small model,
+// embeddings without a prompt, everything else code. The prompts' first sentences come word for word
+// from pipeline/extract.py (prompts-data.ts), the call counts from the stored evaluation of the
+// register used in the talk; no costs here - that punchline stays on 'cost'. Every label on it was
+// said on an earlier card; the search index is introduced here (build 1), which is why the card
+// 'register-index' could become a deep dive. Built and planned are marked.
+const CALLS = (purpose: string) => stats.cost.by_purpose.find((p) => p.purpose === purpose);
+const READ_CALLS = CALLS("extract");
+const CHECK_CALLS = CALLS("check");
+const EMBED_MODEL = CALLS("embed")?.model ?? "";
+const CHAT_MODEL = stats.config.extraction[0].model;
+
+function WhatWeUse() {
+  return (
+    <div className="x-wu">
+      <div className="x-wu-prompts">
+        <div className="x-wu-box model">
+          <span className="x-wu-k">1 · Reader · system prompt</span>
+          <q>{opening(READER)}</q>
+          <span>{RULES} rules · Legal's playbook: {CLAUSES} clauses · one whole contract</span>
+          <span className="x-wu-calls">{READ_CALLS?.calls} calls – one per contract</span>
+        </div>
+        <div className="x-wu-box model">
+          <span className="x-wu-k">2 · Checker · system prompt</span>
+          <q>{opening(CHECKER)}</q>
+          <span>only a definition and a quote · says no → “found” becomes “unclear”</span>
+          <span className="x-wu-calls">{CHECK_CALLS?.calls} calls – one per contract with a “found”</span>
+        </div>
+        <div className="x-wu-both">both on <b>{CHAT_MODEL}</b> · temperature {TEMPERATURE} · a fixed form (strict JSON) · no model writes an answer</div>
+      </div>
+      <div className="x-wu-rest">
+        <Build at={1} className="x-wu-box emb">
+          <span className="x-wu-k">3 · Embeddings · no prompt</span>
+          <span>passages → numbers, for open questions only: keywords + meaning, merged</span>
+          <span className="x-wu-never">never “which contracts lack …”</span>
+        </Build>
+        <Build at={2} className="x-wu-box code">
+          <span className="x-wu-k">Code · no language model</span>
+          <span><i>before</i>PDF text or OCR · cut at the headings</span>
+          <span><i>after</i>quote found? · clause words · pattern check → triage</span>
+          <span><i>answer</i>lookups Q1, Q2 · coverage · four eyes · archive gate</span>
+        </Build>
+      </div>
+      <Build at={2} className="x-wu-foot">
+        <span><span className="x-tag built">built</span>Python + FastAPI · React + TypeScript · SQLite · local OCR · Azure OpenAI</span>
+        <span><span className="x-tag planned">planned</span>a model that drafts the plan · Prompt Shields as a second check</span>
+        <a href="/api/documents/M18/prompt" target="_blank" rel="noreferrer" data-no-advance>M18's prompt →</a>
+      </Build>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------- guards (development only)
 if (import.meta.env.DEV) {
   const gold = (id: string) => goldQueries.find((g) => g.id === id);
@@ -290,14 +350,29 @@ if (import.meta.env.DEV) {
       && "card 'injection': the card says the pattern check found only M14's original - the probe says otherwise",
     !TRIAGE.four_eyes.includes("amendment_contradiction") && "card 'human': four eyes no longer covers an amendment that contradicts its contract",
     !TRIAGE.four_eyes.some((s) => s.includes("injection")) && "card 'human': four eyes no longer covers a hidden instruction",
+    // the prompts themselves are guarded in prompts-data.ts; here what the card says about the calls
+    !(READ_CALLS && READ_CALLS.calls === stats.config.documents)
+      && `card 'what-we-use': the reader says one call per contract - ${READ_CALLS?.calls} calls for ${stats.config.documents} documents`,
+    !(CHECK_CALLS && CHECK_CALLS.calls === deck.patterns.checked_contracts)
+      && `card 'what-we-use': the checker says one call per contract with a "found" - ${CHECK_CALLS?.calls} calls, ${deck.patterns.checked_contracts} such contracts`,
+    !(READ_CALLS?.model === CHAT_MODEL && CHECK_CALLS?.model === CHAT_MODEL) && "card 'what-we-use': both prompts are said to run on one model - the stored calls say otherwise",
+    !EMBED_MODEL && "card 'what-we-use': the stored evaluation has no embedding calls",
+    // the note of 'register': comparing is built (GET /api/compare) but not in the tool yet
+    !registerApiPy.includes('@router.get("/compare")') && "card 'register': the note says comparing is built - api/register.py has no /compare",
+    toolApi.includes("/compare") && "card 'register': the note says comparing is 'API only so far' - web/src/api.ts calls /compare now",
+    // the note of 'human': the server refuses before approval; the storage stores once per fingerprint, write once
+    !reviewPy.includes("HTTPException(409, f\"tool gate: archive copy only after approval") && "card 'human': the note says the server refuses the copy before approval - api/review.py changed",
+    !(storagePy.includes("hashlib.sha256(body)") && storagePy.includes('"already_stored"') && storagePy.includes("write once") && storagePy.includes('"receipt_id"'))
+      && "card 'human': the note says stored once by its fingerprint, write-once, with a receipt - api/storage_mock.py changed",
   ].filter(Boolean);
-  for (const p of problems) console.error(`act 3: ${p}`);
+  for (const p of problems) console.error(`part 3: ${p}`);
 }
 
 export const ACT3: Slide[] = [
   {
-    id: "act-3", act: 3, kind: "opener", title: "Our solution: read once, then look up", steps: 0, seconds: 4,
-    notes: ["Design: how do we deliver the three guarantees?"],
+    id: "part-3", act: 3, kind: "opener", title: "The technical solution", steps: 0, seconds: 6,
+    quote: ["An overall technical solution you would present to our team and how it could be implemented"],
+    notes: ["Design: how do we deliver the three guarantees – and does it work?"],
   },
   {
     id: "tomorrow", act: 3, kind: "content", title: "Tomorrow: the system reads, the lawyer decides.", steps: 1, seconds: 30, Body: Tomorrow,
@@ -321,49 +396,72 @@ export const ACT3: Slide[] = [
     words: [{ word: "OCR", say: "oh-see-AR" }, { word: M18_MODEL, say: "G-P-T four point one mini" }, { word: "sections", say: "SEK-shunz" }],
   },
   {
-    id: "checks", act: 3, kind: "content", title: "The model is checked: M08 said “found”, the register says “unclear”.", steps: 2, seconds: 37, Body: ChecksM08,
+    id: "checks", act: 3, kind: "content", title: "The model is checked: M08 said “found”, the register says “unclear”.", steps: 2, seconds: 38, Body: ChecksM08,
     notes: [
       `But a model can be wrong. M08: the model said: limitation of liability, found. Its quote is clause ${M08_CLAUSE}.`,
-      "Guarantee two: the quote is really there. But it lacks the words Legal's playbook expects – the playbook is Legal's clause list, as data. And a second model call says: this is about data protection.",
+      // the task: "ensuring they comply with our corporate guidelines" - the playbook is those guidelines
+      "Guarantee two: the quote is really there. But it lacks the words Legal's playbook expects – the playbook is Legal's guidelines, as data. And a second model call says: this is about data protection.",
       `So the register says unclear, ${M08.confidence}, and a lawyer looks. Code before and after the model: the guardrail sandwich.`,
     ],
     words: [{ word: "playbook", say: "PLAY-book" }, { word: "guardrail", say: "GARD-rail" }, { word: "unclear", say: "un-KLEER" }],
   },
   {
-    id: "injection", act: 3, kind: "content", title: "A hidden instruction in M14 – caught, and sent to two people.", steps: 2, seconds: 29, Body: HiddenNote,
+    id: "injection", act: 3, kind: "content", title: "A hidden instruction in M14 – caught, and sent to two people.", steps: 2, seconds: 31, Body: HiddenNote,
     notes: [
-      "Second danger: M14's hidden instruction tells the AI to report a cap. That is a prompt injection.",
+      // the task: "represent the company's best interests"
+      "Second danger: M14's hidden note tells the AI to report a cap – prompt injection. A counterparty's text must not decide for Riverty.",
       "Our pattern check finds it. The register still says: no cap. Two people look – four eyes.",
       `Honestly: M14 and ${REWORDED} rewordings – our pattern check found only the original, ${REGEX_HITS} of ${PS_CASES.length}. ` +
-        `Prompt Shields, Microsoft's detector: ${SHIELD_HITS} of ${PS_CASES.length}. Our next step.`,
+        `Microsoft's Prompt Shields: ${SHIELD_HITS} of ${PS_CASES.length} – our next step.`,
     ],
     words: [{ word: "injection", say: "in-JEK-shun" }, { word: "detector", say: "dih-TEK-ter" }, { word: "honestly", say: "ON-ist-lee" }],
   },
   {
-    id: "register", act: 3, kind: "content", title: "Every contract in one table – a question becomes a lookup.", steps: 3, seconds: 47, Body: Register,
+    id: "register", act: 3, kind: "content", title: "Every contract in one table – a question becomes a lookup.", steps: 3, seconds: 52, Body: Register,
     notes: [
-      "Every contract, read like M18, in one table: the register. The merchant agreements: required clauses, former names. Green found, red not found, amber unclear.",
+      "Every contract, read like M18, in one table: the register. Here the merchant agreements. Green found, red not found, amber unclear.",
       `Q1 is one column: ${Q1.length} contracts, no model call. Red and amber count together – one too many beats one missed. Keyword search: ${AT_K10.false_alarms.length} false alarms, ${AT_K10.missed.join(", ")} missed.`,
-      `Coverage: ${ROWS.length} in scope, ${CHECKED} checked, ${COPY.id} excluded as a copy of ${COPY.copy_of}. Nothing drops out silently.`,
+      // the task's "comparing them": GET /api/compare (api/register.py) - not in the tool yet (guarded)
+      `Coverage: ${ROWS.length} in scope, ${CHECKED} checked, ${COPY.id} excluded – a copy of ${COPY.copy_of}. Nothing drops out silently. ` +
+        `Comparing is built too: ${COPY.id} next to ${COPY.copy_of}, the same text – API only so far.`,
       `Legal's second question, Q2: which contracts still name ${LEGACY.join(" or ")} – Riverty's former names? ${Q2.length}. Not ${FIXED?.id}: its amendment ${FIXED?.by} renamed it to ${FIXED_TO}.`,
     ],
     words: [{ word: "register", say: "REJ-ih-ster" }, { word: "coverage", say: "KUV-er-ij" }, { word: "excluded", say: "ik-SKLOO-did" }],
   },
   {
-    id: "register-index", act: 3, kind: "content", title: "Two stores, two jobs: the register and the search index.", steps: 1, seconds: 25, Body: TwoStores,
-    notes: [
-      "Are the contracts embedded too? Yes – for another job. The register answers which contracts lack something, for every contract.",
-      `The search index holds the ${deck.register.passages} passages, with keywords and embeddings: hybrid search, for open questions. Never for “which contracts lack”.`,
-    ],
-    words: [{ word: "hybrid", say: "HY-brid" }, { word: "embedded", say: "em-BED-id" }],
-  },
-  {
-    id: "human", act: 3, kind: "content", title: "Observations, not verdicts: a lawyer decides.", steps: 2, seconds: 35, Body: LawyerDecides,
+    id: "human", act: 3, kind: "content", title: "Observations, not verdicts: a lawyer decides.", steps: 2, seconds: 40, Body: LawyerDecides,
     notes: [
       `Guarantee three: a lawyer decides; the system only observes. Triage sorts each finding: sure ones get a spot check; unclear, or below ${TRIAGE.review_below} confidence, one lawyer; risky ones two – four eyes.`,
       "The lawyer sees the passage on the page first, then decides with a reason – stored, and reused next time.",
-      "Only after approval may we store a copy in the contract storage. Once. It may receive nothing else.",
+      // api/review.py: no approval -> 409, logged; api/storage_mock.py: PUT by SHA-256, write once, a
+      // receipt - a repeated PUT gets 200 "already_stored", so never "exactly one call"
+      "Riverty's storage has a REST API. Our server sends the file only after approval – before, it refuses. " +
+        "Stored once, by its fingerprint, write-once, with a receipt. Here a stand-in.",
     ],
-    words: [{ word: "observes", say: "ub-ZURVZ" }, { word: "triage", say: "TREE-ahzh" }, { word: "approval", say: "uh-PROO-vul" }],
+    words: [{ word: "observes", say: "ub-ZURVZ" }, { word: "triage", say: "TREE-ahzh" }, { word: "approval", say: "uh-PROO-vul" }, { word: "receipt", say: "rih-SEET" }],
+  },
+  {
+    // the task: "we encourage any form of AI usage, as long as we understand what is happening",
+    // "Python with FastAPI", "Frontend written in React and TypeScript"
+    id: "what-we-use", act: 3, kind: "content", title: "What we use: two prompts – one reads, one checks. The rest is code.", steps: 2, seconds: 45, Body: WhatWeUse,
+    notes: [
+      `What do we use? ${Say(PROMPTS)} prompts on one small model. The reader gets ${say(RULES)} rules, Legal's playbook and one whole contract. ` +
+        "It fills the form. The checker sees only a definition and a quote. No model writes an answer.",
+      "Embeddings need no prompt. They serve only open questions. Never to say a clause is missing.",
+      "Everything else is code we can test: OCR, every check, triage, the lookups, the gate. Python and FastAPI. The tool is React and TypeScript. " +
+        "Planned: a model that drafts the plan, and Prompt Shields.",
+    ],
+    words: [{ word: "FastAPI", say: "fast-ay-pee-EYE" }, { word: "TypeScript", say: "TYPE-script" }, { word: "embeddings", say: "em-BED-ingz" }],
   },
 ];
+
+// A deep dive since decision 90 (the main track stays under 20 minutes; 'what-we-use' names the search
+// index now): opened on a question, listed in deep.tsx.
+export const REGISTER_INDEX: Slide = {
+  id: "register-index", act: 7, kind: "content", title: "Two stores, two jobs: the register and the search index.", steps: 1, seconds: 25, deep: true, Body: TwoStores,
+  notes: [
+    "Are the contracts embedded too? Yes – for another job. The register answers which contracts lack something, for every contract.",
+    `The search index holds the ${deck.register.passages} passages, with keywords and embeddings: hybrid search, for open questions. Never for “which contracts lack”.`,
+  ],
+  words: [{ word: "hybrid", say: "HY-brid" }, { word: "embedded", say: "em-BED-id" }],
+};

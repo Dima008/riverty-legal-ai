@@ -1,8 +1,10 @@
-// Act 4 - proof. The test set as a trap map: the documents I wrote, the traps hidden in them
-// (one of three questions each: read, understand, organise), and the real contracts from CUAD
-// with the experts' labels. Colour means the question a trap asks, never right or wrong. The
-// audience met the 47 and the 8 test questions on the card 'contracts' (act 2, decision 88), so
-// this card shows the traps, not the set again; "I" for my own work, like 'contracts'.
+// A deep dive since decision 90 (it was the first proof card; the main track stays under 20
+// minutes, and its CUAD sentence moves to 'results'). The test set as a trap map: the documents I
+// wrote, the traps hidden in them (one of three questions each: read, understand, organise), and
+// the real contracts from CUAD with the experts' labels. Colour means the question a trap asks,
+// never right or wrong. The audience met the 47 and the 8 test questions on the card 'contracts'
+// (part 2, decision 88), so this card shows the traps, not the set again; "I" for my own work,
+// like 'contracts'.
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import {
@@ -106,7 +108,7 @@ function TrapMap() {
 }
 
 export const TEST_SET: Slide = {
-  id: "test-set", act: 4, kind: "content", title: "A test set built to break the system.", steps: LAST, seconds: 48, Body: TrapMap,
+  id: "test-set", act: 7, kind: "content", title: "A test set built to break the system.", steps: LAST, seconds: 48, deep: true, Body: TrapMap,
   notes: [
     `You met the ${ALL_DOCS}. In my ${DOCS.length}, I hid traps – and wrote the answers first.`,
     "One: can it read? Scans, German, a cap split across two pages.",
@@ -126,10 +128,7 @@ if (import.meta.env.DEV) {
     !TRAPS.some((t) => t.code === "scan") && "the override 'only an image, no text' no longer has a trap 'scan'",
     TRAPS.filter((t) => t.q === 3).map((t) => t.code).join(",") !== "amendment,copy,law"
       && "note 3 of 'test-set' names an old name fixed by an amendment, a copy and foreign law - the traps of question 3 changed",
-    FOUND_BY_CUAD.length === 0 && "note 4 of 'test-set' says the real contracts showed errors my traps missed - none are listed",
-    // the errors by name (F3, F4, F10 in docs/failure-cases.md), so the count cannot drift silently
-    FOUND_BY_CUAD.join(" | ") !== "C04 | C09, C10 | C11"
-      && `note 4 of 'test-set' speaks of the errors C04, C09/C10 and C11 - docs/failure-cases.md now gives ${FOUND_BY_CUAD.join(" | ")}`,
+    // the guards on FOUND_BY_CUAD moved to proof.tsx with the CUAD sentence of 'results' (decision 90)
     CUAD_DIFFER.size === 0 && "note 4 of 'test-set' names a contract that is a question for Legal - there is none",
   ].filter(Boolean);
   for (const p of problems) console.error(`card "test-set": ${p}`);

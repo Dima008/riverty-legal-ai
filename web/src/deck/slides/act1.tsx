@@ -1,7 +1,8 @@
-// Act 1 - the task: the roadmap of the talk (how I worked), what Riverty wrote (six sentences,
-// verbatim), what one question costs today, what makes it hard, and the lever everything else
-// builds on: to prove that something is missing you read everything - and today that reading
-// starts again for every new question. Numbers come from the case study (?raw) and deck-data.json.
+// Part 1 - the problem (decision 90): what Riverty wrote (six sentences, verbatim), what one
+// question costs today, what makes it hard, and the lever everything else builds on: to prove that
+// something is missing you read everything - and today that reading starts again for every new
+// question. The roadmap (how I worked) opens part 2. Numbers come from the case study (?raw) and
+// deck-data.json.
 import { useState } from "react";
 import caseStudy from "../../../../docs/context/case-study.md?raw";
 import { Build } from "../Build";
@@ -22,45 +23,6 @@ function TitleBody() {
       <div className="t-field" aria-hidden>
         {Array.from({ length: 47 }, (_, i) => <span key={i} className={GAPS.has(i) ? "gap" : undefined} />)}
       </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------- how I worked: the roadmap
-// The path from the problem to the platform (docs/context/briefing.md, section 4) and the order of
-// the talk: act 4 evaluates, act 5 runs it on the platform and brings it to the lawyers (decision 88).
-const PHASES = [
-  { at: 0, name: "Understand", steps: [
-    { n: 1, name: "Qualify the pilot" },
-    { n: 2, name: "Map today's process" },
-    { n: 3, name: "Rethink the process" },
-  ] },
-  { at: 1, name: "Design", steps: [
-    { n: 4, name: "Per step: code or AI?" },
-    { n: 5, name: "As little freedom for the AI as works" },
-    { n: 6, name: "Architecture and decisions" },
-  ] },
-  { at: 2, name: "Deliver", steps: [
-    { n: 7, name: "Evaluate and harden" },
-    { n: 8, name: "Platform" },
-    { n: 9, name: "Adopt and scale" },
-  ] },
-];
-
-function HowIWorked() {
-  return (
-    <div className="x-steps">
-      {PHASES.map((ph) => (
-        <Build key={ph.name} at={ph.at} className="x-phase">
-          <div className="x-phase-name">{ph.name}</div>
-          {ph.steps.map((st) => (
-            <div key={st.n} className="x-step">
-              <span className="x-step-n">{st.n}</span>
-              <div className="x-step-name">{st.name}</div>
-            </div>
-          ))}
-        </Build>
-      ))}
     </div>
   );
 }
@@ -95,7 +57,7 @@ function TaskSnippets() {
 
 // ---------------------------------------------------------------- today: one question in hours
 // The partner counts are Riverty's (the addendum of the case study); five minutes per contract is
-// my assumption, to be measured with Legal in the pilot.
+// my assumption, to be measured with Legal first.
 const CASE = caseStudy.replace(/\s+/g, " ");
 const over = (who: string) => Number(new RegExp(`over ([\\d,]+) ${who}`).exec(CASE)?.[1].replace(/,/g, "") ?? NaN);
 const VENDORS = over("vendors");
@@ -127,7 +89,7 @@ function Today() {
 }
 
 // ---------------------------------------------------------------- what makes it hard
-// No ids here: the test set and its ids come at the start of act 2 (decision 88), and the card
+// No ids here: the test set and its ids come early in part 2 (decisions 88, 90), and the card
 // 'contracts' then names them by pointing back to this card.
 const RENAME = deck.register.renames[0];
 const year = (date: string | null | undefined) => (date ?? "").slice(0, 4);
@@ -193,25 +155,22 @@ if (import.meta.env.DEV) {
 
 export const ACT1: Slide[] = [
   {
-    id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 15, Body: TitleBody,
+    // 25 s (decision 90): room for the agenda and one sentence about Dima himself.
+    // TODO(Dima): write that sentence yourself - Riverty: "we want to get to know you, not only your
+    // slides". Not invented for you on purpose; until then the note below (the question, then the
+    // agenda along Riverty's outline) is the whole title card.
+    id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 25, Body: TitleBody,
     notes: [
-      "Hello, I'm Dima. Riverty's lawyers keep asking one kind of question: which contracts are missing something? In under twenty minutes I show how I'd answer it – with a working prototype.",
+      "Hello, I'm Dima. Riverty's lawyers keep asking one kind of question: which contracts are missing something? In under twenty minutes I show how I'd answer it – with a working prototype. " +
+        "I follow your outline: from the problem to adoption, then it runs live.",
     ],
     words: [{ word: "Riverty's", say: "RIV-er-teez" }, { word: "prototype", say: "PROH-tuh-type" }],
   },
   {
-    id: "how-i-worked", act: 1, kind: "content", title: "How I worked: from the problem to the platform.", steps: 2, seconds: 26, Body: HowIWorked,
+    id: "part-1", act: 1, kind: "opener", title: "The problem", steps: 0, seconds: 4,
+    quote: ["One of these challenges is making our legal team more efficient."],
     notes: [
-      "This is how I worked – and the order of my talk. Understand: the pilot – our first question – today's process, a better one.",
-      "Design: code or AI for each step, as little freedom for the AI as works, then the architecture.",
-      "Deliver: test it, run it on Azure, bring it to the lawyers.",
-    ],
-    words: [{ word: "pilot", say: "PIE-lut" }, { word: "architecture", say: "AR-kih-tek-cher" }],
-  },
-  {
-    id: "act-1", act: 1, kind: "opener", title: "The task", steps: 0, seconds: 4,
-    notes: [
-      "First, understand: what does Legal actually ask?",
+      "First, the problem: what does Legal actually ask?",
     ],
     words: [],
   },
@@ -228,16 +187,16 @@ export const ACT1: Slide[] = [
     id: "today", act: 1, kind: "content", title: "Today: open every contract, search, note it down.", steps: 2, seconds: 26, Body: Today,
     notes: [
       `What does one question cost today? Riverty has over ${n(CONTRACTS)} contracts. Over ${n(VENDORS)} vendors, over ${n(MERCHANTS)} merchants.`,
-      `I assume ${MINUTES} minutes per contract: open, search, note. We'd measure it with Legal in the pilot.`,
+      `I assume ${MINUTES} minutes per contract: open, search, note. We'd measure it with Legal first.`,
       `That's about ${HOURS} hours for one question. And again for the next one.`,
     ],
     words: [{ word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }, { word: "measure", say: "MEZH-er" }],
   },
   {
-    id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 36, Body: Hard,
+    id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 38, Body: Hard,
     notes: [
       "Why not just search for a word?",
-      "First, scans. Some contracts are only images, like this one. OCR – text recognition – reads them first. Later I'll show a handwritten one, live.",
+      "First, scans. Most are PDFs with text – we read that directly. Some are only images, like this one. OCR – text recognition – reads them. Later, a handwritten one, live.",
       `Second, amendments. A contract from ${year(RENAME.amends_date)} names ${RENAME.old.split(" ")[0]}; its ${year(RENAME.date)} amendment says: read as ${RENAME.to.split(" ")[0]}. The answer needs both.`,
       "Third, wording. All three cap liability. The second never says liability, the third is German. Keywords miss them. Remember the second one.",
     ],

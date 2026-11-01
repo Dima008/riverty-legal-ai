@@ -1,7 +1,8 @@
-// Act 4 - proof, after the trap map: how many answers were complete and how sure we can be, a
-// safeguard switched off live (the stored model answers replayed on a copy of the register), and
-// what reading costs - whether a bigger model would help, and the release gate that decides the
-// next one (merged here from the old card 'run-it', decision 88). Every number is read from a
+// The proof at the end of part 3, the technical solution (decision 90; the trap map is a deep dive
+// now, its CUAD sentence is said here): how many answers were complete and how sure we can be, a safeguard switched off live (the
+// stored model answers replayed on a copy of the register), and what reading costs - whether a
+// bigger model would help, and the release gate that decides the next one (merged here from the old
+// card 'run-it', decision 88). Every number is read from a
 // stored evaluation file, the running API or the card that said it first - nothing is typed by hand.
 import { useEffect, useRef, useState } from "react";
 import goldQueries from "../../../../data/gold_queries.json";
@@ -18,6 +19,7 @@ import stored from "../../../../eval/results/2026-10-31_what_if.json";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import { ACT1 } from "./act1";
+import { CUAD_AGREE, CUAD_N, FOUND_BY_CUAD } from "./testset-data";
 import "./proof.css";
 
 const pct = (x: number) => `${Math.round(x * 100)} %`;
@@ -151,8 +153,9 @@ function Results() {
       <div className="p-side">
         <Build at={0} className="p-fact">
           {RUNS_COMPLETE === RUNS.length
-            ? <><b>{RUNS.length} runs from scratch</b>, {MODELS.length} models: complete, no false alarm</>
+            ? <><b>{RUNS.length} runs from scratch</b>: complete, no false alarm</>
             : <><b>{RUNS_COMPLETE} of {RUNS.length} runs from scratch</b> complete</>}
+          <span className="p-cuad">Real contracts: <b>{CUAD_AGREE} of {CUAD_N}</b> agree with experts · {FOUND_BY_CUAD.length} errors found, fixed</span>
         </Build>
         <Build at={1} className="p-fact p-amber">
           <span className="p-swatch" /><span className="p-nb">{WEAKEST.expected.length} of {WEAKEST.expected.length}</span> → <span className="p-nb">could be {pct(WEAKEST.recall_lower_95)}</span>
@@ -384,7 +387,7 @@ function Cost() {
       </Build>
       <Build at={2} className="p-verdict">
         The small model stays: <b>{MINI}</b>. A new model, new instructions or a new playbook go live
-        only if all <b>{QS.length} test questions</b> stay at 100 %.
+        only if all <b>{QS.length} test questions</b> stay at 100 %. <span className="p-tag">our rule · run by hand</span>
       </Build>
     </div>
   );
@@ -431,16 +434,25 @@ if (import.meta.env.DEV) {
     !(MINI_ROW.complete && BIG_ROW.complete) && "the notes of 'cost' say both models find every contract",
     !(mean(BIG_ROW.alone) > mean(MINI_ROW.alone)) && "note 1 of 'cost' says the bigger model alone misses less",
     STORED.some((r) => r.questions.some((q) => q.recall[0] !== 1)) && "the stored replay starts from a register that is not complete",
+    // moved here from act4.tsx with the CUAD sentence (decision 90); the deep dive 'test-set' says it too
+    FOUND_BY_CUAD.length === 0 && "note 0 of 'results' says the real contracts showed errors my traps missed - none are listed",
+    // the errors by name (F3, F4, F10 in docs/failure-cases.md), so the count cannot drift silently
+    FOUND_BY_CUAD.join(" | ") !== "C04 | C09, C10 | C11"
+      && `note 0 of 'results' speaks of the errors C04, C09/C10 and C11 - docs/failure-cases.md now gives ${FOUND_BY_CUAD.join(" | ")}`,
+    !(CUAD_N > 0 && CUAD_AGREE <= CUAD_N && CUAD_AGREE > CUAD_N / 2) && `note 0 of 'results': ${CUAD_AGREE} of ${CUAD_N} real contracts agree - read wrong`,
   ].filter(Boolean);
-  for (const p of problems) console.error(`act 4 proof cards: ${p}`);
+  for (const p of problems) console.error(`proof cards (part 3): ${p}`);
 }
 
 // ---------------------------------------------------------------- the cards
 export const RESULTS: Slide = {
-  id: "results", act: 4, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 32, Body: Results,
+  id: "results", act: 3, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 39, Body: Results,
   notes: [
-    `Did it find every contract? ${RUNS.length} runs from scratch, ${MODELS.length} models: every expected contract, no false alarm.`,
-    `How sure are we? ${Q1_N} of ${Q1_N} could still mean ${Math.round(Q1.recall_lower_95 * 100)} percent. ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
+    // 'Deliver' is the third phase of the card 'how-i-worked'; the CUAD sentence came from the card
+    // 'test-set' (a deep dive since decision 90). The task: "while learning and improving ourselves".
+    `Deliver: does it work – how do I know? ${RUNS.length} runs from scratch: complete, no false alarm. ` +
+      `Real contracts, labelled by experts: we agree on ${CUAD_AGREE} of ${CUAD_N}. They showed ${FOUND_BY_CUAD.length} errors my traps missed – all fixed.`,
+    `Sure? ${Q1_N} of ${Q1_N} could still mean ${Math.round(Q1.recall_lower_95 * 100)} percent. ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
     `All ${POOLED.expected} answers together: at least ${Math.round(POOLED.recall_lower_95 * 100)} percent. But I tuned on these ${DISTINCT} contracts. ` +
       "Planned: a sealed test set – new contracts I never tune on.",
   ],
@@ -448,7 +460,7 @@ export const RESULTS: Slide = {
 };
 
 export const WHAT_IF: Slide = {
-  id: "what-if", act: 4, kind: "content", title: "Switch a safeguard off – live.", steps: SCENARIOS.length, seconds: 46, Body: WhatIf,
+  id: "what-if", act: 3, kind: "content", title: "Switch a safeguard off – live.", steps: SCENARIOS.length, seconds: 46, Body: WhatIf,
   notes: [
     "Remember M08: the model said found, the checks said unclear. What if the checks were off? I replay the stored answers on a copy – no model call, no cost.",
     `The second model call, off. Q1 still finds all ${Math.round(S1.recall[1] * S1.expected.length)}. The checks overlap – watch the next switch.`,
@@ -459,11 +471,14 @@ export const WHAT_IF: Slide = {
 };
 
 export const COST: Slide = {
-  id: "cost", act: 4, kind: "content", title: "A few cents to read everything – and the small model was enough on our tests.", steps: 2, seconds: 34, Body: Cost,
+  id: "cost", act: 3, kind: "content", title: "A few cents to read everything – and the small model was enough on our tests.", steps: 2, seconds: 38, Body: Cost,
   notes: [
-    `And the cost? Reading all ${DOCUMENTS} once: ${Math.round(COST_ALL * 100)} cents. Then a question is a lookup: no model call – not ${HOURS} hours of reading.`,
-    `A bigger model? ${BIG.toUpperCase()} costs ${RATIO} times more. Without our checks it misses less; with them, both find every contract.`,
-    `So the small model stays. A new model, new instructions or a new playbook goes live only if all ${QS.length} test questions still find everything.`,
+    // the task: "create more with the same number of engineers" - said for Legal
+    `And the cost? Reading all ${DOCUMENTS} once: ${Math.round(COST_ALL * 100)} cents. Then a question is a lookup – not ${HOURS} hours. ` +
+      "Your definition of productivity: the same lawyers answer more questions.",
+    `A bigger model? ${BIG.toUpperCase()} costs ${RATIO} times more. Without our checks it misses less; with them, both find everything.`,
+    // the gate is a rule: eval.repeat and eval.check_register are run by hand - no CI (no .github folder)
+    `So the small model stays. A new model, prompt or playbook goes live only if all ${QS.length} test questions still pass – our rule, run by hand today.`,
   ],
   words: [{ word: "GPT-4.1", say: "G-P-T four point one" }, { word: "lookup", say: "LOOK-up" }, { word: "playbook", say: "PLAY-book" }],
 };

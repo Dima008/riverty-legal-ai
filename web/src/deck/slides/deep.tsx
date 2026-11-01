@@ -1,10 +1,16 @@
 // Deep dives (decision 78): cards after the close, outside the timed track. The presenter opens
 // them from the overview (O) when a question comes. Numbers from deck-data.json and decisions 79/80.
+// Since decision 90 three former main-track cards are here too (test-set, embedding-map,
+// register-index - imported from the files of their parts), and the two prompts word for word.
 import { useState } from "react";
 import shieldsProbePy from "../../../../eval/prompt_shields_probe.py?raw";
 import runPy from "../../../../pipeline/run.py?raw";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
+import { EMBEDDING_MAP } from "./act2";
+import { REGISTER_INDEX } from "./act3";
+import { TEST_SET } from "./act4";
+import { CHECKER, CHECKER_ASK, CLAUSES, READER, READER_ASK, RULES, Say, TEMPERATURE, say } from "./prompts-data";
 import "./acts.css";
 import deck from "./deck-data.json";
 
@@ -305,7 +311,7 @@ function AgentPatterns() {
       </div>
       <Build at={2} className="x-wide">
         <span className="x-tag planned">planned</span>{" "}
-        a planner that uses a model · <b>Microsoft Agent Framework</b> · the tools via <b>MCP</b> – a standard plug that gives a model its tools
+        a planner that uses a model · <b>Microsoft Agent Framework</b> or <b>LangGraph</b> (LangChain) · the tools via <b>MCP</b> – a standard plug for a model's tools
       </Build>
     </div>
   );
@@ -372,6 +378,30 @@ function HybridSearch() {
   );
 }
 
+// ---------------------------------------------------------------- the two prompts (decision 90)
+// Both system prompts in full, word for word from pipeline/extract.py (prompts-data.ts reads and
+// guards them), with the line each user message starts with. The card 'what-we-use' shows their
+// first sentences; this is the answer to "show me the prompt".
+function Prompts() {
+  return (
+    <div className="x-pr">
+      <div className="x-pr-box">
+        <span className="x-wu-k">1 · Reader · SYSTEM_PROMPT</span>
+        <div className="x-pr-text cols">{READER}</div>
+        <span className="x-pr-user">
+          its message: Legal's {CLAUSES} clause definitions · <q>{READER_ASK}.</q> · the whole contract in sections [S1] … [Sn]
+        </span>
+      </div>
+      <Build at={1} className="x-pr-box">
+        <span className="x-wu-k">2 · Checker · CHECKER_PROMPT</span>
+        <div className="x-pr-text">{CHECKER}</div>
+        <span className="x-pr-user">its message: <q>{CHECKER_ASK}</q> · per claim: clause type, definition, the quote – never the contract</span>
+        <span className="x-pr-user">both: {TEMPERATURE === "0" ? "temperature 0" : `temperature ${TEMPERATURE}`} · a fixed form (strict JSON schema)</span>
+      </Build>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------- guards (development only)
 if (import.meta.env.DEV) {
   const problems = [
@@ -392,6 +422,7 @@ if (import.meta.env.DEV) {
   for (const p of problems) console.error(`deep dives: ${p}`);
 }
 
+// the order of the talk plan (decision 90): questions from the main track first, in its order
 export const DEEP: Slide[] = [
   {
     id: "deep-dives", act: 7, kind: "opener", title: "Deep dives – for your questions", steps: 0, seconds: 6, deep: true,
@@ -410,6 +441,8 @@ export const DEEP: Slide[] = [
     ],
     words: [{ word: "technique", say: "tek-NEEK" }, { word: "playbook", say: "PLAY-book" }, { word: "triage", say: "TREE-ahzh" }],
   },
+  TEST_SET,
+  EMBEDDING_MAP,
   {
     id: "decoy", act: 7, kind: "content", title: "Embeddings know the topic – not whether the clause is there.", steps: 1, seconds: 40, deep: true, Body: Decoy,
     notes: [
@@ -426,22 +459,6 @@ export const DEEP: Slide[] = [
       "In M09 the liability clause runs over the page break. A fixed cut splits it. Our sections keep it whole.",
     ],
     words: [{ word: "chunking", say: "CHUNK-ing" }, { word: "characters", say: "KAR-ik-terz" }],
-  },
-  {
-    id: "ms-checks", act: 7, kind: "content", title: "Microsoft at the edges, our own checks in the middle.", steps: 1, seconds: 40, deep: true, Body: MsChecks,
-    notes: [
-      "Microsoft services do what they do best: reading scans, a second opinion on hidden instructions, and identity.",
-      "Prompt Shields only says yes or no, without the position. So our own check stays. A hit means four eyes, never a block.",
-    ],
-    words: [{ word: "identity", say: "eye-DEN-tih-tee" }, { word: "Shields", say: "SHEELDZ" }],
-  },
-  {
-    id: "graph-details", act: 7, kind: "content", title: "SharePoint in detail: subscription, delta query, safety net.", steps: 1, seconds: 40, deep: true, Body: GraphDetails,
-    notes: [
-      "The details from Microsoft's documentation. The subscription only wakes us up. The delta query tells us what changed. The subscription must be renewed within 30 days.",
-      "And we ask only for read rights on the one library.",
-    ],
-    words: [{ word: "subscription", say: "sub-SKRIP-shun" }, { word: "Sites.Selected", say: "sites dot seh-LEK-tid" }],
   },
   {
     id: "ocr", act: 7, kind: "content", title: "OCR reads a scan word by word – its confidence is a hint, not proof.", steps: 2, seconds: 45, deep: true, Body: Ocr,
@@ -466,6 +483,16 @@ export const DEEP: Slide[] = [
     words: [{ word: "schema", say: "SKEE-muh" }, { word: "JSON", say: "JAY-sun" }, { word: "characters", say: "KAR-ik-terz" }],
   },
   {
+    // what the model is told, word for word (decision 90); the note says what the rules mean
+    id: "prompts", act: 7, kind: "content", title: "Two prompts, word for word.", steps: 1, seconds: 40, deep: true, Body: Prompts,
+    notes: [
+      `The reader's prompt, word for word. ${Say(RULES)} rules: the contract is data, not orders; quotes word for word; if unsure, unclear. ` +
+        `Then the document types. Its message adds Legal's ${say(CLAUSES)} clauses and the whole contract.`,
+      "The checker's prompt: it sees only the definition and the quote – never the contract. If it says no, found becomes unclear.",
+    ],
+    words: [{ word: "prompt", say: "PROMPT" }, { word: "verbatim", say: "ver-BAY-tim" }],
+  },
+  {
     id: "agent-patterns", act: 7, kind: "content", title: "Agent building blocks, each with one job – but no free agent.", steps: 2, seconds: 50, deep: true, Body: AgentPatterns,
     notes: [
       "Code fixes the order. One: plan first – the lawyer confirms it. Two: maker and checker: a second call checks every “found” – " +
@@ -473,10 +500,12 @@ export const DEEP: Slide[] = [
       "Three: a tool behind a gate – the archive copy needs approval and runs once. Four: a person decides. " +
         `In ${PAT.q1.id} a lawyer opens ${TO_LAWYER} of ${PAT.q1.reported} – ${TRIAGE.FOUR_EYES === 1 ? "one" : TRIAGE.FOUR_EYES} with four eyes; ` +
         `${TRIAGE.CONFIRM} sure ones: one click, with a spot check.`,
-      "Honestly: the planner has no model yet. Agent Framework and MCP – a standard plug that gives a model its tools: planned, not built.",
+      // Riverty's stack names LangChain and LangGraph for agents: the fallback of the card 'azure'
+      "Honestly: the planner has no model yet. Agent Framework or LangChain's LangGraph, and MCP – a standard plug for a model's tools: planned, not built.",
     ],
     words: [{ word: "overruled", say: "oh-ver-ROOLD" }, { word: "MCP", say: "em-see-PEE" }, { word: "plug", say: "PLUG" }],
   },
+  REGISTER_INDEX,
   {
     id: "hybrid-search", act: 7, kind: "content", title: "Open questions: keywords and meaning, merged.", steps: 2, seconds: 40, deep: true, Body: HybridSearch,
     notes: [
@@ -486,5 +515,21 @@ export const DEEP: Slide[] = [
       "Still open: a reranker – a second model that re-sorts the best hits – and a test set. On Azure: AI Search. Never for which contracts lack a clause.",
     ],
     words: [{ word: "hybrid", say: "HY-brid" }, { word: "reranker", say: "ree-RANK-er" }, { word: "damages", say: "DAM-ih-jiz" }],
+  },
+  {
+    id: "ms-checks", act: 7, kind: "content", title: "Microsoft at the edges, our own checks in the middle.", steps: 1, seconds: 40, deep: true, Body: MsChecks,
+    notes: [
+      "Microsoft services do what they do best: reading scans, a second opinion on hidden instructions, and identity.",
+      "Prompt Shields only says yes or no, without the position. So our own check stays. A hit means four eyes, never a block.",
+    ],
+    words: [{ word: "identity", say: "eye-DEN-tih-tee" }, { word: "Shields", say: "SHEELDZ" }],
+  },
+  {
+    id: "graph-details", act: 7, kind: "content", title: "SharePoint in detail: subscription, delta query, safety net.", steps: 1, seconds: 40, deep: true, Body: GraphDetails,
+    notes: [
+      "The details from Microsoft's documentation. The subscription only wakes us up. The delta query tells us what changed. The subscription must be renewed within 30 days.",
+      "And we ask only for read rights on the one library.",
+    ],
+    words: [{ word: "subscription", say: "sub-SKRIP-shun" }, { word: "Sites.Selected", say: "sites dot seh-LEK-tid" }],
   },
 ];

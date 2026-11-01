@@ -1,8 +1,9 @@
-// Act 2 - why the usual AI approaches fail. First the test bench (47 documents with known answers,
-// moved here from act 1, decision 88), then every term before it is used: what a chatbot over
-// documents (RAG) and top-k are, then why they cannot prove absence; then what an agent is, and why
-// a free agent cannot prove it read everything. The register's own result is NOT shown here: act 3
-// reveals it. Numbers come from the test-set files, deck-data.json, eval/results and docs (?raw).
+// Part 2 - my approach (decision 90): the roadmap (how I worked), then why the usual AI approaches
+// fail. First the test bench (47 documents with known answers, decision 88), then every term before
+// it is used: what a chatbot over documents (RAG) and top-k are, then why they cannot prove absence;
+// then what an agent is, and why a free agent cannot prove it read everything. The register's own
+// result is NOT shown here: part 3 reveals it. The embedding map is a deep dive since decision 90.
+// Numbers come from the test-set files, deck-data.json, eval/results and docs (?raw).
 import measurement from "../../../../eval/results/2026-10-31_negative_search.json";
 import negativeSearchPy from "../../../../eval/negative_search.py?raw";
 import caseStudy from "../../../../docs/context/case-study.md?raw";
@@ -12,6 +13,53 @@ import type { Slide } from "../types";
 import "./acts.css";
 import deck from "./deck-data.json";
 import { CUAD, DOCS, QUESTIONS_N } from "./testset-data";
+
+// ---------------------------------------------------------------- how I worked: the roadmap
+// The path from the problem to the platform (docs/context/briefing.md, section 4). It opens part 2,
+// 'My approach' (decision 90): part 1 walked the first steps (the pilot question, today's process).
+const PHASES = [
+  { at: 0, name: "Understand", steps: [
+    { n: 1, name: "Qualify the pilot" },
+    { n: 2, name: "Map today's process" },
+    { n: 3, name: "Rethink the process" },
+  ] },
+  { at: 1, name: "Design", steps: [
+    { n: 4, name: "Per step: code or AI?" },
+    { n: 5, name: "As little freedom for the AI as works" },
+    { n: 6, name: "Architecture and decisions" },
+  ] },
+  { at: 2, name: "Deliver", steps: [
+    { n: 7, name: "Evaluate and harden" },
+    { n: 8, name: "Platform" },
+    { n: 9, name: "Adopt and scale" },
+  ] },
+];
+
+// Build 3 picks up "As our future teammate, we encourage you to do the same" (AI usage): said as
+// "every", not as a count - every commit carries the Co-Authored-By trailer today (CLAUDE.md rule),
+// and a number would go stale with the next commit.
+function HowIWorked() {
+  return (
+    <div>
+      <div className="x-steps">
+        {PHASES.map((ph) => (
+          <Build key={ph.name} at={ph.at} className="x-phase">
+            <div className="x-phase-name">{ph.name}</div>
+            {ph.steps.map((st) => (
+              <div key={st.n} className="x-step">
+                <span className="x-step-n">{st.n}</span>
+                <div className="x-step-name">{st.name}</div>
+              </div>
+            ))}
+          </Build>
+        ))}
+      </div>
+      <Build at={3} className="x-ai">
+        Built with <b>Claude Code</b> · every AI commit marked in git · <b>I can explain every line.</b>
+      </Build>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------- the test bench
 // The 47 documents as tiles in three groups: the ids (M, V, C) are used on every later card, so the
@@ -260,41 +308,49 @@ if (import.meta.env.DEV) {
 
 export const ACT2: Slide[] = [
   {
-    id: "act-2", act: 2, kind: "opener", title: "Why the usual AI approaches fail", steps: 0, seconds: 4,
+    id: "part-2", act: 2, kind: "opener", title: "My approach", steps: 0, seconds: 4,
+    quote: ["A solution explaining how you would tackle the challenge"],
     notes: [
-      "Do the usual approaches work? I tested them.",
+      "How would I tackle it? Here's my roadmap.",
     ],
-    words: [{ word: "approaches", say: "uh-PROH-chiz" }],
+    words: [{ word: "roadmap", say: "ROHD-map" }],
   },
   {
-    id: "contracts", act: 2, kind: "content", title: `Riverty cannot share contracts – so I put together ${ALL_DOCS} with known answers.`, steps: 3, seconds: 40, Body: TestSet,
+    id: "how-i-worked", act: 2, kind: "content", title: "How I worked: from the problem to the platform.", steps: 3, seconds: 34, Body: HowIWorked,
+    notes: [
+      // part 1 walked steps 1 and 2 (the task's two questions, today's process) - the rethinking is part 3
+      "How I worked: you've seen the first steps – the pilot, our first question, and today's process. Rethinking comes next.",
+      "Design: code or AI per step, as little AI freedom as works, then the architecture.",
+      "Deliver: test it, run it on Azure, bring it to the lawyers.",
+      "You encourage AI – so did I: built with Claude Code, every AI commit marked in git. I can explain every line.",
+    ],
+    words: [{ word: "pilot", say: "PIE-lut" }, { word: "architecture", say: "AR-kih-tek-cher" }, { word: "Claude", say: "KLAWD" }],
+  },
+  {
+    id: "contracts", act: 2, kind: "content", title: `Riverty cannot share contracts – so I put together ${ALL_DOCS} with known answers.`, steps: 3, seconds: 44, Body: TestSet,
     notes: [
       "To test any approach, I need known answers. Riverty can't share contracts, so I built a test set.",
       // the ranges of V and C are on screen (prefix and tiles) - said only for M, to keep the card in time
-      `${M_IDS.length} merchant agreements I wrote, ${range(M_IDS)}, with traps. M18: the scan you saw. M05 and its amendment M05-A: the former name. M02: a cap in other words.`,
+      // Riverty's addendum: "These agreements cover both B2B and B2B2C business models"
+      `${M_IDS.length} merchant agreements I wrote, ${range(M_IDS)}, with traps. They are B2B – with consumer terms in the merchant's checkout, B2B2C. ` +
+        "M18: the scan you saw. M05 and its amendment M05-A: the former name. M02: a cap in other words.",
       `${V_IDS.length} data processing agreements: the vendor side.`,
       `${C_IDS.length} real public contracts from CUAD, labelled by experts. For ${QUESTIONS_N} test questions, I wrote the answers first.`,
     ],
     words: [{ word: "amendment", say: "uh-MEND-ment" }, { word: "labelled", say: "LAY-buld" }, { word: "CUAD", say: "KWAD" }],
   },
   {
-    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 46, Body: Rag,
+    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 50, Body: Rag,
     notes: [
       "Most document assistants work like this. You ask, for example, about liability in the Nordlicht contract, M01.",
-      "A search compares your question with every passage – a short piece of a contract – and returns the most similar ones.",
+      // the first word on embeddings (rag-fails says "Embeddings rank too"; the map is a deep dive)
+      "A search compares your question with every passage – a short piece of a contract – and returns the most similar ones. " +
+        "It compares meaning: every passage becomes numbers – embeddings. Near means similar.",
       `This is called top-k. Here k is ${E.k}: the ${E.k} best passages, nothing else.`,
       `The model – the AI that writes – reads only these ${E.k} and answers. For M01 this works: the search finds clause ${M01_CLAUSE}.`,
       "This is called RAG: retrieval-augmented generation. The model only sees what the search returns.",
     ],
-    words: [{ word: "retrieval", say: "rih-TREE-vul" }, { word: "augmented", say: "awg-MEN-tid" }, { word: "similar", say: "SIM-ih-ler" }],
-  },
-  {
-    id: "embedding-map", act: 2, kind: "content", title: "Embeddings: every passage becomes numbers, near means similar.", steps: 1, seconds: 30, Body: EmbeddingRuler,
-    notes: [
-      `How does a search know what is similar? With embeddings. Every passage becomes about ${DIMS_ROUND.toLocaleString("en")} numbers. Here every dot is one of our ${E.passages} passages. Further right means closer in meaning to the question.`,
-      `Top-k takes the dots on the far right: ${NEAR_CUAD} CUAD passages, only ${NEAR_M} from a merchant agreement. So: does top-k answer Legal's question?`,
-    ],
-    words: [{ word: "embeddings", say: "em-BED-ingz" }, { word: "similar", say: "SIM-ih-ler" }],
+    words: [{ word: "retrieval", say: "rih-TREE-vul" }, { word: "augmented", say: "awg-MEN-tid" }, { word: "embeddings", say: "em-BED-ingz" }],
   },
   {
     id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 4, seconds: 62, Body: RagFails,
@@ -328,3 +384,14 @@ export const ACT2: Slide[] = [
     words: [{ word: "guarantees", say: "gair-un-TEEZ" }, { word: "lawyer", say: "LOY-er" }],
   },
 ];
+
+// A deep dive since decision 90 (the main track stays under 20 minutes): opened on a question,
+// listed in deep.tsx. Its data and guard stay here, next to the RAG cards it belongs to.
+export const EMBEDDING_MAP: Slide = {
+  id: "embedding-map", act: 7, kind: "content", title: "Embeddings: every passage becomes numbers, near means similar.", steps: 1, seconds: 30, deep: true, Body: EmbeddingRuler,
+  notes: [
+    `How does a search know what is similar? With embeddings. Every passage becomes about ${DIMS_ROUND.toLocaleString("en")} numbers. Here every dot is one of our ${E.passages} passages. Further right means closer in meaning to the question.`,
+    `Top-k takes the dots on the far right: ${NEAR_CUAD} CUAD passages, only ${NEAR_M} from a merchant agreement. So: does top-k answer Legal's question?`,
+  ],
+  words: [{ word: "embeddings", say: "em-BED-ingz" }, { word: "similar", say: "SIM-ih-ler" }],
+};

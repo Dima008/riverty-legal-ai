@@ -7,6 +7,34 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-01 · The talk follows Riverty's own outline, in six parts, with "what we use"
+
+- **Problem:** Dima wants the talk to pick up the task's sentences and to use the structure the
+  task proposes, without slide overload, plus an overview of what we use (prompts, methods). The
+  decision-88 order had its own act names; a panel member could not map it to their outline.
+- **Cause:** The acts were named after the problem-solving arc, not after Riverty's
+  "Presentation outlining" bullets.
+- **Technique and why:** Decision 90 (plan by the parallel session, approved by Dima): six parts –
+  the problem, my approach, the technical solution, infrastructure, adoption, the basic
+  implementation live as the finale. Each part opener shows its outline bullet word for word in a
+  small quote line, guarded against the case study text (whitespace-normalised); content cards
+  pick up their sentence in the notes. New card "what-we-use": two system prompts, read verbatim
+  from `pipeline/extract.py?raw` (guards: exactly 2 prompts, 8 rules, 5 clauses), call counts from
+  the stats file, built vs planned marked. New deep dive "prompts". test-set, embedding-map and
+  register-index moved to the deep dives to stay under 20 minutes; the proof cards close part 3;
+  the card "live" got 115 s for the redesigned Workbench (decision 92). The title note has a TODO
+  in a code comment for Dima's own sentence – never invented, never spoken.
+- **Rejected alternative:** A quote line on every content card (about 25 more lines, against the
+  Gamma style); the live demo at the end of part 3 (an overrun would eat infrastructure and
+  adoption); keeping test-set in the main track (about 20:15, over Riverty's 20 minutes).
+- **Metric before → after:** main track 35 cards / 1138 s → 33 cards / 1193 s (19:53, Riverty's
+  limit 20:00, Dima's hard maximum 22:00); deep dives 10 → 14; rendered word budget 0 problems,
+  no dev-guard console errors; `newcards.mjs` 47 of 47 cards without problems; `deck.mjs` errors
+  none (33 main cards, checkpoints per part).
+- **Links:** decisions 90, 92; plan `talk-structure.md` (parallel session); `web/src/deck/slides.ts`,
+  `types.ts`, `SlideView.tsx`, `slides/act1.tsx`–`act6.tsx`, `proof.tsx`, `deep.tsx`,
+  `prompts-data.ts`, `docs/approach.md`
+
 ## 2026-11-01 · The talk in the order of the problem: nothing reaches ahead, and the live card works (F20)
 
 - **Problem:** Dima asked for a check that the talk goes step by step – identify the problems,

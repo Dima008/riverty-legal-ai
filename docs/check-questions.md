@@ -217,6 +217,28 @@ one of them at 96 % confidence. So a high confidence is a hint, not proof.
 61 %, below 70 → a person. *Where:* `tools/deck_data.py` (`--measure-h01` writes
 `eval/results/2026-10-31_h01_ocr.json`), deep dive "ocr", decision 85.
 
+**34. Interview question: "How do you make sure the AI is right – and how do you decide that a
+finding goes to a person?"**
+
+In three layers. First, every finding: the model never decides alone. Its quote must be found
+word for word in the contract, it must use the words of the clause, and a second model call that
+sees only the definition and the quote must agree. If one check fails, "found" becomes "unclear".
+For "not found" we look for narrow signal words of the clause; a hit makes it less sure.
+Second, the confidence is computed from these checks – never asked from the model – and a fixed
+rule decides who looks: a hidden instruction or a contradicting amendment → two people; unclear,
+or below 0.8 → one lawyer; everything else → one click, and 10 % of those are still checked at
+random. A poor scan caps the confidence at 0.5, so it always goes to a person. Third, the whole
+system: a test set with known answers, public contracts with lawyers' labels, and in the pilot
+every lawyer decision is counted – how often they overrule the system.
+
+*Numbers:* confidence 0.95 when every check passes; 0.9 "not found" with no signal words; 0.6
+"not found" but signal words; 0.4 / 0.35 / 0.2 when a check fails (quote not found or no clause
+words / the checker says no / quote inside a hidden instruction); at most 0.5 on a poor scan (OCR
+below 70 %), at most 0.7 with a hidden instruction in the document, −0.05 for OCR text. Q1–Q8
+complete in all 7 full runs; 19 of 20 agree with the CUAD labels. *Where:* `pipeline/extract.py`
+(`assess`), `pipeline/portfolio.py` (`triage`, `REVIEW_BELOW`, `SAMPLE_PERCENT`); question 19
+(how the levels get calibrated).
+
 ## Testing
 
 **9. The test for M08 does not check "the model says X". It only checks "the register never
@@ -322,6 +344,33 @@ document and everything made from it leave the register.
 *Numbers:* H01 findings after 7.5–10.7 s, $0.0010 per drop; after the reset: 47 documents, 938
 passages, 235 clauses, as before. *Where:* `pipeline/forget.py`, `tools/demo.py`, `docs/demo.md`,
 decision 86, F21, F22.
+
+## Code: modules and classes
+
+**33. Why is `Page` a dataclass, but `ReviewRequest` a Pydantic model?**
+
+`Page` is made by our own code in `read_pages()`. We trust it, so it only needs fixed, typed
+fields – a dataclass is enough. `ReviewRequest` comes from the browser, from outside. Pydantic
+checks it before our code runs: wrong type, missing field or a decision that is not one of the
+allowed words gives 422. It also writes the API documentation at `/docs`.
+
+*Numbers:* 18 classes in the repo – 4 data, 2 doors, 6 forms, 3 errors, 3 fakes. *Where:*
+`docs/podcast/bonus-classes.md`, `pipeline/ingest.py:49`, `api/review.py:92`.
+
+**35. A new contract lands in the inbox. Which modules does it pass, and which register tables
+does each one write, until it shows up in the answer to Q1?**
+
+`ingest` reads the pages – text layer or OCR – and writes `documents` and `pages`. `chunking`
+joins the pages, cuts at the clause headings and writes `doc_text` and `chunks`. `extract` sends
+the whole contract to the model, runs the checks and the checker call, and writes `metadata`,
+`clauses` and the cost rows in `llm_calls`. `families` finds copies, amendments and former names
+and writes `name_hits` and the copy and family fields in `documents`. `index` writes `chunks_fts`
+and `embeddings` for the search. Ingest, extraction, families and the run itself add rows to
+`audit_log`. Q1 is then a lookup in
+`clauses`: `portfolio.run_check` lists every merchant agreement where the liability cap is ABSENT
+or UNCLEAR – no model call.
+
+*Where:* `pipeline/run.py:32-61`, `docs/podcast/01-big-picture.md`.
 
 ## The talk
 
