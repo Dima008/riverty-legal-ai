@@ -15,55 +15,89 @@ code itself (`?raw`); none is typed by hand. Dev guards in the deck check each c
 This file is a snapshot of the rendered notes: regenerate it when the notes change. The earlier chapter
 text of the first website (decision 68) is in the git history of this file.
 
-**Main track: 33 cards, 1193 s = 19:53** – Riverty asks for 15–20 minutes. Deep dives: 14 cards.
+**Main track: 29 cards, 1319 s = 21:59** – Riverty asks for 15–20 minutes; since 1.11. (Dima: no content cuts) the hard maximum is 22:00. Deep dives: 18 cards, opened only on a question.
+
+**Timing rule:** each card's seconds are what its notes need when read aloud at about 115 spoken words per
+minute (numbers and ids as the words they are) plus 1 s per build; the title card adds about 15 s for Dima's
+own introduction, and `live` keeps its click script (115 s). Since the read-aloud pass of 2.11. the notes are
+short spoken sentences (about 8–15 words, one idea each), every hard word has a pronunciation hint in the
+presenter view, and each point of the first cards is said once: `title` what the project is and the agenda,
+`part-1` Legal's ask, `task` and `today` the details.
+
+**Moved to the deep dives** (decision 96, nothing deleted, to stay under 22:00): `injection`, `what-if`,
+`sharepoint` and `cost`. What they said first is said once on the main track: M14's hidden instruction and
+four eyes on `human`, Prompt Shields on `what-we-use` and `azure`, the cents of a full run on `what-we-use`,
+productivity on `run-it`.
 
 | Part | Starts | Cards | Seconds |
 | --- | --- | --- | --- |
-| 1 · The problem | 0:00 | 6 | 155 |
-| 2 · My approach | 2:35 | 7 | 262 |
-| 3 · The technical solution | 6:57 | 11 | 421 |
-| 4 · Infrastructure | 13:58 | 3 | 99 |
-| 5 · Adoption | 15:37 | 2 | 60 |
-| 6 · The basic implementation, live | 16:37 | 4 | 196 |
+| 1 · The problem | 0:00 | 6 | 186 |
+| 2 · My approach | 3:06 | 7 | 344 |
+| 3 · The technical solution | 8:50 | 8 | 424 |
+| 4 · Infrastructure | 15:54 | 2 | 82 |
+| 5 · Adoption | 17:16 | 2 | 67 |
+| 6 · The basic implementation, live | 18:23 | 4 | 216 |
 
-**When late** (all before the demo): skip `results` from build 2 → `what-if` from build 3 → `sharepoint` from build 3. Never skip `what-we-use`, `run-it`, `live-add` or `live`.
+**When late** (all before the demo): skip `results` from build 2. Never skip `what-we-use`, `run-it`, `live-add` or `live`.
 
-**Open:** one sentence Dima writes about himself for the title card ("we want to get to know you, not
-only your slides"). It is not invented here; until then the title note is the question and the agenda.
+**Open:** Dima's own introduction on the title card ("we want to get to know you, not only your slides").
+The note shows the line “[Here you introduce yourself – in your own words.]” – not spoken by the timing
+script, about 15 s held for it. It is not invented here.
+
+**Explained once on the main track** (where each key idea is first said and explained, in plain words):
+
+| Idea | Card · build | In the note |
+| --- | --- | --- |
+| Known answers | `contracts` · build 0 | To test any approach, I need known answers. |
+| CUAD: public contracts, expert labels | `contracts` · build 3 | 20 real public contracts from CUAD, labelled by legal experts. |
+| Top-k cannot prove absence | `rag-fails` · build 4 | A missing clause has no passage. It never shows up. … Top-k ranks what is there. It cannot prove that something is missing. |
+| Compile, don't search (the register) | `tomorrow` · build 1 | Compile, don't search: the result goes into one table, the register. Then a question is a lookup. |
+| Maker-checker | `checks` · build 1 | Then maker-checker: a second model call sees only definition and quote. |
+| model_status vs status | `checks` · build 2 | The register keeps both answers. The model's: found. Ours, after the checks: unclear, confidence 0.35. |
+| Guardrail sandwich | `checks` · build 2 | The model never decides alone: code before and after it, the guardrail sandwich. |
+| Recall first | `register` · build 1 | Red and amber count together: recall first. One too many beats one missed. |
+| Cost: a question needs no model call | `register` · build 1 | Q1 is one column: 5 contracts, no model call. |
+| Triage and four eyes | `human` · build 0 | Triage: not the model, our checks sort each finding. … Risky: two different people, four eyes. |
+| Approval gate before the archive copy | `human` · build 2 | Our server sends a file only after approval. Before that, the gate refuses. … It keeps each file once, by its fingerprint, with a receipt. |
+| The two prompts | `what-we-use` · build 0 | What do we use? Two prompts, one small model. … The checker gets only definition and quote. |
+| Cost: reading everything once | `what-we-use` · build 0 | Reading all 47 once: 12 cents. |
+| Today vs planned | `azure` · build 0 | Today it runs on my laptop. Only the model calls go to Azure, with test data only. |
 
 ---
 
-## 1 · The problem (0:00, 155 s)
+## 1 · The problem (0:00, 186 s)
 
-### `title` · 25 s · 1 build · from 0:00
+### `title` · 38 s · 1 build · from 0:00
 
 **On screen:** Which contracts are missing something?
 
-**Picks up:** “present your solution in 15–20 minutes” · “we want to get to know you, not only your slides”
+**Picks up:** “we want to get to know you, not only your slides”
 
-**Says:** Hello, I'm Dima. Riverty's lawyers keep asking one kind of question: which contracts are missing something? In under twenty minutes I show how I'd answer it – with a working prototype. I follow your outline: from the problem to adoption, then it runs live.
+**Says:** Hello, I'm Dima. [Here you introduce yourself – in your own words.] I built an AI assistant for Riverty's legal team. It answers questions across all contracts. It shows the page as proof. A lawyer decides. I follow your outline: problem, approach, solution, infrastructure, adoption. Then the prototype runs live.
 
-### `part-1` · 4 s · 1 build · from 0:25
+### `part-1` · 12 s · 1 build · from 0:38
 
 **Opener: The problem** – on screen, word for word from the task:
 
 > One of these challenges is making our legal team more efficient.
 
-**Says:** First, the problem: what does Legal actually ask?
+**Picks up:** “They approached us to ask whether AI could help with this task” · “it is purely repetitive work that nobody enjoys doing”
 
-### `task` · 40 s · 3 builds · from 0:29
+**Says:** First, the problem: which contracts are missing something? Purely repetitive work, nobody enjoys it. Legal asked whether AI could help.
 
-**On screen:** I read Riverty's task sentence by sentence.
+### `task` · 40 s · 3 builds · from 0:50
+
+**On screen:** Six sentences that shaped the solution.
 
 **Picks up:** “contracts that do not contain a certain text passage or contracts in which a company name needs to be updated” · “they have to open the documents, search for the relevant content, and verify the results themselves”
 
 **Says:**
 
-- *Build 0:* I started with Riverty's own words, sentence by sentence. Two sentences are Legal's questions: contracts without a certain passage, and contracts with a former company name. Both are about every contract.
-- *Build 1:* Today it is done by hand: open, search, verify. And some contracts are old handwritten scans, only images.
-- *Build 2:* Two sentences set the rules. The storage may only receive a copy. And Riverty wants to understand what happens. So every finding needs evidence.
+- *Build 0:* I started with your words, sentence by sentence. Two are Legal's questions. First: contracts without a certain passage. Second: contracts with a former company name. Both are about every contract.
+- *Build 1:* Today, lawyers do it by hand: open, search, verify. Some contracts are old handwritten scans, only images.
+- *Build 2:* Two sentences set the rules. The storage may only get a copy. You want to understand what happens. So every finding needs evidence.
 
-### `today` · 26 s · 3 builds · from 1:09
+### `today` · 26 s · 3 builds · from 1:30
 
 **On screen:** Today: open every contract, search, note it down.
 
@@ -71,11 +105,11 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* What does one question cost today? Riverty has over 1,100 contracts. Over 100 vendors, over 1,000 merchants.
-- *Build 1:* I assume 5 minutes per contract: open, search, note. We'd measure it with Legal first.
-- *Build 2:* That's about 90 hours for one question. And again for the next one.
+- *Build 0:* What does one question cost today? You work with over 100 vendors and over 1,000 merchants. So over 1,100 contracts.
+- *Build 1:* I assume 5 minutes per contract. We'd measure it with Legal first.
+- *Build 2:* That's about 90 hours for one question.
 
-### `hard` · 38 s · 4 builds · from 1:35
+### `hard` · 48 s · 4 builds · from 1:56
 
 **On screen:** Three things make it hard.
 
@@ -83,27 +117,25 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* Why not just search for a word?
-- *Build 1:* First, scans. Most are PDFs with text – we read that directly. Some are only images, like this one. OCR – text recognition – reads them. Later, a handwritten one, live.
-- *Build 2:* Second, amendments. A contract from 2020 names Arvato; its 2022 amendment says: read as Riverty. The answer needs both.
-- *Build 3:* Third, wording. All three cap liability. The second never says liability, the third is German. Keywords miss them. Remember the second one.
+- *Build 0:* Why not search for a word?
+- *Build 1:* First, scans. Most PDFs have text: we read it directly. Some are only images, like this one. OCR, text recognition, reads them. Later, a handwritten one, live.
+- *Build 2:* Second, amendments. A contract from 2020 names Arvato, Riverty's old name. Its 2022 amendment says: read as Riverty. The answer needs both.
+- *Build 3:* Third, wording. All three cap liability. The second never says liability. The third is German. Keywords miss them. Remember the second one.
 
-### `insight` · 22 s · 2 builds · from 2:13
+### `insight` · 22 s · 2 builds · from 2:44
 
 **On screen:** To prove that something is missing, you have to read everything.
 
-**Picks up:** “it is purely repetitive work that nobody enjoys doing”
-
 **Says:**
 
-- *Build 0:* Finding is easy: you stop at the first hit. To prove something is not there, you must read every contract, every page.
-- *Build 1:* And today that reading starts again for every new question. That is the lever: read everything once – and prove it.
+- *Build 0:* Finding is easy: you stop at the first hit. To prove something is missing, you read every contract, every page.
+- *Build 1:* Today, that reading starts again with every question. That is the lever: read everything once, and prove it.
 
 ---
 
-## 2 · My approach (2:35, 262 s)
+## 2 · My approach (3:06, 344 s)
 
-### `part-2` · 4 s · 1 build · from 2:35
+### `part-2` · 6 s · 1 build · from 3:06
 
 **Opener: My approach** – on screen, word for word from the task:
 
@@ -111,20 +143,20 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:** How would I tackle it? Here's my roadmap.
 
-### `how-i-worked` · 34 s · 4 builds · from 2:39
+### `how-i-worked` · 45 s · 4 builds · from 3:12
 
-**On screen:** How I worked: from the problem to the platform.
+**On screen:** How I work: from the problem to the platform.
 
 **Picks up:** “how you approach real-world problems” · “As our future teammate, we encourage you to do the same.”
 
 **Says:**
 
-- *Build 0:* How I worked: you've seen the first steps – the pilot, our first question, and today's process. Rethinking comes next.
-- *Build 1:* Design: code or AI per step, as little AI freedom as works, then the architecture.
-- *Build 2:* Deliver: test it, run it on Azure, bring it to the lawyers.
-- *Build 3:* You encourage AI – so did I: built with Claude Code, every AI commit marked in git. I can explain every line.
+- *Build 0:* How I work. You saw steps one and two: Legal's two questions as the pilot, and today's process. Step three, rethinking it, comes in part three.
+- *Build 1:* Design: per step, code or AI. As little AI freedom as works. Then the architecture.
+- *Build 2:* Deliver: I tested it. Azure and the rollout to lawyers are planned.
+- *Build 3:* You encourage AI. I built this with Claude Code. Every AI commit is marked in git. I can explain every line.
 
-### `contracts` · 44 s · 4 builds · from 3:13
+### `contracts` · 57 s · 4 builds · from 3:57
 
 **On screen:** Riverty cannot share contracts – so I put together 47 with known answers.
 
@@ -132,12 +164,12 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* To test any approach, I need known answers. Riverty can't share contracts, so I built a test set.
-- *Build 1:* 20 merchant agreements I wrote, M01 to M20, with traps. They are B2B – with consumer terms in the merchant's checkout, B2B2C. M18: the scan you saw. M05 and its amendment M05-A: the former name. M02: a cap in other words.
+- *Build 0:* To test any approach, I need known answers. You can't share contracts, so I built a test set.
+- *Build 1:* I wrote 20 merchant agreements, M01 to M20, with traps. They are B2B. With consumer terms in the checkout, also B2B2C. M18: the scan you saw. M05 and its amendment M05-A: the former name. M02: a cap in other words.
 - *Build 2:* 6 data processing agreements: the vendor side.
-- *Build 3:* 20 real public contracts from CUAD, labelled by experts. For 8 test questions, I wrote the answers first.
+- *Build 3:* 20 real public contracts from CUAD, labelled by legal experts. For 8 test questions, I wrote the answers first.
 
-### `rag` · 50 s · 5 builds · from 3:57
+### `rag` · 60 s · 5 builds · from 4:54
 
 **On screen:** The usual approach: a chatbot over your documents.
 
@@ -145,13 +177,13 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* Most document assistants work like this. You ask, for example, about liability in the Nordlicht contract, M01.
-- *Build 1:* A search compares your question with every passage – a short piece of a contract – and returns the most similar ones. It compares meaning: every passage becomes numbers – embeddings. Near means similar.
-- *Build 2:* This is called top-k. Here k is 5: the 5 best passages, nothing else.
-- *Build 3:* The model – the AI that writes – reads only these 5 and answers. For M01 this works: the search finds clause 7.2.
+- *Build 0:* Most document assistants work like this. For example, you ask about liability in M01, the Nordlicht contract.
+- *Build 1:* A search compares your question with every passage, a short piece of a contract. It returns the most similar ones. It compares meaning: each passage becomes numbers, called embeddings. Near means similar.
+- *Build 2:* This is called top-k. Here k is 5: only the 5 best passages.
+- *Build 3:* Then a language model reads only these 5 and writes the answer. For M01 this works: the search finds clause 7.2.
 - *Build 4:* This is called RAG: retrieval-augmented generation. The model only sees what the search returns.
 
-### `rag-fails` · 62 s · 5 builds · from 4:47
+### `rag-fails` · 80 s · 5 builds · from 5:54
 
 **On screen:** It fails when the answer is what is not in the text.
 
@@ -159,13 +191,13 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* Legal's question, our Q1: which merchant agreements lack a limitation of liability – a cap like the ones you saw? 19 contracts: M15 is a copy of M01 and counts once.
+- *Build 0:* Legal's question, our Q1: which merchant agreements lack a limitation of liability? A cap, like the ones you saw. 19 contracts: M15 is a copy of M01 and counts once.
 - *Build 1:* Now a keyword search over these 19: 'limitation of liability', top 10. The 10 best passages come from 8 contracts.
-- *Build 2:* For the search, the other 11 'lack' it.
-- *Build 3:* 7 of the 11 are false alarms: they cap liability in other words or in German, like M02. And M14 is missed: no cap, but its hidden instruction for the AI mentions liability – so it ranks high.
-- *Build 4:* A larger k does not help: 11 contracts never match the keywords. Embeddings rank too. Top-k ranks what is there. It cannot prove what is missing.
+- *Build 2:* For the search, the other 11 seem to lack it.
+- *Build 3:* 7 of the 11 are false alarms. They cap liability in other words or in German, like M02. And M14 is missed: no cap, but its hidden instruction for the AI mentions liability. So it ranks high.
+- *Build 4:* A missing clause has no passage. It never shows up. A larger k does not help: 11 contracts never match the keywords. Embeddings rank too. Top-k ranks what is there. It cannot prove that something is missing.
 
-### `agent` · 43 s · 4 builds · from 5:49
+### `agent` · 73 s · 4 builds · from 7:14
 
 **On screen:** And an AI agent that reads everything itself?
 
@@ -173,12 +205,12 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* Second idea: an agent. A model plans a step, calls a tool – open a file, search, take notes – and repeats.
-- *Build 1:* The weak point: it decides when it is done. Nobody checks that it opened every file.
-- *Build 2:* A 2026 study, OverclaimBench: agents told to review every file skipped files in 68 percent of runs – and 4 in 5 reports hid it.
-- *Build 3:* Riverty's own task says agents fail on the size of the environment. A thousand contracts is exactly that.
+- *Build 0:* Second idea: an agent. A model plans a step, calls a tool, and repeats. Its tools open files, search and take notes.
+- *Build 1:* The weak point: it decides itself when it has seen enough. So it can stop early, and nobody notices.
+- *Build 2:* A 2026 study, OverclaimBench, told agents to review every file. They skipped files in 68 percent of runs. In 4 of 5 of those runs, the report hid it.
+- *Build 3:* Your task says agents fail on the size of the environment. I found the same. Over 1,100 contracts fit into no context window. An agent sees only a part. A missed contract never shows up, and the answer still sounds complete. That's why I read every contract once, completely. One AI call reads each contract.
 
-### `needs` · 25 s · 4 builds · from 6:32
+### `needs` · 23 s · 4 builds · from 8:27
 
 **On screen:** So we need three guarantees.
 
@@ -188,33 +220,33 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 - *Build 0:* So we need three guarantees.
 - *Build 1:* One: every contract is read. We prove it, not just claim it.
-- *Build 2:* Two: every finding shows the passage on the page. A lawyer can check it in seconds.
+- *Build 2:* Two: every finding shows its passage on the page. A lawyer checks it in seconds.
 - *Build 3:* Three: a lawyer decides.
 
 ---
 
-## 3 · The technical solution (6:57, 421 s)
+## 3 · The technical solution (8:50, 424 s)
 
-### `part-3` · 6 s · 1 build · from 6:57
+### `part-3` · 7 s · 1 build · from 8:50
 
 **Opener: The technical solution** – on screen, word for word from the task:
 
 > An overall technical solution you would present to our team and how it could be implemented
 
-**Says:** Design: how do we deliver the three guarantees – and does it work?
+**Says:** Design: how do we deliver the guarantees? And does it work?
 
-### `tomorrow` · 30 s · 2 builds · from 7:03
+### `tomorrow` · 40 s · 2 builds · from 8:57
 
 **On screen:** Tomorrow: the system reads, the lawyer decides.
 
-**Picks up:** “They approached us to ask whether AI could help with this task” · “Most documents reside on SharePoint”
+**Picks up:** “Most documents reside on SharePoint”
 
 **Says:**
 
-- *Build 0:* Today a lawyer opens, searches, reads and notes – every contract, every question.
-- *Build 1:* Tomorrow the system reads each contract once, when it is saved in SharePoint – into one table, the register. The lawyer asks; the system shows a plan – which contracts, which check – the lawyer confirms it, checks the evidence and approves the archive copy. The machine reads. The lawyer decides.
+- *Build 0:* Today a lawyer opens, searches, reads and notes. Every contract, every question.
+- *Build 1:* Tomorrow the system reads each contract once, when it is saved in SharePoint. Compile, don't search: the result goes into one table, the register. Then a question is a lookup. The lawyer asks. The system shows a plan: which contracts, which check. The lawyer confirms it, checks the evidence and approves the archive copy. The machine reads. The lawyer decides.
 
-### `follow-m18` · 56 s · 6 builds · from 7:33
+### `follow-m18` · 71 s · 6 builds · from 9:37
 
 **On screen:** Follow one contract: M18, a scan from 2018.
 
@@ -222,14 +254,14 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* Follow M18, the scan from the start. It arrives in a folder – later, SharePoint.
-- *Build 1:* OCR reads 2 pages, 93 percent average confidence. Below 70, a person looks.
-- *Build 2:* We cut at the headings: 12 sections – the passages the search uses.
-- *Build 3:* One call to a small model, gpt-4.1-mini, fills a fixed form: status and quote per clause.
-- *Build 4:* The checks – next card. 5 clauses: 1 found, 4 not found – 2 of them are required only in data processing agreements.
-- *Build 5:* Register: no liability cap, no data processing agreement, a former name. Fixed steps in code; the AI sees one contract at a time – a small world. Guarantee one: 'every contract was read' is a fact.
+- *Build 0:* Follow M18, the scan you saw. It arrives in a folder, later SharePoint.
+- *Build 1:* OCR reads 2 pages: 93 percent average confidence. Below 70, we doubt its findings: a lawyer looks.
+- *Build 2:* We cut at the headings: 12 sections. A fixed length can split a clause.
+- *Build 3:* One call to a small model, gpt-4.1-mini, fills a fixed form. Per clause: status and quote.
+- *Build 4:* Checks: next card. 5 clauses: 1 found, 4 not found. Two are required only in data processing agreements.
+- *Build 5:* Register: no liability cap, no data processing agreement, a former name. Fixed steps in code. The AI sees one contract at a time: a small world. Guarantee one: 'every contract was read' is a fact.
 
-### `checks` · 38 s · 3 builds · from 8:29
+### `checks` · 53 s · 3 builds · from 10:48
 
 **On screen:** The model is checked: M08 said “found”, the register says “unclear”.
 
@@ -237,23 +269,11 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* But a model can be wrong. M08: the model said: limitation of liability, found. Its quote is clause 6.2.
-- *Build 1:* Guarantee two: the quote is really there. But it lacks the words Legal's playbook expects – the playbook is Legal's guidelines, as data. And a second model call says: this is about data protection.
-- *Build 2:* So the register says unclear, 0.35, and a lawyer looks. Code before and after the model: the guardrail sandwich.
+- *Build 0:* But a model can be wrong. M08: the model said the liability cap is found, and quoted clause 6.2.
+- *Build 1:* Guarantee two: the quote is really there. But it lacks the words of Legal's playbook, their guidelines as data. Then maker-checker: a second model call sees only definition and quote. It says: this is about data protection.
+- *Build 2:* The register keeps both answers. The model's: found. Ours, after the checks: unclear, confidence 0.35. A lawyer looks. The model never decides alone: code before and after it, the guardrail sandwich.
 
-### `injection` · 31 s · 3 builds · from 9:07
-
-**On screen:** A hidden instruction in M14 – caught, and sent to two people.
-
-**Picks up:** “represent the company's best interests”
-
-**Says:**
-
-- *Build 0:* Second danger: M14's hidden note tells the AI to report a cap – prompt injection. A counterparty's text must not decide for Riverty.
-- *Build 1:* Our pattern check finds it. The register still says: no cap. Two people look – four eyes.
-- *Build 2:* Honestly: M14 and 3 rewordings – our pattern check found only the original, 1 of 4. Microsoft's Prompt Shields: 4 of 4 – our next step.
-
-### `register` · 52 s · 4 builds · from 9:38
+### `register` · 69 s · 4 builds · from 11:41
 
 **On screen:** Every contract in one table – a question becomes a lookup.
 
@@ -261,12 +281,12 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* Every contract, read like M18, in one table: the register. Here the merchant agreements. Green found, red not found, amber unclear.
-- *Build 1:* Q1 is one column: 5 contracts, no model call. Red and amber count together – one too many beats one missed. Keyword search: 7 false alarms, M14 missed.
-- *Build 2:* Coverage: 20 in scope, 19 checked, M15 excluded – a copy of M01. Nothing drops out silently. Comparing is built too: M15 next to M01, the same text – API only so far.
-- *Build 3:* Legal's second question, Q2: which contracts still name Arvato or AfterPay – Riverty's former names? 5. Not M05: its amendment M05-A renamed it to Riverty.
+- *Build 0:* The register: every contract, read like M18, organised clause by clause. Here, the merchant agreements. Green found, red not found, amber unclear.
+- *Build 1:* Q1 is one column: 5 contracts, no model call. Red and amber count together: recall first. One too many beats one missed. Keyword search: 7 false alarms, M14 missed.
+- *Build 2:* Coverage: 20 in scope, 19 checked, M15 excluded: a copy of M01. Nothing drops out silently. Comparing is built too: M15 next to M01, the same text. API only so far.
+- *Build 3:* Legal's second question, Q2: which contracts still name Arvato or AfterPay, Riverty's former names? 5. Not M05: its amendment M05-A renamed it to Riverty.
 
-### `human` · 40 s · 3 builds · from 10:30
+### `human` · 67 s · 3 builds · from 12:50
 
 **On screen:** Observations, not verdicts: a lawyer decides.
 
@@ -274,11 +294,11 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* Guarantee three: a lawyer decides; the system only observes. Triage sorts each finding: sure ones get a spot check; unclear, or below 0.8 confidence, one lawyer; risky ones two – four eyes.
-- *Build 1:* The lawyer sees the passage on the page first, then decides with a reason – stored, and reused next time.
-- *Build 2:* Riverty's storage has a REST API. Our server sends the file only after approval – before, it refuses. Stored once, by its fingerprint, write-once, with a receipt. Here a stand-in.
+- *Build 0:* Guarantee three: a lawyer decides. The system only observes. Triage: not the model, our checks sort each finding. Sure: one click, one in ten opened at random. Unclear, or confidence below 0.8: one lawyer. Risky: two different people, four eyes. Like M14: our pattern check finds its hidden instruction. A counterparty's text must not decide for Riverty.
+- *Build 1:* First the passage on the page. Then the decision, with a reason. It is stored and reused.
+- *Build 2:* Riverty's storage has a REST API. Our server sends a file only after approval. Before that, the gate refuses. Here, a stand-in plays the storage. It keeps each file once, by its fingerprint, with a receipt. It cannot be changed later.
 
-### `what-we-use` · 45 s · 3 builds · from 11:10
+### `what-we-use` · 63 s · 3 builds · from 13:57
 
 **On screen:** What we use: two prompts – one reads, one checks. The rest is code.
 
@@ -286,11 +306,11 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* What do we use? Two prompts on one small model. The reader gets eight rules, Legal's playbook and one whole contract. It fills the form. The checker sees only a definition and a quote. No model writes an answer.
-- *Build 1:* Embeddings need no prompt. They serve only open questions. Never to say a clause is missing.
-- *Build 2:* Everything else is code we can test: OCR, every check, triage, the lookups, the gate. Python and FastAPI. The tool is React and TypeScript. Planned: a model that drafts the plan, and Prompt Shields.
+- *Build 0:* What do we use? Two prompts, one small model. The reader gets eight rules, Legal's playbook and a whole contract. It fills the form. The checker gets only definition and quote. No model writes an answer. Reading all 47 once: 12 cents.
+- *Build 1:* Embeddings need no prompt. With keywords, they power a search for open questions. Like: what does M01 say about liability? They never decide a clause is missing.
+- *Build 2:* Everything else is code we can test: OCR, the other checks, triage, lookups, the gate. Python and FastAPI. The tool is React and TypeScript. Planned: a model that drafts the plan, and Microsoft's Prompt Shields for hidden instructions.
 
-### `results` · 39 s · 3 builds · from 11:55
+### `results` · 54 s · 3 builds · from 15:00
 
 **On screen:** 8 of 8 questions complete – and how sure we can be.
 
@@ -298,40 +318,15 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* Deliver: does it work – how do I know? 7 runs from scratch: complete, no false alarm. Real contracts, labelled by experts: we agree on 19 of 20. They showed 3 errors my traps missed – all fixed.
-- *Build 1:* Sure? 5 of 5 could still mean 54 percent. 1 of 1 says almost nothing.
-- *Build 2:* All 28 answers together: at least 89 percent. But I tuned on these 16 contracts. Planned: a sealed test set – new contracts I never tune on.
-
-### `what-if` · 46 s · 4 builds · from 12:34
-
-**On screen:** Switch a safeguard off – live.
-
-**Picks up:** “as long as we understand what is happening”
-
-**Says:**
-
-- *Build 0:* Remember M08: the model said found, the checks said unclear. What if the checks were off? I replay the stored answers on a copy – no model call, no cost.
-- *Build 1:* The second model call, off. Q1 still finds all 5. The checks overlap – watch the next switch.
-- *Build 2:* Now the words check off too. M08 and M10 slip through: 3 of 5 – and no lawyer would look at them.
-- *Build 3:* Both checks back on. Now only the pattern check off: M14 no longer goes to two people.
-
-### `cost` · 38 s · 3 builds · from 13:20
-
-**On screen:** A few cents to read everything – and the small model was enough on our tests.
-
-**Picks up:** “create more with the same number of engineers”
-
-**Says:**
-
-- *Build 0:* And the cost? Reading all 47 once: 12 cents. Then a question is a lookup – not 90 hours. Your definition of productivity: the same lawyers answer more questions.
-- *Build 1:* A bigger model? GPT-4.1 costs 5 times more. Without our checks it misses less; with them, both find everything.
-- *Build 2:* So the small model stays. A new model, prompt or playbook goes live only if all 8 test questions still pass – our rule, run by hand today.
+- *Build 0:* Deliver: does it work? 7 runs from scratch: every expected contract found, no false alarm. Real contracts, labelled by experts: we agree on 19 of 20. They showed 3 errors my traps missed. All fixed.
+- *Build 1:* How sure? 5 of 5. At 95 percent confidence, the true rate could still be 54 percent. 1 of 1 says almost nothing.
+- *Build 2:* All 28 answers together: at least 89 percent. But they come from only 16 contracts. And I tuned on this test set. Planned: a sealed test set, with new contracts I never tune on.
 
 ---
 
-## 4 · Infrastructure (13:58, 99 s)
+## 4 · Infrastructure (15:54, 82 s)
 
-### `part-4` · 4 s · 1 build · from 13:58
+### `part-4` · 5 s · 1 build · from 15:54
 
 **Opener: Infrastructure** – on screen, word for word from the task:
 
@@ -339,7 +334,7 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:** Where would it run at Riverty?
 
-### `azure` · 60 s · 3 builds · from 14:02
+### `azure` · 77 s · 3 builds · from 15:59
 
 **On screen:** On Azure: buy the building blocks, build what is Riverty's.
 
@@ -347,28 +342,15 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* Riverty chooses in two steps: best of breed, then compared with Microsoft – I measured Prompt Shields and a bigger model. Each part has its Azure service: Content Understanding reads scans, Azure OpenAI in the EU data zone, Entra ID for approvals. It would run in Container Apps, set up with Terraform – planned: no Dockerfile or Terraform yet.
+- *Build 0:* Today it runs on my laptop. Only the model calls go to Azure, with test data only. You choose in two steps: best of breed, then compare with Microsoft. I measured Prompt Shields and a bigger model. On Azure, each part would get its service. Content Understanding for scans. Azure OpenAI in the EU data zone. Entra ID for approvals. Container Apps, set up with Terraform. All this is planned: no Dockerfile or Terraform yet.
 - *Build 1:* We buy the building blocks. We build what is Riverty's: playbook, evidence, storage boundary.
-- *Build 2:* Gemini? The model sits behind one small adapter file; any model must first pass the 8 test questions. LangChain or LangGraph? Not needed today – code fixes the order. Target: Agent Framework, LangGraph as fallback. The value is the architecture: a small, structured world for the AI.
-
-### `sharepoint` · 35 s · 4 builds · from 15:02
-
-**On screen:** Saved in SharePoint – how does it reach the register?
-
-**Picks up:** “Most documents reside on SharePoint and are in PDF format.”
-
-**Says:**
-
-- *Build 0:* Target design: a lawyer saves a contract in SharePoint.
-- *Build 1:* We would subscribe to the library. Microsoft Graph – Microsoft's interface to SharePoint – says only: something changed. The delta query then asks: what changed?
-- *Build 2:* Then the pipeline reads it – the fixed steps you saw with M18. Its model calls took about 7 seconds.
-- *Build 3:* Messages usually come within a minute, at most six hours. Lost ones? A scheduled run would check again.
+- *Build 2:* Gemini? The model sits behind one small adapter file. Any model must first pass the 8 test questions. LangChain or LangGraph? Not needed today: code fixes the order. Target: Microsoft Agent Framework, LangGraph as fallback. The value is the architecture: a small, structured world for the AI.
 
 ---
 
-## 5 · Adoption (15:37, 60 s)
+## 5 · Adoption (17:16, 67 s)
 
-### `part-5` · 4 s · 1 build · from 15:37
+### `part-5` · 5 s · 1 build · from 17:16
 
 **Opener: Adoption** – on screen, word for word from the task:
 
@@ -376,23 +358,23 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:** How do lawyers get the most value?
 
-### `run-it` · 56 s · 3 builds · from 15:41
+### `run-it` · 62 s · 3 builds · from 17:21
 
 **On screen:** Adoption: one team, one question – measured against today.
 
-**Picks up:** “Our legal colleagues currently leverage a variety of tools”
+**Picks up:** “Our legal colleagues currently leverage a variety of tools” · “create more with the same number of engineers”
 
 **Says:**
 
-- *Build 0:* Legal already has a variety of tools – this one must earn its place. Adoption starts with a pilot: one team, one question. First we measure today, with 2 or 3 lawyers. Then the question runs next to the old way, for a few weeks. Training: read the evidence on the page – don't trust it blindly. Then the next question, the next team.
-- *Build 1:* Legal owns it: the playbook is their guidelines, as data. Corrections go into the test set.
-- *Build 2:* Value, measured: time per question against today, and how often lawyers overrule – the prototype counts that already. A review is stored and reused. And lawyers work in German or English.
+- *Build 0:* Legal already has a variety of tools. This one must earn its place. Adoption starts with a pilot: one team, one question. First we measure today, with 2 or 3 lawyers. Then the question runs next to the old way, for a few weeks. Training: read the evidence on the page, don't trust it blindly. Then the next question, the next team.
+- *Build 1:* Legal owns it: the playbook is theirs. Corrections go into the test set.
+- *Build 2:* Value, measured: your definition of productivity. The same lawyers answer more questions. We compare time per question with today. The prototype already counts how often lawyers overrule it. Reviews are reused. And lawyers work in German or English.
 
 ---
 
-## 6 · The basic implementation, live (16:37, 196 s)
+## 6 · The basic implementation, live (18:23, 216 s)
 
-### `part-6` · 6 s · 1 build · from 16:37
+### `part-6` · 11 s · 1 build · from 18:23
 
 **Opener: The basic implementation, live** – on screen, word for word from the task:
 
@@ -400,9 +382,9 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 > Anything else you feel is relevant to understanding your approach to solving the challenge
 
-**Says:** Your second list: pipeline, front-end, the whole workflow – let me show you.
+**Says:** Your second list: pipeline, front-end, the whole workflow. Then anything else: what I learned. Let me show you.
 
-### `live-add` · 45 s · 2 builds · from 16:43
+### `live-add` · 54 s · 2 builds · from 18:34
 
 **On screen:** A handwritten contract arrives – watch what is found.
 
@@ -410,24 +392,24 @@ only your slides"). It is not invented here; until then the title note is the qu
 
 **Says:**
 
-- *Build 0:* Now live. Riverty has handwritten contracts, only as JPEG. I made one: H01, dated 2009 – rendered to look like a phone photo. I copy it into the folder – our stand-in for SharePoint. Watch the number. The watcher looks every 5 seconds. Then OCR reads the image, one model call, the checks – like M18.
-- *Build 1:* 48. Handwriting, hard to read – a person checks it. Not found: limitation of liability, data processing agreement. Consumer terms: unclear – a person looks. Former name: cannot be ruled out on this scan – a person reads it.
+- *Build 0:* Now live. You have handwritten contracts, only as JPEG. I made one: H01, dated 2009, made to look like a phone photo. I copy it into the folder, our stand-in for SharePoint. Watch the number. The watcher looks every 5 seconds. Then OCR reads the image, one model call, the checks: like M18.
+- *Build 1:* 48 documents. Handwriting, hard to read: a poor scan. Not found: limitation of liability, data processing agreement. Consumer terms: unclear, a person looks. Former name: cannot be ruled out on this scan, a person reads it.
 
-### `live` · 115 s · 1 build · from 17:28
+### `live` · 115 s · 1 build · from 19:28
 
 **On screen:** The Legal Workbench, live.
 
 **Picks up:** “A basic front-end demonstrating how the solution can be used”
 
-**Says:** Now the tool for Legal, live – React and TypeScript, like these slides. It has seen the new contract too: H01, new, a poor scan. One: I ask Q1 – which merchant agreements lack a limitation of liability? Two: the plan – this check, on every merchant agreement. Nothing runs before I confirm it. Three: the answer, with coverage – a tile for every merchant agreement, H01 too; M15 is excluded as a copy, with the reason. Not found: M03, M14, M18. Unclear: M08, M10. And H01, the handwritten one: not found – but a poor scan, so a person checks the page. Four: M08 – the passage, highlighted on the page. The checks overruled the model. Five: M14 needs four eyes. Reviewer A approves; I switch to B, who approves too. Six: only now the archive copy – and only once. Then back to the talk.
+**Says:** Now the tool for Legal, live. It is React and TypeScript, like these slides. It has seen the new contract too: H01, new, a poor scan. One: I ask Q1. Which merchant agreements lack a limitation of liability? Two: the plan. This check, on every merchant agreement. In the tool, nothing runs before I confirm it. Three: the answer, with coverage. A tile for every merchant agreement, H01 too. M15 is excluded as a copy, with the reason. Not found: M03, M14, M18. Unclear: M08, M10. And H01, the handwritten one: not found. But it is a poor scan, so a person checks the page. Four: M08. The passage is highlighted on the page. The checks overruled the model. Five: M14 needs four eyes. Reviewer A approves. I switch to B, who approves too. Six: only now the archive copy, and only once. Then back to the talk.
 
-### `close` · 30 s · 1 build · from 19:23
+### `close` · 36 s · 1 build · from 21:23
 
 **On screen:** 100 % traceable instead of 100 % accurate.
 
 **Picks up:** “start a meaningful conversation during the interview” · “while learning and improving ourselves”
 
-**Says:** What I learned: no model is always right. So every contract is read, every answer traced to a page, and a lawyer decides. Not built yet: the Azure platform, a model that plans, a reader for handwriting. Two questions: I assumed a missed contract hurts more than a false alarm – right for Legal? And who would pilot it? Thank you.
+**Says:** What I learned: no model is always right. So every contract is read, every answer traced to a page, and a lawyer decides. Not built yet: the Azure platform, the SharePoint connector. Also a model that plans, and one that reads handwriting well. Two questions. I assumed a missed contract hurts more than a false alarm. Right for Legal? And who would pilot it? Thank you.
 
 ---
 
@@ -453,16 +435,16 @@ only your slides"). It is not invented here; until then the title note is the qu
 - *Build 1:* One: can it read? Scans, German, a cap split across two pages.
 - *Build 2:* Two: does it understand? Caps in other words. Look-alike clauses without a cap. A hidden instruction.
 - *Build 3:* Three: is the collection in order? An old name fixed by an amendment, a copy, foreign law.
-- *Build 4:* Real contracts, labelled by experts: on the cap, we agree on 19 of 20. C03 is a question for Legal. They showed 3 errors my traps missed – all fixed.
+- *Build 4:* Real contracts, labelled by experts: on the cap, we agree on 19 of 20. C03 has a payment on termination – is that a cap? A question for Legal. They showed 3 errors my traps missed – all fixed.
 
 ### `embedding-map` · Embeddings: every passage becomes numbers, near means similar.
 
 - *Build 0:* How does a search know what is similar? With embeddings. Every passage becomes about 1,500 numbers. Here every dot is one of our 938 passages. Further right means closer in meaning to the question.
-- *Build 1:* Top-k takes the dots on the far right: 4 CUAD passages, only 1 from a merchant agreement. So: does top-k answer Legal's question?
+- *Build 1:* Top-k takes the dots on the far right: 4 CUAD passages, only 1 from a merchant agreement. Near in meaning – but it cannot tell which contract lacks a cap.
 
 ### `decoy` · Embeddings know the topic – not whether the clause is there.
 
-- *Build 0:* These are real similarities to M01's liability section. M10's indemnification clause has no cap, but it scores 0.805.
+- *Build 0:* These are real similarities to M01's liability section. M10's indemnification clause – who pays for whose damage – has no cap, but it scores 0.805.
 - *Build 1:* M19's real cap, in German, scores only 0.746. Embeddings say what a text is about. Whether it is a cap, the model and the checks decide.
 
 ### `chunking` · Chunking: cut at the headings, not at a fixed length.
@@ -482,6 +464,12 @@ only your slides"). It is not invented here; until then the title note is the qu
 - *Build 0:* The model fills a fixed form, a JSON schema: per clause found, not found or unclear, a section, a quote, a reason – nothing else.
 - *Build 1:* This is M18's real answer. Liability cap: not found, with a reason. Consumer terms in checkout: found, with a quote from section 3.
 - *Build 2:* Then our code adds page and confidence; a second model call checks each found clause. 47 contracts, 47 calls to read them. Over 200,000 characters, a contract is read in parts – none here.
+
+### `injection` · A hidden instruction in M14 – caught, and sent to two people.
+
+- *Build 0:* Second danger: a hidden note in M14 tells the AI to report a cap. That is prompt injection. A counterparty's text must not decide for Riverty.
+- *Build 1:* Our pattern check finds it. The register still says: no cap. Two people look – four eyes.
+- *Build 2:* Honestly: M14 and 3 rewordings – our pattern check found only the original, 1 of 4. Microsoft's Prompt Shields: 4 of 4 – our next step.
 
 ### `prompts` · Two prompts, word for word.
 
@@ -505,12 +493,32 @@ only your slides"). It is not invented here; until then the title note is the qu
 - *Build 1:* We merge both lists by rank, not by score: what both found comes first. That is hybrid search – built.
 - *Build 2:* Still open: a reranker – a second model that re-sorts the best hits – and a test set. On Azure: AI Search. Never for which contracts lack a clause.
 
-### `ms-checks` · Microsoft at the edges, our own checks in the middle.
+### `what-if` · Switch a safeguard off – live.
 
-- *Build 0:* Microsoft services do what they do best: reading scans, a second opinion on hidden instructions, and identity.
-- *Build 1:* Prompt Shields only says yes or no, without the position. So our own check stays. A hit means four eyes, never a block.
+- *Build 0:* Remember M08: the model said found, the checks said unclear. What if the checks were off? I replay the stored answers on a copy – no model call, no cost.
+- *Build 1:* The second model call, off. Q1 still finds all 5. The checks overlap – watch the next switch.
+- *Build 2:* Now the words check off too. M08 and M10, the two unclear ones, slip through: 3 of 5. No lawyer would look at them.
+- *Build 3:* Both checks back on. Now only the pattern check off: M14 no longer goes to two people.
+
+### `cost` · A few cents to read everything – and the small model was enough on our tests.
+
+- *Build 0:* And the cost? Reading all 47 once: 12 cents. Then a question is a lookup – not 90 hours. Your definition of productivity: the same lawyers answer more questions.
+- *Build 1:* A bigger model? GPT-4.1 costs 5 times more. Without our checks it misses less; with them, both find everything.
+- *Build 2:* So the small model stays. A new model, prompt or playbook goes live only if all 8 test questions still pass – our rule, run by hand today.
+
+### `ms-checks` · Microsoft at the edges (planned), our own checks in the middle (built).
+
+- *Build 0:* On Azure, Microsoft services would do what they do best: reading scans, a second opinion on hidden instructions, and identity. Planned, not built.
+- *Build 1:* I measured Prompt Shields once. It only says yes or no, without the position. So our own check stays. A hit would mean four eyes, never a block.
+
+### `sharepoint` · Saved in SharePoint – how does it reach the register?
+
+- *Build 0:* Target design: a lawyer saves a contract in SharePoint.
+- *Build 1:* Microsoft Graph is Microsoft's interface to SharePoint. We would subscribe to the library. Then Graph would say only: something changed. The delta query would then ask: what changed?
+- *Build 2:* Then the pipeline reads it – the fixed steps you saw with M18. Its model calls took about 7 seconds.
+- *Build 3:* Messages usually come within a minute, at most six hours. Lost ones? A scheduled run would check again.
 
 ### `graph-details` · SharePoint in detail: subscription, delta query, safety net.
 
-- *Build 0:* The details from Microsoft's documentation. The subscription only wakes us up. The delta query tells us what changed. The subscription must be renewed within 30 days.
-- *Build 1:* And we ask only for read rights on the one library.
+- *Build 0:* The target design, from Microsoft's documentation. Not built yet. The subscription would only wake us up. The delta query would tell us what changed. We would renew the subscription within 30 days.
+- *Build 1:* And we would ask only for read rights on the one library.

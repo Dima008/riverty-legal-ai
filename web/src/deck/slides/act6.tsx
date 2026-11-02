@@ -206,15 +206,16 @@ export const ACT6: Slide[] = [
       // (measured in Edge on a register copy, docs/demo.md) - the words after 'I copy it' take 13-15 s
       // H01 is rendered from handwriting fonts, with photo effects (tools/make_handwritten.py) - nobody
       // photographed it, so the note says it is made to look like a phone photo
-      `Now live. Riverty has handwritten contracts, only as JPEG. I made one: ${HANDWRITTEN.doc_id}, dated ${H01_YEAR} – made to look like a phone photo. ` +
-        `I copy it into the folder – our stand-in for SharePoint. Watch the number. ` +
-        `The watcher looks every ${WATCH_S} seconds. Then OCR reads the image, one model call, the checks – like M18.`,
-      // F19 (decision 89): the former name is not found on this scan - the register says it cannot rule it out
-      `${deck.register.documents + 1} documents. Handwriting, hard to read – a person checks it. ` +
-        "Not found: limitation of liability, data processing agreement. Consumer terms: unclear – a person looks. " +
-        "Former name: cannot be ruled out on this scan – a person reads it.",
+      `Now live. You have handwritten contracts, only as JPEG. I made one: ${HANDWRITTEN.doc_id}, dated ${H01_YEAR}, made to look like a phone photo. ` +
+        `I copy it into the folder, our stand-in for SharePoint. Watch the number. ` +
+        `The watcher looks every ${WATCH_S} seconds. Then OCR reads the image, one model call, the checks: like M18.`,
+      // F19 (decision 89): the former name is not found on this scan - the register says it cannot rule it out.
+      // The poor scan itself is named, not "sent to a person": its findings go to one (panel design, 'Nicht sagen')
+      `${deck.register.documents + 1} documents. Handwriting, hard to read: a poor scan. ` +
+        "Not found: limitation of liability, data processing agreement. Consumer terms: unclear, a person looks. " +
+        "Former name: cannot be ruled out on this scan, a person reads it.",
     ],
-    words: [{ word: "handwritten", say: "HAND-rit-n" }, { word: "watcher", say: "WOTCH-er" }, { word: "JPEG", say: "JAY-peg" }],
+    words: [{ word: "handwritten", say: "HAND-rit-n" }, { word: "JPEG", say: "JAY-peg" }, { word: "watcher", say: "WOTCH-er" }, { word: "ruled out", say: "ROOLD out" }],
   },
   {
     id: "live", act: 6, kind: "content", title: "The Legal Workbench, live.", steps: 0, seconds: 115, Body: Live,
@@ -225,28 +226,29 @@ export const ACT6: Slide[] = [
       // the answer has a tile per merchant agreement and the table "To look at", H01 first ('Not found · Poor scan · Review');
       // a tile or row opens step 3 (Decide) with the decision on the same screen
       // the task: "A basic front-end demonstrating how the solution can be used" + "Frontend written in React and TypeScript"
-      "Now the tool for Legal, live – React and TypeScript, like these slides. It has seen the new contract too: " + `${HANDWRITTEN.doc_id}, new, a poor scan. ` +
-        "One: I ask Q1 – which merchant agreements lack a limitation of liability? " +
-        "Two: the plan – this check, on every merchant agreement. Nothing runs before I confirm it. " +
-        `Three: the answer, with coverage – a tile for every merchant agreement, ${HANDWRITTEN.doc_id} too; ` +
+      "Now the tool for Legal, live. It is React and TypeScript, like these slides. It has seen the new contract too: " + `${HANDWRITTEN.doc_id}, new, a poor scan. ` +
+        "One: I ask Q1. Which merchant agreements lack a limitation of liability? " +
+        "Two: the plan. This check, on every merchant agreement. In the tool, nothing runs before I confirm it. " +
+        `Three: the answer, with coverage. A tile for every merchant agreement, ${HANDWRITTEN.doc_id} too. ` +
         `${COPY?.id} is excluded as a copy, with the reason. Not found: ${list(Q1_NOT_FOUND)}. Unclear: ${list(Q1_UNCLEAR)}. ` +
-        `And ${HANDWRITTEN.doc_id}, the handwritten one: not found – but a poor scan, so a person checks the page. ` +
-        `Four: ${EVIDENCE} – the passage, highlighted on the page. The checks overruled the model. ` +
-        `Five: ${FOUR_EYES} needs four eyes. Reviewer A approves; I switch to B, who approves too. ` +
-        "Six: only now the archive copy – and only once. Then back to the talk.",
+        `And ${HANDWRITTEN.doc_id}, the handwritten one: not found. But it is a poor scan, so a person checks the page. ` +
+        `Four: ${EVIDENCE}. The passage is highlighted on the page. The checks overruled the model. ` +
+        `Five: ${FOUR_EYES} needs four eyes. Reviewer A approves. I switch to B, who approves too. ` +
+        "Six: only now the archive copy, and only once. Then back to the talk.",
     ],
-    words: [{ word: "Workbench", say: "WURK-bench" }, { word: "coverage", say: "KUV-er-ij" }, { word: "archive", say: "AR-kyv" }],
+    words: [{ word: "Workbench", say: "WURK-bench" }, { word: "coverage", say: "KUV-er-ij" }, { word: "highlighted", say: "HY-ly-tid" },
+      { word: "overruled", say: "oh-ver-ROOLD" }, { word: "archive", say: "AR-kyv" }],
   },
   {
-    id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 35, Body: Close,
+    id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 36, Body: Close,
     notes: [
       // the task: "while learning and improving ourselves", "start a meaningful conversation"; the honest gap
       // list of CLAUDE.md (no Azure deployment, the planner has no model, handwriting needs a multimodal reader)
       "What I learned: no model is always right. So every contract is read, every answer traced to a page, and a lawyer decides. " +
-        "Not built yet: the Azure platform, the SharePoint connector, a model that plans, a model that reads handwriting well. " +
-        "Two questions: I assumed a missed contract hurts more than a false alarm – right for Legal? And who would pilot it? Thank you.",
+        "Not built yet: the Azure platform, the SharePoint connector. Also a model that plans, and one that reads handwriting well. " +
+        "Two questions. I assumed a missed contract hurts more than a false alarm. Right for Legal? And who would pilot it? Thank you.",
     ],
-    words: [{ word: "traceable", say: "TRAY-suh-bul" }, { word: "accurate", say: "AK-yur-it" }],
+    words: [{ word: "traceable", say: "TRAY-suh-bul" }, { word: "accurate", say: "AK-yur-it" }, { word: "connector", say: "kuh-NEK-ter" }, { word: "assumed", say: "uh-SOOMD" }],
   },
 ];
 

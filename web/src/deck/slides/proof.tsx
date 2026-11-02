@@ -454,17 +454,17 @@ if (import.meta.env.DEV) {
 
 // ---------------------------------------------------------------- the cards
 export const RESULTS: Slide = {
-  id: "results", act: 3, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 56, Body: Results,
+  id: "results", act: 3, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 54, Body: Results,
   notes: [
     // 'Deliver' is the third phase of the card 'how-i-worked'; the CUAD sentence came from the card
     // 'test-set' (a deep dive since decision 90). The task: "while learning and improving ourselves".
-    `Deliver: does it work – how do I know? ${RUNS.length} runs from scratch: every expected contract found, no false alarm. ` +
-      `Real contracts, labelled by experts: we agree on ${CUAD_AGREE} of ${CUAD_N}. They showed ${FOUND_BY_CUAD.length} errors my traps missed – all fixed.`,
-    `How sure? ${Q1_N} of ${Q1_N} – at 95 percent, the true rate could still be ${Math.round(Q1.recall_lower_95 * 100)} percent. ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
-    `All ${POOLED.expected} answers together: at least ${Math.round(POOLED.recall_lower_95 * 100)} percent. But the ${POOLED.expected} answers come from only ${DISTINCT} contracts, and I tuned on this test set. ` +
-      "Planned: a sealed test set – new contracts I never tune on.",
+    `Deliver: does it work? ${RUNS.length} runs from scratch: every expected contract found, no false alarm. ` +
+      `Real contracts, labelled by experts: we agree on ${CUAD_AGREE} of ${CUAD_N}. They showed ${FOUND_BY_CUAD.length} errors my traps missed. All fixed.`,
+    `How sure? ${Q1_N} of ${Q1_N}. At 95 percent confidence, the true rate could still be ${Math.round(Q1.recall_lower_95 * 100)} percent. ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
+    `All ${POOLED.expected} answers together: at least ${Math.round(POOLED.recall_lower_95 * 100)} percent. But they come from only ${DISTINCT} contracts. And I tuned on this test set. ` +
+      "Planned: a sealed test set, with new contracts I never tune on.",
   ],
-  words: [{ word: "scratch", say: "SKRATCH" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
+  words: [{ word: "scratch", say: "SKRATCH" }, { word: "confidence", say: "KON-fih-dence" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
 };
 
 export const WHAT_IF: Slide = {

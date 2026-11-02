@@ -4,8 +4,9 @@
 // implementation, live - the finale, so every outline bullet is said before the part whose timing
 // varies most. Each opener shows its line of the case study word for word (guarded below). The
 // deep dives after the close are opened only on a question. Riverty asks for 15-20 minutes; since
-// 1.11. (Dima: no cuts) each card's seconds are what its notes need at about 115 words per minute,
-// and the main track may grow past 20:00 - never past 22:00. To stay under it, decision 96 moved
+// 1.11. (Dima: no cuts) each card's seconds are what its notes need at about 115 words per minute
+// (plus about 15 s on the title for Dima's own introduction, 2.11.), and the main track may grow past
+// 20:00 - never past 22:00. To stay under it, decision 96 moved
 // four cards to the deep dives, nothing deleted: 'injection', 'what-if', 'sharepoint' and 'cost';
 // what they said first (M14 and four eyes, Prompt Shields, the cents of a full run, productivity)
 // is said once on the main track ('human', 'what-we-use', 'run-it').

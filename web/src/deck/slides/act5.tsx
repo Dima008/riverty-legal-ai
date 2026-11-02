@@ -21,14 +21,23 @@ const MODEL = stats.config.extraction[0].model;             // the model that re
 const QUESTIONS = stats.questions.length;                   // the test questions a new model must pass (the release gate of 'cost')
 // Gemini or any other model: all model access sits in one adapter file (pipeline/llm.py, guarded below)
 const ADAPTER = "Swapping Azure OpenAI for another provider only touches this file.";
+// 'azure' note 0: "Only the model calls go to Azure" - the only Python file that imports openai is
+// pipeline/llm.py; "no Dockerfile or Terraform yet" - no Dockerfile, *.tf or infra/ in the repository
+// (panel design 1.4; the IaC glob covers the root and the two likely build folders, not the whole tree)
+const PY = import.meta.glob(["../../../../pipeline/*.py", "../../../../api/*.py"],
+  { query: "?raw", import: "default", eager: true }) as Record<string, string>;
+const CALLS_MODEL = Object.entries(PY).filter(([, src]) => /^\s*(from|import) openai\b/m.test(src)).map(([f]) => f);
+const IAC = Object.keys(import.meta.glob(["../../../../Dockerfile", "../../../../*.tf", "../../../../infra/**",
+  "../../../../api/Dockerfile", "../../../../web/Dockerfile"]));
 
 // target vs prototype, per role (web/src/story/chapters/architecture/map.ts, decisions 35, 79, 80)
 const ROLES = [
   // Microsoft Graph is introduced in the deep dive 'sharepoint' (order pass #32, decision 96)
   { role: "Contracts", proto: "data/inbox folder", target: "SharePoint library" },
   { role: "Read scans", proto: "Tesseract", target: "Content Understanding" },
-  // the prototype already calls Azure OpenAI (Global Standard, synthetic data only - decision 34)
-  { role: "Read and check", proto: `${MODEL} on Azure OpenAI (Global Standard, synthetic data)`, target: "Azure OpenAI in Foundry, EU data zone" },
+  // the prototype already calls Azure OpenAI (Global Standard, decision 34) with test data only:
+  // synthetic contracts and public CUAD contracts (decisions 29, 30) - never "synthetic data only"
+  { role: "Read and check", proto: `${MODEL} on Azure OpenAI (Global Standard, test data only)`, target: "Azure OpenAI in Foundry, EU data zone" },
   { role: "Register", proto: "SQLite", target: "PostgreSQL" },
   { role: "Search", proto: "SQLite keywords + embeddings", target: "Azure AI Search" },
   { role: "Hidden instructions", proto: "a pattern check", target: "+ Prompt Shields" },
@@ -150,6 +159,9 @@ if (import.meta.env.DEV) {
     !findingsPy.includes("reuses it") && "card 'run-it': 'a review is stored and reused' - api/findings.py no longer says so (decision 73)",
     !/export type Lang = "en" \| "de"/.test(i18n) && "card 'run-it': 'German or English' - web/src/i18n.tsx has no German any more (decision 74)",
     !llmPy.includes(ADAPTER) && "card 'azure': the note says any model sits behind one adapter file - pipeline/llm.py no longer says so",
+    !(CALLS_MODEL.length === 1 && CALLS_MODEL[0].endsWith("pipeline/llm.py"))
+      && `card 'azure': the note says only the model calls go to Azure, through one file - ${CALLS_MODEL.join(", ") || "no file"} import openai`,
+    IAC.length > 0 && `card 'azure': the note says Container Apps and Terraform are planned, not built - found ${IAC.join(", ")}`,
     QUESTIONS !== 8 && `card 'azure': the release gate names the test questions - the stored evaluation has ${QUESTIONS}`,
     !(M18_SECONDS > 0) && "card 'sharepoint': M18's model seconds are missing in deck-data.json",
     !(WATCH_S > 0) && "card 'sharepoint': the watcher's interval is no longer in pipeline/run.py",
@@ -169,18 +181,23 @@ export const INFRASTRUCTURE: Slide[] = [
     words: [{ word: "infrastructure", say: "IN-fruh-struk-cher" }],
   },
   {
-    id: "azure", act: 4, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 71, Body: Azure,
+    id: "azure", act: 4, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 77, Body: Azure,
     notes: [
       // the task: "two guiding principles" (best of breed, then compared with Microsoft) and its stack list -
-      // what is planned is said as planned: no Dockerfile, no Terraform file in the repository
-      "Riverty chooses in two steps: best of breed, then compared with Microsoft. I measured Prompt Shields and a bigger model. " +
-        "On Azure, each part would get its service: Content Understanding for scans, Azure OpenAI in the EU data zone, Entra ID for approvals. " +
-        "It would run in Container Apps, set up with Terraform. All of this is planned: no Dockerfile or Terraform yet.",
+      // what is planned is said as planned: no Dockerfile, no Terraform file in the repository. Today
+      // (panel design, fact-checked): the laptop; only the model calls (reader, checker, embeddings, all
+      // through pipeline/llm.py) go to Azure OpenAI, with test data only - synthetic or public (CUAD).
+      "Today it runs on my laptop. Only the model calls go to Azure, with test data only. " +
+        "You choose in two steps: best of breed, then compare with Microsoft. I measured Prompt Shields and a bigger model. " +
+        "On Azure, each part would get its service. Content Understanding for scans. Azure OpenAI in the EU data zone. Entra ID for approvals. " +
+        "Container Apps, set up with Terraform. All this is planned: no Dockerfile or Terraform yet.",
       "We buy the building blocks. We build what is Riverty's: playbook, evidence, storage boundary.",
-      `Gemini? The model sits behind one small adapter file; any model must first pass the ${QUESTIONS} test questions. ` +
-        "LangChain or LangGraph? Not needed today – code fixes the order. Target: Microsoft Agent Framework, LangGraph as fallback. The value is the architecture: a small, structured world for the AI.",
+      `Gemini? The model sits behind one small adapter file. Any model must first pass the ${QUESTIONS} test questions. ` +
+        "LangChain or LangGraph? Not needed today: code fixes the order. Target: Microsoft Agent Framework, LangGraph as fallback. " +
+        "The value is the architecture: a small, structured world for the AI.",
     ],
-    words: [{ word: "Azure", say: "AZH-er" }, { word: "Entra", say: "EN-truh" }, { word: "LangGraph", say: "LANG-graf" }, { word: "Gemini", say: "JEM-ih-nye" }],
+    words: [{ word: "Azure", say: "AZH-er" }, { word: "Entra", say: "EN-truh" }, { word: "Terraform", say: "TER-uh-form" }, { word: "Gemini", say: "JEM-ih-nye" },
+      { word: "adapter", say: "uh-DAP-ter" }, { word: "LangGraph", say: "LANG-graf" }, { word: "architecture", say: "AR-kih-tek-cher" }],
   },
 ];
 
@@ -208,18 +225,20 @@ export const ADOPTION: Slide[] = [
     words: [{ word: "adoption", say: "uh-DOP-shun" }],
   },
   {
-    id: "run-it", act: 5, kind: "content", title: "Adoption: one team, one question – measured against today.", steps: 2, seconds: 65, Body: Adoption,
+    id: "run-it", act: 5, kind: "content", title: "Adoption: one team, one question – measured against today.", steps: 2, seconds: 62, Body: Adoption,
     notes: [
       // the task: "Our legal colleagues currently leverage a variety of tools"
-      "Legal already has a variety of tools – this one must earn its place. " +
+      "Legal already has a variety of tools. This one must earn its place. " +
         `Adoption starts with a pilot: one team, one question. First we measure today, with ${FEW_LO} or ${FEW_HI} lawyers. ` +
-        "Then the question runs next to the old way, for a few weeks. Training: read the evidence on the page – don't trust it blindly. Then the next question, the next team.",
-      "Legal owns it: the playbook is their guidelines, as data. Corrections go into the test set.",
+        "Then the question runs next to the old way, for a few weeks. Training: read the evidence on the page, don't trust it blindly. Then the next question, the next team.",
+      // "their guidelines, as data" is explained on 'checks' and stays on screen here
+      "Legal owns it: the playbook is theirs. Corrections go into the test set.",
       // the task: "create more with the same number of engineers" - said for Legal (picked up from the deep dive 'cost', decision 96)
-      "Value, measured – your definition of productivity: the same lawyers answer more questions. " +
-        "Time per question against today, and how often lawyers overrule – the prototype counts that already. " +
-        "A review is stored and reused. And lawyers work in German or English.",
+      "Value, measured: your definition of productivity. The same lawyers answer more questions. " +
+        "We compare time per question with today. The prototype already counts how often lawyers overrule it. " +
+        "Reviews are reused. And lawyers work in German or English.",
     ],
-    words: [{ word: "adoption", say: "uh-DOP-shun" }, { word: "guidelines", say: "GIDE-lines" }, { word: "overrule", say: "oh-ver-ROOL" }],
+    words: [{ word: "variety", say: "vuh-RY-ih-tee" }, { word: "adoption", say: "uh-DOP-shun" }, { word: "blindly", say: "BLYND-lee" },
+      { word: "productivity", say: "proh-duk-TIV-ih-tee" }, { word: "overrule", say: "oh-ver-ROOL" }],
   },
 ];

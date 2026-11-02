@@ -149,7 +149,8 @@ if (import.meta.env.DEV) {
     ...SNIPPETS.filter((s) => !CASE.includes(s.quote)).map((s) => `card 'task' quotes a sentence that is not in the case study: "${s.quote}"`),
     SNIPPETS.length !== 6 && `card 'task': the title says six sentences - the card shows ${SNIPPETS.length}`,
     // Dima's opener note picks up the case study's "whether AI could help ... purely repetitive work"
-    !(CASE.includes("whether AI could help") && CASE.includes("purely repetitive work")) && "card 'part-1': the note picks up 'whether AI could help' and 'purely repetitive work' - the case study no longer says so",
+    !(CASE.includes("whether AI could help") && CASE.includes("purely repetitive work") && CASE.includes("nobody enjoys"))
+      && "card 'part-1': the note picks up 'whether AI could help', 'purely repetitive work' and 'nobody enjoys' - the case study no longer says so",
     !(VENDORS > 0 && MERCHANTS > 0) && "card 'today': the vendor or merchant count is no longer in the case study",
     !RENAME?.contract && "card 'hard': the register has no amendment that renames a contract",
     !(RENAME?.old.startsWith("Arvato") && RENAME?.to.startsWith("Riverty")) && "card 'hard': the note calls the old name Riverty's old name - the amendment renames something else",
@@ -161,60 +162,66 @@ if (import.meta.env.DEV) {
 
 export const ACT1: Slide[] = [
   {
-    // 27 s: the note needs 24 s at 115 wpm; what is left under 22:00 after decision 96 is 3 s, not
-    // the ~15 s wanted for one sentence about Dima himself (decision 90) - see the TODO.
-    // TODO(Dima): write that sentence yourself - Riverty: "we want to get to know you, not only your
-    // slides". Not invented for you on purpose; until then the note below (the question, then the
-    // agenda along Riverty's outline) is the whole title card.
-    id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 27, Body: TitleBody,
+    // The seconds are the note's need at about 115 wpm plus about 15 s for Dima's own introduction
+    // (the line in square brackets: shown in the presenter view, not spoken by the script's count).
+    // TODO(Dima): write that introduction yourself - Riverty: "we want to get to know you, not only
+    // your slides". Not invented for you on purpose; replace the bracketed line with your own words.
+    // Each point is said once across the first cards (2.11.): here what the project is and the
+    // agenda along Riverty's outline; 'part-1' Legal's ask; 'task' and 'today' the details.
+    id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 38, Body: TitleBody,
     notes: [
-      "Hello, I'm Dima. Riverty's lawyers keep asking one kind of question: which contracts are missing something? In about twenty minutes I show how I'd answer it – with a working prototype. " +
-        "I follow your outline: from the problem to adoption, then it runs live.",
+      "Hello, I'm Dima. [Here you introduce yourself – in your own words.] " +
+        "I built an AI assistant for Riverty's legal team. It answers questions across all contracts. It shows the page as proof. A lawyer decides. " +
+        "I follow your outline: problem, approach, solution, infrastructure, adoption. Then the prototype runs live.",
     ],
-    words: [{ word: "Riverty's", say: "RIV-er-teez" }, { word: "prototype", say: "PROH-tuh-type" }],
+    words: [{ word: "Riverty's", say: "RIV-er-teez" }, { word: "assistant", say: "uh-SIS-tunt" }, { word: "infrastructure", say: "IN-fruh-struk-cher" },
+      { word: "adoption", say: "uh-DOP-shun" }, { word: "prototype", say: "PROH-tuh-type" }],
   },
   {
     id: "part-1", act: 1, kind: "opener", title: "The problem", steps: 0, seconds: 12,
     quote: ["One of these challenges is making our legal team more efficient."],
     notes: [
-      // Dima's wish (Notion card 2, 1.11.); Riverty's words: "whether AI could help", "purely repetitive work"
-      "First, the problem. Legal asked whether AI could help with this purely repetitive work – so the team gets more done.",
+      // Dima's wish (Notion card 2, 1.11.); Riverty's words: "whether AI could help", "purely repetitive
+      // work that nobody enjoys doing" - said here, once (2.11.); "by hand" is said on 'task' build 1.
+      "First, the problem: which contracts are missing something? Purely repetitive work, nobody enjoys it. Legal asked whether AI could help.",
     ],
-    words: [{ word: "repetitive", say: "rih-PET-ih-tiv" }],
+    words: [{ word: "repetitive", say: "rih-PET-ih-tiv" }, { word: "whether", say: "WEH-ther" }],
   },
   {
-    id: "task", act: 1, kind: "content", title: "Six sentences that shaped the solution.", steps: 2, seconds: 42, Body: TaskSnippets,
+    id: "task", act: 1, kind: "content", title: "Six sentences that shaped the solution.", steps: 2, seconds: 40, Body: TaskSnippets,
     notes: [
-      "I started with Riverty's own words, sentence by sentence. Two sentences are Legal's questions: contracts without a certain passage, and contracts with a former company name. Both are about every contract.",
-      "Today it is done by hand: open, search, verify. And some contracts are old handwritten scans, only images.",
-      "Two sentences set the rules. The storage may only receive a copy. And Riverty wants to understand what happens. So every finding needs evidence.",
+      "I started with your words, sentence by sentence. Two are Legal's questions. First: contracts without a certain passage. Second: contracts with a former company name. Both are about every contract.",
+      "Today, lawyers do it by hand: open, search, verify. Some contracts are old handwritten scans, only images.",
+      "Two sentences set the rules. The storage may only get a copy. You want to understand what happens. So every finding needs evidence.",
     ],
-    words: [{ word: "passage", say: "PASS-ij" }, { word: "verify", say: "VER-ih-fy" }, { word: "evidence", say: "EV-ih-dence" }],
+    words: [{ word: "passage", say: "PASS-ij" }, { word: "former", say: "FOR-mer" }, { word: "verify", say: "VER-ih-fy" }, { word: "evidence", say: "EV-ih-dence" }],
   },
   {
-    id: "today", act: 1, kind: "content", title: "Today: open every contract, search, note it down.", steps: 2, seconds: 34, Body: Today,
+    id: "today", act: 1, kind: "content", title: "Today: open every contract, search, note it down.", steps: 2, seconds: 26, Body: Today,
     notes: [
-      `What does one question cost today? Riverty works with over ${n(VENDORS)} vendors and over ${n(MERCHANTS)} merchants – so over ${n(CONTRACTS)} contracts.`,
-      `I assume ${MINUTES} minutes per contract: open, search, note. We'd measure it with Legal first.`,
-      `That's about ${HOURS} hours for one question. And again for the next one. Repetitive work – nobody enjoys it.`,
+      // "again for every new question" is said once, on 'insight' (2.11.); the steps are the card's title
+      `What does one question cost today? You work with over ${n(VENDORS)} vendors and over ${n(MERCHANTS)} merchants. So over ${n(CONTRACTS)} contracts.`,
+      `I assume ${MINUTES} minutes per contract. We'd measure it with Legal first.`,
+      `That's about ${HOURS} hours for one question.`,     // proof.tsx reads "about N hours" from this note
     ],
-    words: [{ word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }, { word: "measure", say: "MEZH-er" }],
+    words: [{ word: "vendors", say: "VEN-derz" }, { word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }, { word: "measure", say: "MEZH-er" }],
   },
   {
-    id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 49, Body: Hard,
+    id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 48, Body: Hard,
     notes: [
-      "Why not just search for a word?",
-      "First, scans. Most are PDFs with text – we read that directly. Some are only images, like this one. OCR – text recognition – reads them. Later, a handwritten one, live.",
+      "Why not search for a word?",
+      "First, scans. Most PDFs have text: we read it directly. Some are only images, like this one. OCR, text recognition, reads them. Later, a handwritten one, live.",
       `Second, amendments. A contract from ${year(RENAME.amends_date)} names ${RENAME.old.split(" ")[0]}, Riverty's old name. Its ${year(RENAME.date)} amendment says: read as ${RENAME.to.split(" ")[0]}. The answer needs both.`,
-      "Third, wording. All three cap liability. The second never says liability, the third is German. Keywords miss them. Remember the second one.",
+      "Third, wording. All three cap liability. The second never says liability. The third is German. Keywords miss them. Remember the second one.",
     ],
-    words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "amendment", say: "uh-MEND-ment" }, { word: "recognition", say: "rek-ug-NISH-un" }],
+    words: [{ word: "PDFs", say: "pee-dee-EFFS" }, { word: "OCR", say: "oh-see-AR" }, { word: "recognition", say: "rek-ug-NISH-un" },
+      { word: "Arvato", say: "ar-VAH-toh" }, { word: "amendment", say: "uh-MEND-ment" }, { word: "liability", say: "lie-uh-BIL-ih-tee" }],
   },
   {
-    id: "insight", act: 1, kind: "statement", title: "To prove that something is missing, you have to read everything.", steps: 1, seconds: 24, Body: Insight,
+    id: "insight", act: 1, kind: "statement", title: "To prove that something is missing, you have to read everything.", steps: 1, seconds: 22, Body: Insight,
     notes: [
-      "Finding is easy: you stop at the first hit. To prove something is not there, you must read every contract, every page.",
-      "And today that reading starts again for every new question. That is the lever: read everything once – and prove it.",
+      "Finding is easy: you stop at the first hit. To prove something is missing, you read every contract, every page.",
+      "Today, that reading starts again with every question. That is the lever: read everything once, and prove it.",
     ],
     words: [{ word: "prove", say: "PROOV" }, { word: "lever", say: "LEE-ver" }],
   },

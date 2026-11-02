@@ -7,6 +7,29 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-02 · Speaker notes for reading aloud: short sentences, every key idea explained once, room for Dima's introduction
+
+- **Problem:** Dima reads the notes aloud at B2. Many sentences were long, joined by dashes or
+  nested; some key ideas (compile, don't search; maker-checker; model_status vs status; recall
+  first) were used but never explained in plain words. The title had no room for his own
+  introduction (3 s left at 22:00).
+- **Cause:** The notes grew card by card; each pass added explanations, none rewrote for reading.
+- **Technique and why:** One pass over notes, pronunciation hints and seconds only: sentences of at
+  most 15 words, one idea each, no dashes; every key idea explained once at its first mention
+  (table in the pass report); the panel's fact-checked one-liners on human, checks and azure. Room
+  came from removing repeats (the title's question now only on part-1; three repeats on today), not
+  content. The title is "Hello, I'm Dima." + a visible, unspoken placeholder "[Here you introduce
+  yourself – in your own words.]" + what the project is + the agenda. An independent check found
+  one lost phrase ("nobody enjoys it"), an ambiguous "capped", a wrong reference and "synthetic
+  data" on the azure screen (CUAD is public) – all fixed. Two new guards keep the azure note true
+  (only `pipeline/llm.py` calls the model; no Dockerfile or Terraform yet).
+- **Rejected alternative:** Moving another card to the deep dives for the 15 s; cutting sentences.
+- **Metric before → after:** honest main track 1320 s with 3 s for Dima's introduction → 1319 s
+  (21:59) with 15 s; longest note sentence 30+ → 15 words; dashes in main-track notes many → 0;
+  `newcards.mjs`, `deck.mjs`, `honest.mjs` without problems; no dev-guard console errors.
+- **Links:** decisions 90, 96; `web/src/deck/slides/act1.tsx`–`act6.tsx`, `proof.tsx`,
+  `docs/approach.md`
+
 ## 2026-11-01 · Dima's speaker notes in, every correctness fix in, and honest time: 29 cards in 22:00
 
 - **Problem:** Dima added speaker-note wishes in Notion (the intro before the task sentences, the

@@ -23,6 +23,8 @@ import deck from "./deck-data.json";
 import { CHECKER, CLAUSES, PROMPTS, READER, RULES, Say, TEMPERATURE, opening, say } from "./prompts-data";
 
 const AT_K10 = measurement.top_k.find((r) => r.k === 10)!;
+/** 0.35 -> "zero point three five": the pronunciation hint of a decimal in the notes, from the data */
+const spell = (x: number) => [...String(x)].map((c) => (c === "." ? "point" : say(Number(c)))).join(" ");
 const short = (name: string) => name.split(" ")[0];                   // "Arvato Financial Solutions" -> "Arvato"
 const year = (date: string | null | undefined) => (date ?? "").slice(0, 4);
 
@@ -358,6 +360,7 @@ if (import.meta.env.DEV) {
     !(PS_ORIGINAL?.[1].regex_detects && REGEX_HITS === 1)
       && "card 'injection': the card says the pattern check found only M14's original - the probe says otherwise",
     !TRIAGE.four_eyes.includes("amendment_contradiction") && "card 'human': four eyes no longer covers an amendment that contradicts its contract",
+    !Number.isInteger(100 / TRIAGE.sample_percent) && "card 'human': the note says 'one in N opened at random' - SAMPLE_PERCENT does not divide 100",
     !TRIAGE.four_eyes.some((s) => s.includes("injection")) && "card 'human': four eyes no longer covers a hidden instruction",
     !(PS_ORIGINAL?.[0].startsWith(INJECTED) && deck.m14.finding.flags.some((f) => f.includes("injection")))
       && `card 'human': the note says the pattern check finds ${INJECTED}'s hidden instruction - the register or the probe says otherwise`,
@@ -383,84 +386,104 @@ if (import.meta.env.DEV) {
 
 export const ACT3: Slide[] = [
   {
-    id: "part-3", act: 3, kind: "opener", title: "The technical solution", steps: 0, seconds: 8,
+    id: "part-3", act: 3, kind: "opener", title: "The technical solution", steps: 0, seconds: 7,
     quote: ["An overall technical solution you would present to our team and how it could be implemented"],
-    notes: ["Design: how do we deliver the three guarantees – and does it work?"],
+    notes: ["Design: how do we deliver the guarantees? And does it work?"],
+    words: [{ word: "guarantees", say: "gair-un-TEEZ" }],
   },
   {
-    id: "tomorrow", act: 3, kind: "content", title: "Tomorrow: the system reads, the lawyer decides.", steps: 1, seconds: 35, Body: Tomorrow,
+    id: "tomorrow", act: 3, kind: "content", title: "Tomorrow: the system reads, the lawyer decides.", steps: 1, seconds: 40, Body: Tomorrow,
     notes: [
-      "Today a lawyer opens, searches, reads and notes – every contract, every question.",
-      "Tomorrow the system reads each contract once, when it is saved in SharePoint. The result goes into one table: the register. " +
-        "The lawyer asks. The system shows a plan: which contracts, which check. The lawyer confirms it, checks the evidence, and approves the archive copy. " +
-        "The machine reads. The lawyer decides.",
+      "Today a lawyer opens, searches, reads and notes. Every contract, every question.",
+      // the core design, named once and explained where the register first appears: compile, don't search
+      "Tomorrow the system reads each contract once, when it is saved in SharePoint. Compile, don't search: the result goes into one table, the register. " +
+        "Then a question is a lookup. The lawyer asks. The system shows a plan: which contracts, which check. " +
+        "The lawyer confirms it, checks the evidence and approves the archive copy. The machine reads. The lawyer decides.",
     ],
-    words: [{ word: "register", say: "REJ-ih-ster" }, { word: "evidence", say: "EV-ih-dence" }, { word: "archive", say: "AR-kive" }],
+    words: [{ word: "compile", say: "kum-PILE" }, { word: "register", say: "REJ-ih-ster" }, { word: "evidence", say: "EV-ih-dence" }, { word: "archive", say: "AR-kyv" }],
   },
   {
     id: "follow-m18", act: 3, kind: "content", title: `Follow one contract: M18, a scan from ${M18_YEAR}.`, steps: 5, seconds: 71, Body: FollowM18,
     notes: [
-      "Follow M18, the scan from the start. It arrives in a folder – later, SharePoint.",
-      `OCR reads ${num(J.ingest.pages)} pages, ${num(J.ingest.ocr_confidence).toFixed(0)} percent average confidence. Below ${OCR_MIN}, a person looks.`,
+      "Follow M18, the scan you saw. It arrives in a folder, later SharePoint.",
+      // a poor scan does not go to a person as such: its findings' confidence is capped at 0.5 (extract.py),
+      // so triage sends a reported one to a lawyer (portfolio.py; panel design, 'Nicht sagen'). Said as
+      // "we doubt", not "capped": on this card and others "cap" is the liability cap (2.11.)
+      `OCR reads ${num(J.ingest.pages)} pages: ${num(J.ingest.ocr_confidence).toFixed(0)} percent average confidence. Below ${OCR_MIN}, we doubt its findings: a lawyer looks.`,
       `We cut at the headings: ${num(J.chunking.sections)} sections. A fixed length can split a clause.`,
-      `One call to a small model, ${M18_MODEL}, fills a fixed form: status and quote per clause.`,
-      `The checks – next card. ${M18_CLAUSES} clauses: ${M18_FOUND.PRESENT ?? 0} found, ${M18_FOUND.ABSENT ?? 0} not found – ` +
-        `${M18_DPA_ONLY} of them are required only in data processing agreements.`,
-      "Register: no liability cap, no data processing agreement, a former name. Fixed steps in code; the AI sees one contract at a time – a small world. Guarantee one: 'every contract was read' is a fact.",
+      `One call to a small model, ${M18_MODEL}, fills a fixed form. Per clause: status and quote.`,
+      `Checks: next card. ${M18_CLAUSES} clauses: ${M18_FOUND.PRESENT ?? 0} found, ${M18_FOUND.ABSENT ?? 0} not found. ` +
+        `${Say(M18_DPA_ONLY)} are required only in data processing agreements.`,
+      "Register: no liability cap, no data processing agreement, a former name. Fixed steps in code. The AI sees one contract at a time: a small world. " +
+        "Guarantee one: 'every contract was read' is a fact.",
     ],
-    words: [{ word: "OCR", say: "oh-see-AR" }, { word: M18_MODEL, say: "G-P-T four point one mini" }, { word: "sections", say: "SEK-shunz" }],
+    words: [{ word: "OCR", say: "oh-see-AR" }, { word: "average", say: "AV-rij" }, { word: M18_MODEL, say: "G-P-T four point one mini" }, { word: "sections", say: "SEK-shunz" },
+      { word: "doubt", say: "DOWT" }],
   },
   {
-    id: "checks", act: 3, kind: "content", title: "The model is checked: M08 said “found”, the register says “unclear”.", steps: 2, seconds: 46, Body: ChecksM08,
+    id: "checks", act: 3, kind: "content", title: "The model is checked: M08 said “found”, the register says “unclear”.", steps: 2, seconds: 53, Body: ChecksM08,
     notes: [
-      `But a model can be wrong. M08: the model said: limitation of liability, found. Its quote is clause ${M08_CLAUSE}.`,
-      // the task: "ensuring they comply with our corporate guidelines" - the playbook is those guidelines
-      "Guarantee two: the quote is really there. But it lacks the words Legal's playbook expects. The playbook is Legal's guidelines, as data. And a second model call says: this is about data protection.",
-      `So the register says unclear – confidence ${M08.confidence}, from our checks – and a lawyer looks. Code before and after the model: the guardrail sandwich.`,
+      `But a model can be wrong. M08: the model said the liability cap is found, and quoted clause ${M08_CLAUSE}.`,
+      // the task: "ensuring they comply with our corporate guidelines" - the playbook is those guidelines;
+      // maker-checker: the checker prompt sees only a definition and a quote (guarded in prompts-data.ts)
+      "Guarantee two: the quote is really there. But it lacks the words of Legal's playbook, their guidelines as data. " +
+        "Then maker-checker: a second model call sees only definition and quote. It says: this is about data protection.",
+      // model_status (what the model said) and status (what the register says after the checks): both stored
+      `The register keeps both answers. The model's: found. Ours, after the checks: unclear, confidence ${M08.confidence}. A lawyer looks. ` +
+        "The model never decides alone: code before and after it, the guardrail sandwich.",
     ],
-    words: [{ word: "playbook", say: "PLAY-book" }, { word: "guardrail", say: "GARD-rail" }, { word: "unclear", say: "un-KLEER" }],
+    words: [{ word: "playbook", say: "PLAY-book" }, { word: "guidelines", say: "GIDE-lines" }, { word: "maker-checker", say: "MAY-ker CHEK-er" },
+      { word: String(M08.confidence), say: spell(M08.confidence) }, { word: "guardrail", say: "GARD-rail" }, { word: "sandwich", say: "SAND-wich" }],
   },
   {
-    id: "register", act: 3, kind: "content", title: "Every contract in one table – a question becomes a lookup.", steps: 3, seconds: 70, Body: Register,
+    id: "register", act: 3, kind: "content", title: "Every contract in one table – a question becomes a lookup.", steps: 3, seconds: 69, Body: Register,
     notes: [
-      "Every contract, read like M18, in one table: the register. Organised once, compared clause by clause. Here the merchant agreements. Green found, red not found, amber unclear.",
-      `Q1 is one column: ${Q1.length} contracts, no model call. Red and amber count together – one too many beats one missed. Keyword search: ${AT_K10.false_alarms.length} false alarms, ${AT_K10.missed.join(", ")} missed.`,
+      "The register: every contract, read like M18, organised clause by clause. Here, the merchant agreements. Green found, red not found, amber unclear.",
+      // recall first, named once: unclear counts with not found and goes to a lawyer - a missed contract is the expensive error
+      `Q1 is one column: ${Q1.length} contracts, no model call. Red and amber count together: recall first. One too many beats one missed. ` +
+        `Keyword search: ${AT_K10.false_alarms.length} false alarms, ${AT_K10.missed.join(", ")} missed.`,
       // the task's "comparing them": GET /api/compare (api/register.py) - not in the tool yet (guarded)
-      `Coverage: ${ROWS.length} in scope, ${CHECKED} checked, ${COPY.id} excluded – a copy of ${COPY.copy_of}. Nothing drops out silently. ` +
-        `Comparing is built too: ${COPY.id} next to ${COPY.copy_of}, the same text – API only so far.`,
-      `Legal's second question, Q2: which contracts still name ${LEGACY.join(" or ")} – Riverty's former names? ${Q2.length}. Not ${FIXED?.id}: its amendment ${FIXED?.by} renamed it to ${FIXED_TO}.`,
+      `Coverage: ${ROWS.length} in scope, ${CHECKED} checked, ${COPY.id} excluded: a copy of ${COPY.copy_of}. Nothing drops out silently. ` +
+        `Comparing is built too: ${COPY.id} next to ${COPY.copy_of}, the same text. API only so far.`,
+      `Legal's second question, Q2: which contracts still name ${LEGACY.join(" or ")}, Riverty's former names? ${Q2.length}. Not ${FIXED?.id}: its amendment ${FIXED?.by} renamed it to ${FIXED_TO}.`,
     ],
-    words: [{ word: "register", say: "REJ-ih-ster" }, { word: "coverage", say: "KUV-er-ij" }, { word: "excluded", say: "ik-SKLOO-did" }],
+    words: [{ word: "organised", say: "OR-guh-nyzd" }, { word: "recall", say: "REE-kawl" }, { word: "coverage", say: "KUV-er-ij" },
+      { word: "excluded", say: "ik-SKLOO-did" }, { word: "AfterPay", say: "AF-ter-pay" }],
   },
   {
-    id: "human", act: 3, kind: "content", title: "Observations, not verdicts: a lawyer decides.", steps: 2, seconds: 64, Body: LawyerDecides,
+    id: "human", act: 3, kind: "content", title: "Observations, not verdicts: a lawyer decides.", steps: 2, seconds: 67, Body: LawyerDecides,
     notes: [
       // picked up from the deep dive 'injection' (decision 96): M14's hidden instruction (first named on
-      // 'rag-fails'), the pattern check, and the task's "represent the company's best interests"
-      `Guarantee three: a lawyer decides. The system only observes. Triage sorts each finding. Sure ones: a spot check. Unclear ones, or confidence below ${TRIAGE.review_below}: one lawyer. Risky ones: two different people – four eyes. ` +
+      // 'rag-fails'), the pattern check, and the task's "represent the company's best interests".
+      // Who looks comes from our checks, never from the model (portfolio.triage reads status and the
+      // computed confidence, not model_status); sure ones are one click, SAMPLE_PERCENT of them opened.
+      `Guarantee three: a lawyer decides. The system only observes. Triage: not the model, our checks sort each finding. ` +
+        `Sure: one click, one in ${say(100 / TRIAGE.sample_percent)} opened at random. Unclear, or confidence below ${TRIAGE.review_below}: one lawyer. Risky: two different people, four eyes. ` +
         `Like ${INJECTED}: our pattern check finds its hidden instruction. A counterparty's text must not decide for Riverty.`,
-      "The lawyer sees the passage on the page first, then decides with a reason – stored, and reused next time.",
-      // api/review.py: no approval -> 409, logged; api/storage_mock.py: PUT by SHA-256, write once, a
-      // receipt - a repeated PUT gets 200 "already_stored", so never "exactly one call". The stand-in is
-      // named before its behaviour, so nothing sounds like a fact about Riverty's real storage.
-      "Riverty's storage has a REST API. Our server sends the file only after approval – before, it refuses. " +
-        "Here, a stand-in plays the storage: it keeps each file once, by its fingerprint. It cannot be changed later, and there is a receipt.",
+      "First the passage on the page. Then the decision, with a reason. It is stored and reused.",
+      // api/review.py: no approval -> 409 "tool gate", logged; api/storage_mock.py: PUT by SHA-256, write
+      // once, a receipt - a repeated PUT gets 200 "already_stored", so never "exactly one call". The
+      // stand-in is named before its behaviour, so nothing sounds like a fact about Riverty's real storage.
+      "Riverty's storage has a REST API. Our server sends a file only after approval. Before that, the gate refuses. " +
+        "Here, a stand-in plays the storage. It keeps each file once, by its fingerprint, with a receipt. It cannot be changed later.",
     ],
-    words: [{ word: "observes", say: "ub-ZURVZ" }, { word: "triage", say: "TREE-ahzh" }, { word: "counterparty's", say: "KOWN-ter-par-teez" }, { word: "approval", say: "uh-PROO-vul" }, { word: "receipt", say: "rih-SEET" }],
+    words: [{ word: "observes", say: "ub-ZURVZ" }, { word: "triage", say: "TREE-ahzh" }, { word: String(TRIAGE.review_below), say: spell(TRIAGE.review_below) },
+      { word: "counterparty's", say: "KOWN-ter-par-teez" }, { word: "approval", say: "uh-PROO-vul" }, { word: "receipt", say: "rih-SEET" }],
   },
   {
     // the task: "we encourage any form of AI usage, as long as we understand what is happening",
     // "Python with FastAPI", "Frontend written in React and TypeScript"
-    id: "what-we-use", act: 3, kind: "content", title: "What we use: two prompts – one reads, one checks. The rest is code.", steps: 2, seconds: 66, Body: WhatWeUse,
+    id: "what-we-use", act: 3, kind: "content", title: "What we use: two prompts – one reads, one checks. The rest is code.", steps: 2, seconds: 63, Body: WhatWeUse,
     notes: [
-      `What do we use? ${Say(PROMPTS)} prompts on one small model. The reader gets ${say(RULES)} rules, Legal's playbook and one whole contract. ` +
-        `It fills the form. The checker sees only a definition and a quote. No model writes an answer. Reading all ${stats.config.documents} once: ${FULL_RUN_CENTS} cents.`,
+      `What do we use? ${Say(PROMPTS)} prompts, one small model. The reader gets ${say(RULES)} rules, Legal's playbook and a whole contract. ` +
+        `It fills the form. The checker gets only definition and quote. No model writes an answer. Reading all ${stats.config.documents} once: ${FULL_RUN_CENTS} cents.`,
       // pipeline/search.py: hybrid - BM25 keywords + embedding vectors, fused with RRF; embeddings are the meaning half
-      "Embeddings need no prompt. Together with keywords, they power a search for open questions – like 'what does M01 say about liability?' Never to say a clause is missing.",
-      "Everything else is code we can test: OCR, the other checks, triage, the lookups, the gate. Python and FastAPI. The tool is React and TypeScript. " +
+      "Embeddings need no prompt. With keywords, they power a search for open questions. Like: what does M01 say about liability? They never decide a clause is missing.",
+      "Everything else is code we can test: OCR, the other checks, triage, lookups, the gate. Python and FastAPI. The tool is React and TypeScript. " +
         "Planned: a model that drafts the plan, and Microsoft's Prompt Shields for hidden instructions.",
     ],
-    words: [{ word: "FastAPI", say: "fast-ay-pee-EYE" }, { word: "TypeScript", say: "TYPE-script" }, { word: "embeddings", say: "em-BED-ingz" }, { word: "Shields", say: "SHEELDZ" }],
+    words: [{ word: "embeddings", say: "em-BED-ingz" }, { word: "FastAPI", say: "fast-ay-pee-EYE" }, { word: "TypeScript", say: "TYPE-script" },
+      { word: "drafts", say: "DRAFTS" }, { word: "Shields", say: "SHEELDZ" }],
   },
 ];
 
