@@ -195,15 +195,15 @@ function Close() {
 /** Part 4: the basic implementation, live (decision 99). */
 export const LIVE: Slide[] = [
   {
-    id: "part-4", act: 4, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 6,
+    id: "part-4", act: 4, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 7,
     quote: ["Basic implementation demonstrating the foundation of the concept"],
     notes: [
-      "Now the basic implementation, live: the pipeline, the tool and the whole workflow.",
+      "Now the working implementation. I will first show the experience for Legal, then open the technical pipeline behind it.",
     ],
     words: [{ word: "implementation", say: "im-pluh-men-TAY-shun" }],
   },
   {
-    id: "live-add", act: 4, kind: "content", title: "A handwritten contract arrives – watch what is found.", steps: 1, seconds: 55, Body: LiveAdd,
+    id: "live-add", act: 4, kind: "content", title: "A handwritten contract arrives – watch what is found.", steps: 1, seconds: 51, Body: LiveAdd,
     notes: [
       // b0 fills the wait: from the drop, 48 shows after 8-12 s and the findings after 14-15 s
       // (measured in Edge on a register copy, docs/demo.md) - the words after 'I copy it' take 13-15 s.
@@ -248,7 +248,7 @@ export const LIVE: Slide[] = [
 /** The close: the last card of part 6 (adoption), after 'run-it' - "who would pilot it?" follows the pilot plan. */
 export const CLOSE: Slide[] = [
   {
-    id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 34, Body: Close,
+    id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 32, Body: Close,
     notes: [
       // the task: "while learning and improving ourselves", "start a meaningful conversation"
       "What I learned: no model is always right. So every contract is read, every answer is traced back to a page, and a lawyer decides. " +

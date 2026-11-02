@@ -7,6 +7,66 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-02 · Chunking on the main track; the talk says what the clause vocabulary is and who wrote it
+
+- **Problem:** Dima asked whether the card "how chunking works, where we use it, why" had been overlooked: it sat
+  among the hidden question cards, and the timed talk mentioned chunking in one sentence of the pipeline card. He
+  also asked whether the talk says that we wrote the clause vocabulary ("enums?") and how the checks work: the
+  checks card said only "the vocabulary check caps the score at 0.40", without saying what it checks.
+- **Cause:** the rebuild promoted `follow-m18`, `fixed-form`, `checks` and `cost` into part 4 but not `chunking`;
+  the vocabulary was named on the card as a label, never explained, and the schema's enums were never named.
+- **Technique and why:** `chunking` now follows `follow-m18` (slides.ts) and answers where (right after text layer
+  or OCR), how (at numbered headings; M09's liability clause stays whole across the page break) and why (the reader
+  gets the whole contract with sections marked [S1] …, so each quote has a section and a page; the search index is
+  built from the same sections). The checks card says the vocabulary is a word list per clause in
+  `pipeline/catalogue.py`, written by Dima as an assumption, owned by Legal in production; the fixed-form card says
+  code builds the strict schema from the playbook (one field per clause, three states). Two new dev guards tie the
+  note to `catalogue.py` and to M08's flag. Overlaps between the pipeline, form and checks cards removed, planned
+  seconds of the four cards set from their word counts. `docs/approach.md` regenerated from the deck via Vite SSR.
+- **Rejected alternative:** keep chunking as one sentence on the pipeline card (where and why stay open); put the
+  card in the visible appendix (present mode never reaches it); call the vocabulary an enum (it is a regex word
+  list; enums only restrict the answer's shape).
+- **Metric before → after:** main track 26 → 27 cards; planned 19:55 → 21:06; spoken words 2,402 = 20:53 at
+  115 words/min (under the 22:00 maximum, over Riverty's 20); question cards 22 → 21; words on the checks card
+  175 (first draft) → 130; guard errors 0; production build green; chunking card at its last build fits the
+  screen (headless Edge, 1600×900).
+- **Links:** decision 109; `web/src/deck/slides.ts`, `slides/deep.tsx`, `slides/act3.tsx`; `docs/approach.md`;
+  check question 44
+
+---
+
+## 2026-11-02 · Speaker notes now make one spoken argument: pilot → effort → automation requirements → design → architecture
+
+- **Problem:** Dima's read-through found unnatural meta-language ("again and again", "the case study says it
+  itself"), missing transitions, and unexplained terms: the 90-hour estimate jumped to "three things make it hard",
+  then the register, OCR and AI appeared before the automation goal or their jobs were clear.
+- **Cause:** the 17-minute rebuild optimised for removing repetition and keeping every point once; it compressed the
+  connective reasoning too, so accurate slide bullets remained but the speaker notes no longer sounded spoken.
+- **Technique and why:** rebuilt the argument from the listener's perspective: select two pilot questions, map today's
+  effort, derive three requirements for reliable automation, define the register as a table at first use, compare
+  search and an agent, explain fixed tools versus semantic models, then walk through the architecture left to right.
+  The adoption card now answers the task with a phased co-design → parallel pilot → measured rollout plan. Five
+  optional implementation cards remain visible after the close, outside the timed controls.
+  The results card now names the evaluation set directly and separates synthetic end-to-end questions, public
+  expert labels and the missing independent final test. The required technical implementation now sits in the
+  timed talk itself: full pipeline, bounded prompts, concrete confidence calculation and measured cost replace
+  three longer comparison cards, which remain available for questions. The Workbench is demonstrated before
+  those implementation details; the architecture remains before it as the orientation map. The confidence card
+  now shows all five checks, the minimum-score calculation and the exact rule that routes M08 to one lawyer.
+- **Rejected alternative:** polish only the quoted sentences (the missing causal chain would remain); keep the
+  requested implementation only after the close (it would not answer the brief in the timed presentation); add all
+  eight technical cards unchanged (the talk would exceed 29 minutes).
+- **Metric before → after:** current spoken words 2,299; planned time 17:03 → 19:55; current script at 115 words/min
+  19:59; unexplained contract ids before the live demo 5 → 0; six rejected phrases present → 0; production build
+  2,245 modules, 0 errors; main track 24 → 26 cards; optional appendix 8 → 5 cards and
+  9:28 → 5:10; further question cards 21 → 22; contract-id occurrences in the register card's summary boxes
+  15 → 0; undefined evaluation terms on the results card 3 → 0; checks visible in the confidence calculation
+  3 → 5; visible human-routing conditions 0 → 2.
+- **Links:** decisions 102–108; `web/src/deck/Page.tsx`, `slides.ts`, `slides/act1.tsx`, `act2.tsx`, `act3.tsx`,
+  `act5.tsx`, `deep.tsx`, `proof.tsx`; `docs/approach.md`
+
+---
+
 ## 2026-11-02 · The talk rebuilt: 17 content cards, one line of title, a few words on screen, 17 minutes – identify, narrow down, build
 
 - **Problem:** Dima after the restructure of the same day: "Wir müssen die komplette Präsentation neu bauen" – too long,

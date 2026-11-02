@@ -110,7 +110,7 @@ function WhyFail() {
           <span>opens, searches, notes – until it decides it is done</span>
         </Build>
       </div>
-      <Build at={2} className="x-why-foot">Both tested on contracts with known answers – before choosing.</Build>
+      <Build at={2} className="x-why-foot">RAG for open questions · an agent may plan · a fixed workflow proves coverage.</Build>
     </div>
   );
 }
@@ -395,70 +395,69 @@ if (import.meta.env.DEV) {
 
 export const ACT2: Slide[] = [
   {
-    id: "part-2", act: 2, kind: "opener", title: "My approach · how I narrowed it down", steps: 0, seconds: 5,
+    id: "part-2", act: 2, kind: "opener", title: "My approach · how I narrowed it down", steps: 0, seconds: 9,
     quote: ["A solution explaining how you would tackle the challenge"],
-    notes: ["My approach: where the lever is, what I tested, and what I decided."],
+    notes: ["With those requirements clear, I looked for the biggest source of effort and tested two possible approaches."],
     words: [{ word: "lever", say: "LEE-ver" }],
   },
   {
     // decision 99 (Dima, 2.11.: "where are the biggest levers, where do I see the most automation")
-    id: "levers", act: 2, kind: "content", title: "The biggest lever: read every contract only once.", steps: 3, seconds: 48, Body: Levers,
+    id: "levers", act: 2, kind: "content", title: "The biggest lever: analyse each contract once.", steps: 3, seconds: 66, Body: Levers,
     notes: [
-      "I mapped today's process for one question: open, search and read, note, verify, decide – for every contract, and again for every question.",
-      "The biggest lever is the reading. So the AI reads every contract only once, when it arrives, into a structured register: compile, don't search.",
-      `Then a question becomes a lookup – seconds instead of about ${HOURS} hours, always over every contract.`,
-      "Verifying means the passage on the page; only unclear goes to a person. The decision stays with the lawyer – on purpose.",
+      "The process map showed that most of the effort comes from opening and reading the same contracts again for every new question.",
+      "My design removes that repetition. When a contract arrives, the system analyses it once and adds the result to a structured contract register. Think of it as a table: one row per contract, one column per legal requirement, and every result links back to the exact passage on the page.",
+      `A new portfolio question can then be answered by checking that table in seconds instead of repeating about ${HOURS} hours of manual reading. This is what I mean by “compile, don't search.”`,
+      "The system prepares the evidence, but it does not make the legal decision. Unclear findings go to a lawyer, and the lawyer remains in control.",
     ],
     words: [{ word: "compile", say: "kum-PILE" }, { word: "register", say: "REJ-ih-ster" }],
   },
   {
     // the test set is said here in one sentence (its card is a deep dive, decision 101)
-    id: "rag-fails", act: 2, kind: "content", title: "A search cannot prove what is missing.", steps: 4, seconds: 80, Body: RagFails,
+    id: "rag-fails", act: 2, kind: "content", title: "A search cannot prove what is missing.", steps: 4, seconds: 89, Body: RagFails,
     notes: [
-      "Before I built that, I tested the usual approach: a chatbot over the documents – search first, then a model answers. " +
-        `I wrote ${ALL_DOCS} test contracts with known answers, because Riverty's are confidential. Question 1 on the merchant agreements: ` +
-        `${measurement.contracts} contracts, ${COPY.id} is a copy of ${COPY.copy_of}.`,
-      `A search keeps only the passages most similar to the question – here the top ${K}. They come from only ${AT_K.contracts_in_top_k} contracts.`,
-      `So for the search, the other ${NOT_RANKED} lack the clause?`,
-      `No: ${AT_K.false_alarms.length} are false alarms – they cap liability in other words or in German, like M02. ` +
-        `And ${AT_K.missed.join(", ")} is missed: no cap, but a hidden instruction for the AI mentions liability.`,
+      "Before committing to the register, I tested the usual alternative: a chatbot that searches the documents and lets a model answer from the best matches. " +
+        `To measure it, I created ${ALL_DOCS} test contracts with known answers. For the first pilot question there are ` +
+        `${measurement.contracts} unique merchant agreements after one duplicate is removed.`,
+      `The search returns the ${K} passages that look most similar to the question. Those passages come from only ${AT_K.contracts_in_top_k} contracts.`,
+      `That leaves ${NOT_RANKED} contracts with no result. But no result is not proof that the clause is missing.`,
+      `In fact, ${AT_K.false_alarms.length} of them do contain a liability cap, expressed in different words or in German. At the same time, the search misses ` +
+        "one agreement which has no real cap but contains a hidden instruction mentioning liability.",
       // Dima's wish (Notion card 10, 1.11.), in his own words (decision 98): why top-k can never prove absence
-      `A missing clause has no passage, so it never shows up – a larger k does not help: ${NEVER} contracts never match. ` +
-        "A search ranks what is there; it cannot prove what is missing.",
+      `The limitation is fundamental: a missing clause produces no passage for a search to return. Even a larger result list does not solve that – ${NEVER} contracts never match the keywords. ` +
+        "Search is useful for finding text that exists; it cannot prove absence across a portfolio.",
     ],
     words: [{ word: "merchant", say: "MUR-chunt" }, { word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "instruction", say: "in-STRUK-shun" }],
   },
   {
-    id: "agent", act: 2, kind: "content", title: "An agent stops when it decides it is done.", steps: 3, seconds: 50, Body: Agent,
+    id: "agent", act: 2, kind: "content", title: "An agent stops when it decides it is done.", steps: 3, seconds: 62, Body: Agent,
     notes: [
-      "The second usual option: an agent. A model decides a step, calls a tool – open a file, search, note – and repeats.",
+      "The second option was an AI agent that opens files itself. It chooses the next action – open a contract, search it, record a result – and repeats the process.",
       // Dima's wish (Notion card 11, 1.11.), in his own words (decision 98)
-      "It decides itself when it is done – so it can stop early, and nobody notices.",
+      "The problem is that the agent also decides when it has done enough. It can stop before every file was checked, while still producing a confident answer.",
       `A ${STUDY_YEAR} study, OverclaimBench, told agents to review every file: they skipped files in ${SKIPPED} percent of the runs, ` +
-        `and in ${HID_OF_5} of 5 of those, the report hid it.`,
+        `and in ${HID_OF_5} of 5 of those cases the final report did not reveal that files were missing.`,
       // "one model call per contract": the reader; the checker is a second call for each "found" (said on 'code-or-ai')
-      `That is the sentence from the case study. So I read every contract once, completely: one model call per contract.`,
+      "For a completeness question, that behaviour is too risky. The workflow therefore decides which contracts must be processed; the model never decides when the portfolio is complete.",
     ],
     words: [{ word: "agent", say: "AY-junt" }, { word: "OverclaimBench", say: "OH-ver-klaym-bench" }],
   },
   {
     // decision 100: the decision per step, derived from the problems
-    id: "code-or-ai", act: 2, kind: "content", title: "Per step: code – AI only where meaning is needed.", steps: 2, seconds: 50, Body: CodeOrAi,
+    id: "code-or-ai", act: 2, kind: "content", title: "Fixed tools by default – a model only for meaning.", steps: 2, seconds: 75, Body: CodeOrAi,
     notes: [
-      "From that, per step: code or a model? My rule: as little freedom for the AI as works. Reading the text is code – OCR for an image, with a confidence.",
-      "One step needs meaning: find a clause in any words. Only here a model reads – and because it can be wrong, " +
-        "code checks that its quote is really in the text, and a second model call gives an opinion.",
-      "The question itself is a lookup over every row of the register: coverage is a fact. And a lawyer decides.",
+      "These experiments led to one design rule: use a fixed tool or normal code whenever the step has a clear, testable answer. For example, software extracts text from a PDF. For a scanned page, OCR – optical character recognition – converts the image into text and reports how reliable that text is. OCR may use machine learning internally, but here it is a bounded tool, not a decision-making agent.",
+      "A language model is used only where meaning matters: recognising the same legal clause in different wording. Even there, the model must provide a quotation. Code verifies that the quotation exists in the contract, and an independent second model checks whether it really supports the clause.",
+      "The checked result is stored in the contract register I introduced earlier. Portfolio questions then query every relevant row, so coverage is measured rather than assumed. The final legal decision remains with a lawyer.",
     ],
     words: [{ word: "OCR", say: "oh-see-AR" }, { word: "verdicts", say: "VUR-dikts" }],
   },
   {
-    id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 22, Body: Needs,
+    id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 24, Body: Needs,
     notes: [
-      "From all this, three guarantees.",
-      "First, every contract is read – and we can prove it, not just claim it.",
-      "Second, every finding shows its passage on the page.",
-      "And third, a lawyer decides.",
+      "That gives the solution three guarantees.",
+      "First, every contract in scope is processed, and the system shows the coverage.",
+      "Second, every finding is linked to the supporting passage on the original page.",
+      "Third, the system reports an observation; a lawyer makes the decision.",
     ],
     words: [{ word: "guarantees", say: "gair-un-TEEZ" }],
   },
@@ -466,12 +465,11 @@ export const ACT2: Slide[] = [
 
 // Deep dives since decision 101: the bridge question and the test set (said in one sentence on 'rag-fails').
 export const WHY_FAIL: Slide = {
-    id: "why-fail", act: 7, kind: "content", title: "Why do the usual AI approaches fail at this task?", steps: 2, seconds: 36, deep: true, Body: WhyFail,
+    id: "why-fail", act: 7, kind: "content", title: "Where RAG and an agent fit – and where they do not.", steps: 2, seconds: 36, deep: true, Body: WhyFail,
     notes: [
-      "Before I chose how the AI reads, I took the sixth problem seriously: the case study itself says that agents often fail on the size of the environment. " +
-        "I wanted to see that on the biggest lever, the reading.",
-      "Two usual options: A, a chatbot over the documents; B, an AI agent that reads by itself.",
-      "I tested both on contracts with known answers. First, the test set.",
+      "I considered two common approaches. RAG searches for relevant passages before a model answers. That works for open questions, but a missing clause produces no passage to retrieve, so RAG alone cannot prove absence.",
+      "A free agent can choose which files to open and when to stop. That is useful for planning, but not for proving that every contract was checked.",
+      "My design therefore uses RAG for open questions and an agent only to draft a supported plan. A fixed workflow processes every contract and records the coverage.",
     ],
     words: [{ word: "approaches", say: "uh-PROH-chiz" }, { word: "environment", say: "en-VY-run-ment" }, { word: "agent", say: "AY-junt" }],
 };
@@ -507,14 +505,14 @@ export const HOW_I_WORKED: Slide = {
 // deep.tsx. Their data and guards stay here, next to the cards they belong to. 'rag' explains option A
 // step by step; on the main track 'rag-fails' says top-k in one sentence.
 export const RAG: Slide = {
-    id: "rag", act: 7, kind: "content", title: "Option A in detail: a chatbot over the documents – search first, then answer.", steps: 4, seconds: 50, deep: true, Body: Rag,
+    id: "rag", act: 7, kind: "content", title: "RAG: retrieve relevant passages, then let the model answer.", steps: 4, seconds: 72, deep: true, Body: Rag,
     notes: [
-      "Option A in detail, the usual chatbot over documents. Say a lawyer asks what M01 says about liability.",
+      "RAG stands for retrieval-augmented generation. It is useful when a lawyer asks an open question, such as: what does this agreement say about liability?",
       // the first word on embeddings (rag-fails says "Embeddings rank too"; the map is a deep dive)
-      "A search compares the question with every passage of every contract, by meaning: each passage becomes a list of numbers, an embedding.",
-      `It keeps only the ${E.k} most similar passages. That is top-k – here k is ${E.k}.`,
-      `A language model reads only these ${E.k} and writes the answer. For M01 it works: the search finds clause ${M01_CLAUSE}.`,
-      "This is RAG, retrieval-augmented generation: the model sees only what the search returns.",
+      "First, contracts are divided into passages, called chunks. Each chunk is indexed by its words and by an embedding – a numerical representation of its meaning.",
+      `When a question arrives, the search ranks the chunks and retrieves only the ${E.k} best matches. This is called top-k retrieval; here k is ${E.k}.`,
+      `The language model receives the question and only those ${E.k} passages, then writes an answer grounded in them. For an open question this works well because the relevant liability clause is retrieved.`,
+      "The boundary is important: the model can only reason over what retrieval gives it. RAG can explain text that exists; by itself it cannot prove that a clause is absent from every contract.",
     ],
     words: [{ word: "Nordlicht", say: "NORD-likht" }, { word: "embeddings", say: "em-BED-ingz" }, { word: "top-k", say: "top-KAY" },
       { word: "retrieval", say: "rih-TREE-vul" }, { word: "augmented", say: "awg-MEN-tid" }],

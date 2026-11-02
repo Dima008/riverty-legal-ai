@@ -1,21 +1,22 @@
 // The order of the talk (decision 76; the parts of decisions 90, 99, 100 and 101 - the rebuild of 2.11.:
 // 17 content cards, one title and six part openers, a one-line title each, a few words on screen,
-// about 17 minutes). The talk follows
+// about 19 minutes). The talk follows
 // Dima's path through Riverty's outline - identify, narrow down, build: 1 the problem (the two questions,
-// the cost today, three things that make it hard), 2 my approach (the lever, two options tested and
-// rejected with numbers, per step code or AI, three guarantees), 3 the technical solution (the
-// architecture with its stack, the register, how a finding reaches a person, the proof), 4 the basic
-// implementation live, 5 infrastructure, 6 adoption and the close. Each opener shows its line of the
+// the cost today, three things that make it hard), 2 my approach (the lever, boundaries for RAG and
+// agents, three guarantees), 3 the solution overview (architecture, register, human review and evaluation),
+// 4 the basic implementation (Workbench first, then pipeline, chunking, bounded prompt, checks and cost),
+// 5 infrastructure, 6 adoption and the close. Each opener shows its line of the
 // case study word for word (guarded below). The deep dives after the close are not part of the talk:
-// hidden on the page behind "For questions", never reached by → in present mode.
+// five optional implementation cards form a visible technical appendix, the rest stay behind "More cards for
+// questions", and none is reached by → in present mode.
 import caseStudy from "../../../docs/context/case-study.md?raw";
 import { ACT1 } from "./slides/act1";
-import { ACT2 } from "./slides/act2";
-import { ACT3 } from "./slides/act3";
+import { ACT2, WHY_FAIL } from "./slides/act2";
+import { ACT3, CHECKS, FOLLOW_M18 } from "./slides/act3";
 import { ADOPTION, INFRASTRUCTURE } from "./slides/act5";
 import { CLOSE, LIVE } from "./slides/act6";
 import { DEEP } from "./slides/deep";
-import { RESULTS } from "./slides/proof";
+import { COST, RESULTS } from "./slides/proof";
 import type { Act, Slide } from "./types";
 
 export const ACTS: Act[] = [
@@ -25,17 +26,53 @@ export const ACTS: Act[] = [
   { n: 4, title: "The basic implementation, live" },
   { n: 5, title: "Infrastructure · where it runs" },
   { n: 6, title: "Adoption · how Legal gets the value" },
-  { n: 7, title: "For questions" },
+  { n: 7, title: "Technical appendix" },
 ];
+
+/** Technical implementation cards shown on the page after the close, but never entered by the timed
+ * presentation controls. The remaining deep dives appear only when "More cards for questions" is opened. */
+export const APPENDIX_IDS = [
+  "what-we-use", "agent-patterns", "rag", "register-index", "injection",
+] as const;
+
+const byId = (slides: Slide[], id: string) => {
+  const slide = slides.find((candidate) => candidate.id === id);
+  if (!slide) throw new Error(`Missing slide "${id}"`);
+  return slide;
+};
+const main = (slide: Slide, act: number): Slide => ({ ...slide, act, deep: false });
+const deep = (slide: Slide): Slide => ({ ...slide, act: 7, deep: true });
+
+// Detailed measurements remain available for questions. The timed talk keeps their conclusion in one
+// bridge card and uses the saved time for the concrete implementation requested in the brief.
+const ACT2_MAIN = [byId(ACT2, "part-2"), byId(ACT2, "levers"), main(WHY_FAIL, 2), byId(ACT2, "needs")];
+const ACT2_DETAILS = ["rag-fails", "agent", "code-or-ai"].map((id) => deep(byId(ACT2, id)));
+
+const ACT3_MAIN = [
+  byId(ACT3, "part-3"),
+  byId(ACT3, "architecture"),
+  byId(ACT3, "register"),
+  byId(ACT3, "human"),
+  RESULTS,
+];
+const ACT4_TECHNICAL = [
+  main(FOLLOW_M18, 4),
+  main(byId(DEEP, "chunking"), 4),      // decision 109: where, how and why we chunk - right after the pipeline
+  main(byId(DEEP, "fixed-form"), 4),
+  main(CHECKS, 4),
+  main(COST, 4),
+];
+const PROMOTED = new Set([WHY_FAIL.id, FOLLOW_M18.id, "chunking", "fixed-form", CHECKS.id, COST.id]);
+const DEEP_REMAINING = DEEP.filter((slide) => !PROMOTED.has(slide.id));
 
 export const SLIDES: Slide[] = [
   ...ACT1,                              // 1 the problem: the two questions, the cost today, what makes it hard
-  ...ACT2,                              // 2 my approach: the lever, a search and an agent tested, code or AI, three guarantees
-  ...ACT3, RESULTS,                     // 3 the technical solution: the architecture with its stack, the register, a finding to a person, the proof
-  ...LIVE,                              // 4 the basic implementation, live
+  ...ACT2_MAIN,                         // 2 the approach: the lever, boundaries for RAG/agents, three guarantees
+  ...ACT3_MAIN,                         // 3 the solution overview, register, human review and evaluation
+  ...LIVE, ...ACT4_TECHNICAL,           // 4 the Workbench first, then its pipeline, chunking, prompts, checks and cost
   ...INFRASTRUCTURE,                    // 5
   ...ADOPTION, ...CLOSE,                // 6 adoption, then the close
-  ...DEEP,                              // for questions only
+  ...DEEP_REMAINING, ...ACT2_DETAILS,   // for questions only
 ];
 
 /** The first card after the talk: the deep dives start here (present mode stops before it). */
@@ -90,6 +127,13 @@ if (import.meta.env.DEV) {
     new Set(SLIDES.map((s) => s.id)).size !== SLIDES.length && "two cards share an id",
     SLIDES.some((s, i) => i > 0 && s.act < SLIDES[i - 1].act) && "the parts are not in order",
     SLIDES.some((s) => (s.act === 7) !== !!s.deep) && "a deep dive is not in act 7, or a card of act 7 is not a deep dive",
+    new Set(APPENDIX_IDS).size !== APPENDIX_IDS.length && "the technical appendix names a card twice",
+    ...APPENDIX_IDS.map((id) => {
+      const s = SLIDES.find((slide) => slide.id === id);
+      return !s ? `the technical appendix names missing card "${id}"`
+        : !s.deep ? `the technical appendix card "${id}" is part of the timed talk`
+        : false;
+    }),
     ...SKIP_IF_LATE.map((k) => {
       const s = SLIDES[index(k.id)];
       return !s ? `SKIP_IF_LATE names "${k.id}" - no such card`

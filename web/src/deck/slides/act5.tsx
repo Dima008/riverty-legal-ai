@@ -1,7 +1,7 @@
 // Parts 5 and 6 (decisions 90, 99: after the live demo). Infrastructure: the Azure target next to the prototype (bought
 // building blocks, built what is Riverty's); how a contract saved in SharePoint reaches the
-// register is a deep dive since decision 96 (SHAREPOINT, below). Adoption: one team and one question
-// (docs/context/briefing.md, section 8). The release gate is said on 'azure' ("any model must first
+// register is a deep dive since decision 96 (SHAREPOINT, below). Adoption: co-design, controlled pilot,
+// then rollout team by team (docs/context/briefing.md, section 8). The release gate is said on 'azure' ("any model must first
 // pass the test questions"); the card 'cost' with the gate is a deep dive (decision 96). Facts about Microsoft
 // services are the ones verified against Microsoft Learn (decisions 79 and 80); numbers of our own
 // come from deck-data.json, a stored evaluation file or the briefing (?raw).
@@ -116,26 +116,27 @@ function Adoption() {
   return (
     <div className="x-ra">
       <div>
-        <h3>Start small</h3>
+        <h3>Co-design</h3>
         <ol className="x-ol">
-          <li>Measure today, with {FEW_LO}–{FEW_HI} lawyers</li>
-          <li>One question next to the old way</li>
-          <li>Training: read the evidence</li>
+          <li>{FEW_LO}–{FEW_HI} Legal power users</li>
+          <li>Choose one high-value question</li>
+          <li>Measure today's time and quality</li>
         </ol>
       </div>
       <Build at={1}>
-        <h3>Legal owns it</h3>
+        <h3>Pilot safely</h3>
         <ol className="x-ol">
-          <li>The playbook is Legal's</li>
-          <li>Corrections go into the test set</li>
+          <li>Run next to today's process</li>
+          <li>Train with real review scenarios</li>
+          <li>Weekly feedback with champions</li>
         </ol>
       </Build>
       <Build at={2}>
-        <h3>Value, measured</h3>
+        <h3>Scale and improve</h3>
         <ol className="x-ol">
-          <li>Time per question – against today</li>
-          <li><span>How often lawyers overrule <span className="x-ra-tag">counted already</span></span></li>
-          <li>German or English</li>
+          <li>Roll out team by team</li>
+          <li>Legal owns the playbook</li>
+          <li>Measure use, time and corrections</li>
         </ol>
       </Build>
     </div>
@@ -166,7 +167,7 @@ if (import.meta.env.DEV) {
 /** Part 5: infrastructure - after the demo (decision 99). */
 export const INFRASTRUCTURE: Slide[] = [
   {
-    id: "part-5", act: 5, kind: "opener", title: "Infrastructure · where it runs", steps: 0, seconds: 5,
+    id: "part-5", act: 5, kind: "opener", title: "Infrastructure · where it runs", steps: 0, seconds: 4,
     quote: ["A basic explanation of the infrastructure you would leverage"],
     notes: [
       "The infrastructure: where this would run at Riverty.",
@@ -174,7 +175,7 @@ export const INFRASTRUCTURE: Slide[] = [
     words: [{ word: "infrastructure", say: "IN-fruh-struk-cher" }],
   },
   {
-    id: "azure", act: 5, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 64, Body: Azure,
+    id: "azure", act: 5, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 60, Body: Azure,
     notes: [
       "Today it runs on my laptop; only the model calls go to Azure, with test data only. " +
         "Following Riverty's principle – best of breed, then Microsoft – I measured Prompt Shields and a bigger model. " +
@@ -207,29 +208,30 @@ export const SHAREPOINT: Slide = {
  *  also carries the outline's last bullet, which the close answers ("What did I learn?"). */
 export const ADOPTION: Slide[] = [
   {
-    id: "part-6", act: 6, kind: "opener", title: "Adoption · how Legal gets the value", steps: 0, seconds: 4,
+    id: "part-6", act: 6, kind: "opener", title: "Adoption · how Legal gets the value", steps: 0, seconds: 12,
     quote: [
       "A concept for helping our colleagues adopt the solution and ensure they get the most value out of it",
       "Anything else you feel is relevant to understanding your approach to solving the challenge",
     ],
     notes: [
-      "Finally, adoption – and what I learned.",
+      "Building the tool is not enough. To create value, Legal has to trust it, know how to use it, and shape how it develops.",
     ],
     words: [{ word: "adoption", say: "uh-DOP-shun" }],
   },
   {
-    id: "run-it", act: 6, kind: "content", title: "One team, one question – measured against today.", steps: 2, seconds: 57, Body: Adoption,
+    id: "run-it", act: 6, kind: "content", title: "Adoption: co-design, pilot, scale.", steps: 2, seconds: 68, Body: Adoption,
     notes: [
       // the task: "Our legal colleagues currently leverage a variety of tools"
-      "Legal already uses many tools, so this one must earn its place: a pilot with one team and one question. " +
-        `We measure today's effort with ${FEW_LO} or ${FEW_HI} lawyers, then the new way runs next to the old one for a few weeks. ` +
-        "In the training, lawyers learn to read the evidence on the page, not to trust it blindly.",
-      "Legal owns it: the playbook is theirs, and every correction goes into the test set.",
+      `Adoption starts before rollout. I would co-design the pilot with ${FEW_LO} or ${FEW_HI} lawyers who do this work today. ` +
+        "Together, we choose one high-value question, define a useful answer, and measure today's time and quality. " +
+        "This makes it Legal's workflow, not another tool imposed on the team.",
+      "For a few weeks, the new process runs alongside the current one. Training uses real scenarios: choose the scope, read the evidence, handle an uncertain result, and make the final decision. " +
+        "The first users become champions; weekly feedback turns problems into improvements.",
       // the task: "create more with the same number of engineers"
-      "We measure the value as the case study defines productivity: time per question, against today. " +
-        "The prototype already counts how often lawyers overrule it, and works in German or English.",
+      "We scale team by team only when the pilot improves quality or time. Legal owns the playbook and approves corrections; Engineering runs the service. " +
+        "Corrections become regression tests. We track time per question, active use, review load and user feedback, so adoption and value improve together.",
     ],
-    words: [{ word: "variety", say: "vuh-RY-ih-tee" }, { word: "adoption", say: "uh-DOP-shun" }, { word: "blindly", say: "BLYND-lee" },
-      { word: "productivity", say: "proh-duk-TIV-ih-tee" }, { word: "overrule", say: "oh-ver-ROOL" }],
+    words: [{ word: "co-design", say: "koh-dee-ZINE" }, { word: "adoption", say: "uh-DOP-shun" }, { word: "baseline", say: "BASE-line" },
+      { word: "regression", say: "ree-GRESH-un" }, { word: "champions", say: "CHAM-pee-unz" }],
   },
 ];

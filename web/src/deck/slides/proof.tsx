@@ -459,16 +459,16 @@ function Proof() {
   return (
     <div className="p-three">
       <div className="p-num">
-        <span className="p-big2">{COMPLETE} of {QS.length}</span>questions complete
-        <small>{RUNS.length} runs from scratch · no false alarm</small>
+        <span className="p-big2">{COMPLETE} of {QS.length}</span>evaluation questions passed
+        <small>synthetic contracts · {RUNS.length} full runs</small>
       </div>
       <Build at={1} className="p-num">
-        <span className="p-big2">{CUAD_AGREE} of {CUAD_N}</span>real contracts agree with the experts
-        <small>{FOUND_BY_CUAD.length} errors found by them – fixed</small>
+        <span className="p-big2">{CUAD_AGREE} of {CUAD_N}</span>public contracts matched expert labels
+        <small>{FOUND_BY_CUAD.length} extra weaknesses found and fixed</small>
       </Build>
       <Build at={2} className="p-num">
-        <span className="p-big2">{DISTINCT}</span>contracts – and I tuned on them
-        <small>next: a sealed test set <span className="p-tag">planned</span></small>
+        <span className="p-big2">{DISTINCT}</span>contracts appear in the correct answers
+        <small>next: new unseen contracts <span className="p-tag">planned</span></small>
       </Build>
     </div>
   );
@@ -488,11 +488,11 @@ export const RESULTS_FULL: Slide = {
 };
 
 export const RESULTS: Slide = {
-  id: "results", act: 3, kind: "content", title: "Does it work? Measured, not claimed.", steps: 2, seconds: 42, Body: Proof,
+  id: "results", act: 3, kind: "content", title: "Evaluation: tested against known answers.", steps: 2, seconds: 58, Body: Proof,
   notes: [
-    `I built the register from scratch ${RUNS.length} times: every expected contract found, no false alarm – ${COMPLETE} of ${QS.length} questions.`,
-    `On real public contracts labelled by legal experts, we agree on ${CUAD_AGREE} of ${CUAD_N} – and they showed me ${FOUND_BY_CUAD.length} errors my own traps had missed. Fixed.`,
-    `But it is a small test set – ${DISTINCT} contracts – and I tuned on it. Next: a sealed set I never tune on.`,
+    `For the evaluation, I wrote synthetic contracts and defined the correct answers to ${QS.length} portfolio questions first. I rebuilt the register ${RUNS.length} times. Every run answered all ${COMPLETE} correctly, with no missing contract and no false alarm.`,
+    `I also tested one clause on ${CUAD_N} public contracts labelled by legal experts. The system matched ${CUAD_AGREE} of ${CUAD_N}. This set revealed ${FOUND_BY_CUAD.length} additional weaknesses, which became regression tests.`,
+    `The limitation: only ${DISTINCT} contracts appear in the correct answers, and I improved the system using this set. The next step is an independent set of contracts that I have not seen during development.`,
   ],
   words: [{ word: "scratch", say: "SKRATCH" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
 };
@@ -509,14 +509,13 @@ export const WHAT_IF: Slide = {
 };
 
 export const COST: Slide = {
-  id: "cost", act: 7, kind: "content", title: "A few cents to read everything – and the small model was enough on our tests.", steps: 2, seconds: 45, deep: true, Body: Cost,
+  id: "cost", act: 7, kind: "content", title: "Read once, reuse often: measured cost instead of hidden cost.", steps: 2, seconds: 45, deep: true, Body: Cost,
   notes: [
     // the task: "create more with the same number of engineers" - said for Legal
-    `And the cost? Reading all ${DOCUMENTS} once: ${Math.round(COST_ALL * 100)} cents. Then a question is a lookup – not ${HOURS} hours. ` +
-      "Your definition of productivity: the same lawyers answer more questions.",
-    `A bigger model? ${BIG.toUpperCase()} costs ${RATIO} times more. Without our checks it misses less; with them, both find everything.`,
+    `The model cost occurs when a contract enters the system, not for every later question. Reading and checking all ${DOCUMENTS} test documents cost ${Math.round(COST_ALL * 100)} cents. Register lookups then need no extraction call. Every call, token and estimated cost is recorded.`,
+    `The larger ${BIG.toUpperCase()} model cost ${RATIO} times more. After the same checks, both models answered all test questions correctly. So the smaller model stays until an evaluation proves that the extra cost buys better quality.`,
     // the gate is a rule: eval.repeat and eval.check_register are run by hand - no CI (no .github folder)
-    `So the small model stays. A new model, prompt or playbook goes live only if all ${QS.length} test questions still pass – our rule, run by hand today.`,
+    `A new model, prompt or playbook version is accepted only if all ${QS.length} regression questions still pass. That manual prototype gate would become part of the deployment pipeline.`,
   ],
   words: [{ word: "GPT-4.1", say: "G-P-T four point one" }, { word: "lookup", say: "LOOK-up" }, { word: "playbook", say: "PLAY-book" }],
 };

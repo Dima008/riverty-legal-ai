@@ -8,7 +8,7 @@ import { navigate, parseHash } from "../routing";
 import { useDeckKeys } from "./nav";
 import { openPresenter } from "./Present";
 import { SlideView } from "./SlideView";
-import { ACTS, DEEP_FROM, mmss, pad, SLIDES, TOTAL_SECONDS } from "./slides";
+import { ACTS, APPENDIX_IDS, DEEP_FROM, mmss, pad, SLIDES, TOTAL_SECONDS } from "./slides";
 import type { Slide } from "./types";
 import "./deck.css";
 
@@ -96,7 +96,10 @@ export function Page({ slideId }: { slideId: string }) {
   // the deep dives are not part of the talk (decision 101): shown only on request, or when the address names one
   const [deep, setDeep] = useState(() => !!SLIDES.find((s) => s.id === slideId)?.deep);
   const TALK = DEEP_FROM > 0 ? SLIDES.slice(0, DEEP_FROM) : SLIDES;
-  const shown = deep ? SLIDES : TALK;
+  const appendix = APPENDIX_IDS.map((id) => SLIDES.find((s) => s.id === id)).filter((s): s is Slide => !!s);
+  const shown = deep ? SLIDES : [...TALK, ...appendix];
+  const shownRef = useRef(shown);
+  shownRef.current = shown;
   const pending = useRef<{ i: number; until: number } | null>(null);
 
   // open on the card named in the address, and go to it when the address changes on the page
@@ -116,7 +119,7 @@ export function Page({ slideId }: { slideId: string }) {
     let frame = 0;
     const update = () => {
       frame = 0;
-      const id = SLIDES[middleCard()]?.id;
+      const id = shownRef.current[middleCard()]?.id;
       if (!id) return;
       setCurrent((old) => {
         if (old !== id) history.replaceState(null, "", `#/story/${id}`);   // replaceState fires no hashchange
@@ -137,9 +140,9 @@ export function Page({ slideId }: { slideId: string }) {
   const jump = (d: 1 | -1) => {
     const now = performance.now();
     const from = pending.current && pending.current.until > now ? pending.current.i : middleCard();
-    const i = Math.min(SLIDES.length - 1, Math.max(0, from + d));
+    const i = Math.min(shown.length - 1, Math.max(0, from + d));
     pending.current = { i, until: now + JUMP_MS };
-    scrollToCard(SLIDES[i].id);
+    scrollToCard(shown[i].id);
   };
   // ← → and PageUp / PageDown go card by card; ↑ ↓, Space and Home / End scroll as on any web page
   useDeckKeys({ ArrowRight: () => jump(1), ArrowLeft: () => jump(-1), PageDown: () => jump(1), PageUp: () => jump(-1) });
@@ -187,11 +190,11 @@ export function Page({ slideId }: { slideId: string }) {
       </header>
 
       <nav className="talk-nav" aria-label="Outline" onMouseUp={blur}>
-        {ACTS.filter((act) => deep || act.n < 7).map((act) => (
+        {ACTS.map((act) => (
           <div key={act.n} className={`talk-act${act.n === currentAct ? " on" : ""}`}>
             <div className="talk-act-title">{pad(act.n)} · {act.title}</div>
             <ol>
-              {SLIDES.map((s) => s.act !== act.n || s.kind === "opener" ? null : (
+              {(act.n === 7 && !deep ? appendix : SLIDES).map((s) => s.act !== act.n || s.kind === "opener" ? null : (
                 <li key={s.id}>
                   <a href={`#/story/${s.id}`} className={`${s.id === current ? "on" : ""}${s.draft ? " draft" : ""}`}
                      onClick={(e) => { e.preventDefault(); scrollToCard(s.id, true, true); }}>
@@ -207,7 +210,7 @@ export function Page({ slideId }: { slideId: string }) {
       <main className="talk-cards">
         {shown.map((s, i) => (
           <span key={s.id} style={{ display: "contents" }}>
-            {i === DEEP_FROM && <div className="talk-divider">For questions – not part of the talk</div>}
+            {i === (deep ? DEEP_FROM : TALK.length) && <div className="talk-divider">Technical appendix · optional · not part of the timed talk</div>}
             <Card slide={s} index={i} />
           </span>
         ))}
@@ -215,7 +218,7 @@ export function Page({ slideId }: { slideId: string }) {
           <button type="button" className="pill primary" onClick={() => navigate("/tool/workbench")}>Open the Legal Workbench</button>
           {DEEP_FROM > 0 && (
             <button type="button" className="pill" onClick={() => setDeep((d) => !d)} aria-pressed={deep}>
-              {deep ? "Hide the cards for questions" : `Cards for questions (${SLIDES.length - DEEP_FROM})`}
+              {deep ? "Show only the technical appendix" : `More cards for questions (${SLIDES.length - DEEP_FROM - appendix.length})`}
             </button>
           )}
         </footer>

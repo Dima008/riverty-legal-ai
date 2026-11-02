@@ -276,11 +276,12 @@ if (import.meta.env.DEV) {
 
 // On the main track (decision 101); proof.tsx reads "about N hours" from its notes.
 export const TODAY: Slide = {
-  id: "today", act: 1, kind: "content", title: "Today: open, search, note – by hand.", steps: 2, seconds: 30, Body: Today,
+  id: "today", act: 1, kind: "content", title: "Today: open, search, note – by hand.", steps: 2, seconds: 38, Body: Today,
   notes: [
-    `What does one question cost today? Over ${n(VENDORS)} vendors and over ${n(MERCHANTS)} merchants – over ${n(CONTRACTS)} contracts.`,
-    `I assume ${MINUTES} minutes per contract: open, search, note. To be measured with Legal first.`,
-    `That's about ${HOURS} hours for one question – and again for the next one.`,     // proof.tsx reads "about N hours" from this note
+    "I then mapped how a lawyer answers one of these questions today.",
+    `There are over ${n(VENDORS)} vendors and over ${n(MERCHANTS)} merchants – more than ${n(CONTRACTS)} contracts.`,
+    `At an assumed ${MINUTES} minutes to open, search and record the result for each contract, one portfolio question takes about ${HOURS} hours. ` +
+      "The next question starts the same manual process again. That makes this workflow a strong candidate for automation – if we can automate it reliably.",     // proof.tsx reads "about N hours" from this note
   ],
   words: [{ word: "vendors", say: "VEN-derz" }, { word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }],
 };
@@ -292,36 +293,36 @@ export const ACT1: Slide[] = [
     // brackets: shown in the presenter view, not spoken by the script's count).
     // TODO(Dima): write that introduction yourself - Riverty: "we want to get to know you, not only
     // your slides". Not invented for you on purpose; replace the bracketed line with your own words.
-    id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 45, Body: TitleBody,
+    id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 46, Body: TitleBody,
     notes: [
       "Hello, I'm Dima. [Here you introduce yourself – in your own words.] " +
-        "The case study asks how AI can make the legal team more efficient: most of their work is reviewing and comparing contracts, by hand. " +
-        "I'll show you the problem, my approach and the technical solution – then the prototype live, the infrastructure and adoption.",
+        "Your case study asks how technology can remove repetitive work from Legal. I focused on one workflow: answering questions across the whole contract portfolio. " +
+        "I'll first show why that takes so much time today. Then I'll explain how I redesigned the process, how I implemented it, and finally demonstrate the prototype live.",
     ],
     words: [{ word: "infrastructure", say: "IN-fruh-struk-cher" }, { word: "adoption", say: "uh-DOP-shun" }, { word: "prototype", say: "PROH-tuh-type" }],
   },
   {
-    id: "part-1", act: 1, kind: "opener", title: "The problem · what I identified", steps: 0, seconds: 4,
+    id: "part-1", act: 1, kind: "opener", title: "The problem · what I identified", steps: 0, seconds: 2,
     quote: ["One of these challenges is making our legal team more efficient."],
     notes: ["First, the problem."],
   },
   {
-    id: "questions", act: 1, kind: "content", title: "Two questions, again and again.", steps: 2, seconds: 32, Body: TwoQuestions,
+    id: "questions", act: 1, kind: "content", title: "Two questions define the pilot.", steps: 2, seconds: 31, Body: TwoQuestions,
     notes: [
-      "The task names two questions that come back again and again. First: which contracts lack a certain clause – for example a limitation of liability?",
-      "Second: which contracts still name a former company, after a rename?",
-      "Both come straight from the case study – and both are about every contract.",
+      "After analysing the case study, I chose two questions for the pilot. First: which contracts are missing a required clause – for example a limitation of liability?",
+      "Second: which contracts still use a former company name that needs to be updated?",
+      "I chose them because both require Legal to check the complete portfolio, not just find one relevant document.",
     ],
     words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "former", say: "FOR-mer" }],
   },
   TODAY_CARD,
   {
-    id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 48, Body: HardThree,
+    id: "hard", act: 1, kind: "content", title: "Three challenges the automation must handle.", steps: 3, seconds: 53, Body: HardThree,
     notes: [
-      "Three things make it hard – all three are in the case study.",
-      "Some contracts are old scans, only images. The text has to be read first.",
-      "The same clause comes in other words. All three cap liability; the second never says 'liability', the third is German. Keywords miss them.",
-      `And the case study says it itself: agents often fail on the sheer size of the environment. Over ${n(CONTRACTS)} contracts fit into no context window.`,
+      "To automate that process reliably, the solution has to handle three challenges.",
+      "First, the documents are inconsistent. Some PDFs contain text, while old scans contain only an image and must be converted into text before they can be analysed.",
+      "Second, legal meaning is not tied to one phrase. These three clauses all limit liability, although one uses different words and another is written in German. A keyword search would miss them.",
+      `Third, the result must be complete. More than ${n(CONTRACTS)} contracts do not fit into one model's context, so we need a process that can prove that every relevant contract was checked.`,
     ],
     words: [{ word: "OCR", say: "oh-see-AR" }, { word: "Gesamthaftung", say: "geh-ZAMT-haf-tung" }, { word: "environment", say: "en-VY-run-ment" }, { word: "context window", say: "KON-tekst WIN-doh" }],
   },

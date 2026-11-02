@@ -425,6 +425,22 @@ or UNCLEAR – no model call.
 
 *Where:* `pipeline/run.py:32-61`, `docs/podcast/01-big-picture.md`.
 
+**44. M08 fails the "clause vocabulary" check. What is the clause vocabulary, who wrote it, and how
+is it different from the enums in the model's JSON schema?**
+
+The clause vocabulary is a word list per clause in `pipeline/catalogue.py`, our playbook file. For
+the liability cap it has patterns like "liab", "haft", "shall not exceed" and "damages". I wrote it
+myself as an assumption, because Riverty shares no real guidelines; in production Legal owns it.
+After the model call, code checks that a "found" quote contains at least one word of its clause.
+M08's quote is about a data processing agreement, so no word matches: confidence at most 0.40,
+found becomes unclear. The enums are something else: they restrict the *form* of the answer
+before the check – only the five playbook clauses, only PRESENT, ABSENT or UNCLEAR. So the enum
+says "the answer has the right shape", the vocabulary check says "the quote fits the clause".
+
+*Numbers:* M08: vocabulary 0.40, checker 0.35, minimum 0.35 → one lawyer reviews it.
+*Where:* `pipeline/catalogue.py` (`keywords`), `pipeline/extract.py` (`assess`, `CLAUSE_SCHEMA`),
+card "checks", decision 109.
+
 ## The talk
 
 **15. In present mode on the top-k card you press → three times. What happens on the third press?**
@@ -496,7 +512,7 @@ what the text says, a lawyer decides, and only after approval is a copy stored.
 
 *Where:* card "levers" (part 2), card "architecture" (part 3), decision 99.
 
-**42. On the card "Per step: code or AI?" the AI does only two of seven steps. How did you decide
+**42. On the card "Fixed tools by default – a model only for meaning" the AI does only two of seven steps. How did you decide
 where a model is allowed – and why is "which contracts lack X?" answered by code?**
 
 I went through the process step by step and asked: does this step need meaning, or can code do it?

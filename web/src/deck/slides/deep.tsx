@@ -77,9 +77,13 @@ function Chunking() {
           ))}
         </div>
       </Build>
-      <Build at={2} className="x-wide">
+      <Build at={1} className="x-wide">
         M09's “{m.liability.title}” runs across the page break. A cut every {m.fixed_size.toLocaleString("en")} characters splits it
         into two parts, and neither part holds the whole clause. Cutting at the headings keeps it whole.
+      </Build>
+      <Build at={2} className="x-sp-net two">
+        <div className="x-fact"><b>The reader</b> gets the whole contract, every section marked [S1], [S2] … – so each quote has its section and its page.</div>
+        <div className="x-fact"><b>The search index</b> is built from the same sections – for open questions (RAG).</div>
       </Build>
     </div>
   );
@@ -203,8 +207,6 @@ const FORM = deck.form;
 const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n).replace(/\s+\S*$/, "")} …` : s);
 const FORM_FOUND = FORM.clauses.find((c) => c.status === "PRESENT" && c.quote && c.section)!;
 const FORM_CAP = FORM.clauses.find((c) => c.key === "liability_limitation")!;
-const FORM_SECTION_NO = FORM_FOUND.section!.split(" ")[0].replace(/\.$/, "");   // "3. Checkout-…" -> "3"
-const FORM_FOUND_LABEL = FORM_FOUND.label.replace(/ \(.*\)$/, "");                // "Consumer terms in checkout"
 // the statuses in the main track's words, not the schema's enum
 const SAID: Record<string, string> = { PRESENT: "found", ABSENT: "not found", UNCLEAR: "unclear" };
 const said = (status: string) => SAID[status] ?? status;
@@ -263,7 +265,6 @@ const PAT = deck.patterns;
 const TRIAGE = PAT.q1.triage as Record<string, number>;
 // every Q1 row needs a person (api/review.py): REVIEW one lawyer, FOUR_EYES two, the CONFIRM rows one
 // click for all of them (batch), with a random spot-check sample (pipeline/portfolio.py)
-const TO_LAWYER = (TRIAGE.REVIEW ?? 0) + (TRIAGE.FOUR_EYES ?? 0);
 
 // name + one line each; what each building block does, the speaker says (notes). "Building blocks",
 // not "patterns": the main track's "pattern check" is the injection check (decision 88).
@@ -407,8 +408,8 @@ if (import.meta.env.DEV) {
 // the order of the talk plan (decision 90): questions from the main track first, in its order
 export const DEEP: Slide[] = [
   {
-    id: "deep-dives", act: 7, kind: "opener", title: "Deep dives – for your questions", steps: 0, seconds: 6, deep: true,
-    notes: ["If you want to see a technique closer, I pick a card."],
+    id: "deep-dives", act: 7, kind: "opener", title: "Technical appendix", steps: 0, seconds: 6, deep: true,
+    notes: ["These optional cards explain the implementation in more detail. They are not part of the timed presentation."],
   },
   CASE_STUDY,         // part 1: the numbered problems, rules and the goal (decision 100)
   TASK,
@@ -432,11 +433,17 @@ export const DEEP: Slide[] = [
   TOMORROW,           // the process tomorrow (decision 99: the levers of part 2 and the card 'architecture' now)
   FOLLOW_M18,         // one contract step by step (decision 98), then its steps in detail
   {
-    id: "chunking", act: 7, kind: "content", title: "Chunking: cut at the headings, not at a fixed length.", steps: 2, seconds: 40, deep: true, Body: Chunking,
+    // on the main track since decision 109, right after 'follow-m18' (slides.ts): where, how and why
+    // we chunk. pipeline/chunking.py cuts at numbered headings, a too long section into overlapping
+    // windows; pipeline/extract.py marks the sections [S1] … for the reader and maps each quote to its
+    // section and page; pipeline/index.py builds the search index from the same chunks
+    id: "chunking", act: 7, kind: "content", title: "Chunking: cut at the headings, not at a fixed length.", steps: 2, seconds: 54, deep: true, Body: Chunking,
     notes: [
-      `A common way is to cut every ${deck.m09.fixed_size.toLocaleString("en")} characters. Cutting a contract into passages is called chunking.`,
-      "We cut at the headings instead. Each clause stays one piece.",
-      "In M09 the liability clause runs over the page break. A fixed cut splits it. Our sections keep it whole.",
+      "Right after the text is read – by OCR for a scan – the pipeline cuts each contract into passages. " +
+        `This is chunking. A common way is a fixed length, here every ${deck.m09.fixed_size.toLocaleString("en")} characters.`,
+      "We cut at the numbered headings instead. In test contract M09, the liability clause runs over a page break. The fixed cut splits it in two; our section keeps it whole.",
+      "We use the sections twice. The reader still receives the whole contract, with every section marked, so each quotation points to one section and one page. " +
+        "And the search index for open questions is built from the same sections.",
     ],
     words: [{ word: "chunking", say: "CHUNK-ing" }, { word: "characters", say: "KAR-ik-terz" }],
   },
@@ -452,13 +459,15 @@ export const DEEP: Slide[] = [
             { word: OCR_SURE.truth ?? "Händlers", say: "HEND-lers" }],
   },
   {
-    id: "fixed-form", act: 7, kind: "content", title: "One model call per contract fills a fixed form.", steps: 2, seconds: 40, deep: true, Body: FixedForm,
+    id: "fixed-form", act: 7, kind: "content", title: "One model call per contract fills a fixed form.", steps: 2, seconds: 64, deep: true, Body: FixedForm,
     notes: [
-      "The model fills a fixed form, a JSON schema: per clause found, not found or unclear, a section, a quote, a reason – nothing else.",
-      `This is ${FORM.doc}'s real answer. Liability cap: ${FORM_CAP.status === "ABSENT" ? "not found" : FORM_CAP.status === "PRESENT" ? "found" : "unclear"}, with a reason. ` +
-        `${FORM_FOUND_LABEL}: found, with a quote from section ${FORM_SECTION_NO}.`,
-      `Then our code adds page and confidence; a second model call checks each found clause. ${FORM.documents} contracts, ${FORM.extract_calls} calls to read them. ` +
-        `Over ${FORM.single_pass_chars.toLocaleString("en")} characters, a contract is read in parts – none here.`,
+      "The reader receives one contract, the applicable playbook clauses and a narrow system prompt. The contract is data, never instructions. If the evidence is uncertain, the model must return unclear.",
+      // pipeline/extract.py: EXTRACTION_SCHEMA has one property per key of catalogue.CLAUSES, each with the
+      // status enum PRESENT / ABSENT / UNCLEAR; strict structured output (llm.py) enforces it
+      "The answer must match a strict JSON schema, which code builds from the playbook file: one field per clause, and only three states – found, not found or unclear. " +
+        "So the model cannot invent a clause or a status. A found without an exact quotation becomes unclear. The schema fixes the shape; it does not prove the answer is true.",
+      // 'checks' follows: the quotation check, the checker and the score - not said here twice
+      `Our code then adds the page and computes the review score – the next card shows how. ${FORM.documents} contracts needed ${FORM.extract_calls} reader calls: one per contract, not an agent choosing what to read.`,
     ],
     words: [{ word: "schema", say: "SKEE-muh" }, { word: "JSON", say: "JAY-sun" }, { word: "characters", say: "KAR-ik-terz" }],
   },
@@ -474,15 +483,12 @@ export const DEEP: Slide[] = [
     words: [{ word: "prompt", say: "PROMPT" }, { word: "verbatim", say: "ver-BAY-tim" }],
   },
   {
-    id: "agent-patterns", act: 7, kind: "content", title: "Agent building blocks, each with one job – but no free agent.", steps: 2, seconds: 50, deep: true, Body: AgentPatterns,
+    id: "agent-patterns", act: 7, kind: "content", title: "Where an agent fits – and where it does not.", steps: 2, seconds: 77, deep: true, Body: AgentPatterns,
     notes: [
-      "Code fixes the order. One: plan first – the lawyer confirms it. Two: maker and checker: a second call checks every “found” – " +
-        `${PAT.checker_calls} calls, one per contract, each for all its found clauses. It overruled ${PAT.checker_rejected.length} of ${PAT.found_by_model}.`,
-      "Three: a tool behind a gate – the archive copy needs approval and runs once. Four: a person decides. " +
-        `In ${PAT.q1.id} a lawyer opens ${TO_LAWYER} of ${PAT.q1.reported} – ${TRIAGE.FOUR_EYES === 1 ? "one" : TRIAGE.FOUR_EYES} with four eyes; ` +
-        `${TRIAGE.CONFIRM} sure ones: one click, with a spot check.`,
+      "Today, the document pipeline is not an agent. Code fixes the order: ingest the file, extract the text, call the reader, run the checks, update the register and index the sections. The model fills bounded forms inside that workflow; it cannot choose to skip a contract or call another tool.",
+      "The same principle protects actions. A lawyer confirms the analysis plan. A separate checker reviews every claimed clause. The archive tool sits behind an approval gate and stores each file only once. Human review is part of the stored workflow, not a chat message that disappears.",
       // Riverty's stack names LangChain and LangGraph for agents: the fallback of the card 'azure'
-      "Honestly: the planner has no model yet. Agent Framework or LangChain's LangGraph, and MCP – a standard plug for a model's tools: planned, not built.",
+      "The only planned agentic step is the question planner. A model may translate a lawyer's request into one of the fixed check types, but the lawyer confirms that plan before it runs. Microsoft Agent Framework is the target, LangGraph the fallback, and MCP would expose the narrow register tools. The agent proposes; code and people control execution.",
     ],
     words: [{ word: "overruled", say: "oh-ver-ROOLD" }, { word: "MCP", say: "em-see-PEE" }, { word: "plug", say: "PLUG" }],
   },

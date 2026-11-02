@@ -172,7 +172,7 @@
   .x-pipe-foot b { color: var(--ink); }
 
   /* --- model checked: M08 (act 3) */
-  .x-sand { display: grid; grid-template-columns: 1fr 1.15fr 0.9fr; gap: 1.6cqw; align-items: stretch; }
+  .x-sand { display: grid; grid-template-columns: 0.95fr 1.1fr 0.95fr; gap: 1.4cqw; align-items: stretch; }
   .x-claim, .x-verdict { padding: 1.6cqw; border-radius: 1.2cqw; border: 1px solid; display: flex; flex-direction: column; gap: 0.9cqw; }
   .x-claim { border-color: rgba(181, 157, 255, 0.5); background: rgba(181, 157, 255, 0.08); }
   .x-verdict { border-color: rgba(255, 197, 107, 0.55); background: rgba(255, 197, 107, 0.08); }
@@ -180,11 +180,24 @@
   .x-status { font-size: 1.9cqw; font-weight: 800; }
   .x-status.found { color: var(--mint); }
   .x-status.unclear { color: var(--amber); }
-  .x-checks { display: flex; flex-direction: column; gap: 0.7cqw; padding: 1.4cqw; border-radius: 1.2cqw; border: 1px solid rgba(92, 200, 255, 0.4); background: rgba(92, 200, 255, 0.05); }
-  .x-check { display: grid; grid-template-columns: 2.2cqw 1fr; gap: 0.6cqw; font-size: 1.2cqw; line-height: 1.35; }
+  .x-checks { display: flex; flex-direction: column; gap: 0.45cqw; padding: 1.25cqw; border-radius: 1.2cqw; border: 1px solid rgba(92, 200, 255, 0.4); background: rgba(92, 200, 255, 0.05); }
+  .x-checks-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.2cqw; }
+  .x-checks-head > span:last-child { color: var(--ink-3); font-size: 0.9cqw; }
+  .x-check { display: grid; grid-template-columns: 1.8cqw 1fr; gap: 0.45cqw; font-size: 1.08cqw; line-height: 1.25; }
   .x-check .ok { color: var(--mint); font-weight: 800; }
   .x-check .no { color: var(--red); font-weight: 800; }
-  .x-check small { display: block; color: var(--ink-3); font-size: 1cqw; }
+  .x-check small { display: block; color: var(--ink-3); font-size: 0.9cqw; }
+  .x-calc { display: grid; gap: 0.25cqw; padding: 0.8cqw; border-radius: 0.8cqw; background: rgba(255, 255, 255, 0.04); }
+  .x-calc span, .x-human-trigger span { color: var(--ink-3); font-size: 0.9cqw; text-transform: uppercase; letter-spacing: 0.06em; }
+  .x-calc b { font-size: 1.35cqw; }
+  .x-calc strong { color: var(--amber); font-size: 2cqw; }
+  .x-status-change { display: grid; grid-template-columns: auto 1fr auto auto 1fr; gap: 0.35cqw; align-items: center; font-size: 1cqw; }
+  .x-status-change span { color: var(--ink-3); }
+  .x-status-change b:last-child { color: var(--amber); }
+  .x-status-change i { color: var(--ink-3); font-style: normal; }
+  .x-human-trigger { display: grid; gap: 0.3cqw; margin-top: auto; padding: 0.8cqw; border-radius: 0.8cqw; background: rgba(255, 197, 107, 0.1); }
+  .x-human-trigger b { font-size: 1.05cqw; }
+  .x-human-trigger strong { color: var(--amber); font-size: 1.25cqw; }
 
   /* --- hidden note (act 3) */
   .x-note-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 2.2cqw; align-items: center; }
