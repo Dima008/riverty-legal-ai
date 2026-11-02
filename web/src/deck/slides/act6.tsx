@@ -1,6 +1,7 @@
-// Part 6 - the basic implementation, live (decision 90: the finale, after every outline bullet): a
-// contract is added while the audience watches (the watcher reads data/inbox, the stand-in for
-// SharePoint) and its problems appear; then the Legal Workbench itself; then the close.
+// Part 4 - the basic implementation, live (decision 99: right after the technical solution it shows;
+// infrastructure and adoption follow, the close ends part 6): a contract is added while the audience
+// watches (the watcher reads data/inbox, the stand-in for SharePoint) and its problems appear; then the
+// Legal Workbench itself. The close is exported on its own (CLOSE) and ends the talk.
 import { useEffect, useRef, useState } from "react";
 import makeHandwrittenPy from "../../../../tools/make_handwritten.py?raw";
 import runPy from "../../../../pipeline/run.py?raw";
@@ -191,26 +192,24 @@ function Close() {
   );
 }
 
-export const ACT6: Slide[] = [
+/** Part 4: the basic implementation, live (decision 99). */
+export const LIVE: Slide[] = [
   {
-    id: "part-6", act: 6, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 12,
-    quote: [
-      "Basic implementation demonstrating the foundation of the concept",
-      "Anything else you feel is relevant to understanding your approach to solving the challenge",
-    ],
+    id: "part-4", act: 4, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 8,
+    quote: ["Basic implementation demonstrating the foundation of the concept"],
     notes: [
-      "Now your second list: the pipeline, the front-end and the whole workflow – and anything else I learned. Let me show you.",
+      "Now the basic implementation, live: the pipeline, the front-end and the whole workflow.",
     ],
     words: [{ word: "implementation", say: "im-pluh-men-TAY-shun" }],
   },
   {
-    id: "live-add", act: 6, kind: "content", title: "A handwritten contract arrives – watch what is found.", steps: 1, seconds: 56, Body: LiveAdd,
+    id: "live-add", act: 4, kind: "content", title: "A handwritten contract arrives – watch what is found.", steps: 1, seconds: 55, Body: LiveAdd,
     notes: [
       // b0 fills the wait: from the drop, 48 shows after 8-12 s and the findings after 14-15 s
       // (measured in Edge on a register copy, docs/demo.md) - the words after 'I copy it' take 13-15 s.
       // H01 is rendered from handwriting fonts, with photo effects (tools/make_handwritten.py) - nobody
       // photographed it, so the note says it is made to look like a phone photo
-      `Now live. You have old handwritten contracts, only as JPEG files. I made one: ${HANDWRITTEN.doc_id}, dated ${H01_YEAR}, made to look like a phone photo. ` +
+      `You have old handwritten contracts, only as JPEG files. I made one: ${HANDWRITTEN.doc_id}, dated ${H01_YEAR}, made to look like a phone photo. ` +
         "I copy it into the folder, our stand-in for SharePoint – watch the number. " +
         `The watcher checks every ${WATCH_S} seconds; then OCR, one model call and the checks run, as for every contract.`,
       // F19 (decision 89): the former name is not found on this scan - the register says it cannot rule it out.
@@ -222,7 +221,7 @@ export const ACT6: Slide[] = [
     words: [{ word: "handwritten", say: "HAND-rit-n" }, { word: "JPEG", say: "JAY-peg" }, { word: "watcher", say: "WOTCH-er" }, { word: "ruled out", say: "ROOLD out" }],
   },
   {
-    id: "live", act: 6, kind: "content", title: "The Legal Workbench, live.", steps: 0, seconds: 115, Body: Live,
+    id: "live", act: 4, kind: "content", title: "The Legal Workbench, live.", steps: 0, seconds: 115, Body: Live,
     notes: [
       // a click script: what to click, and what to say while it loads (the Workbench of decision 95, docs/demo.md):
       // 1 the analysis box, 2 the contracts and Confirm the plan, 3 every contract in a lane (red missing, orange a
@@ -239,17 +238,21 @@ export const ACT6: Slide[] = [
         `Four: the evidence on the page. ${EVIDENCE} is only outlined: the model proposed it, our checks rejected it. ` +
         `Now a green one, ${GREEN}: its passage is checked and marked in yellow. ` +
         `Five: ${FOUR_EYES} needs four eyes. Reviewer A approves; I switch to B, who approves too. ` +
-        "Six: only now the archive copy, and only once. Then back to the talk.",
+        "Six: only now the archive copy, and only once. Then back to the slides.",
     ],
     words: [{ word: "Workbench", say: "WURK-bench" }, { word: "coverage", say: "KUV-er-ij" }, { word: "highlighted", say: "HY-ly-tid" },
       { word: "overruled", say: "oh-ver-ROOLD" }, { word: "archive", say: "AR-kyv" }],
   },
+];
+
+/** The close: the last card of part 6 (adoption), after 'run-it' - "who would pilot it?" follows the pilot plan. */
+export const CLOSE: Slide[] = [
   {
     id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 36, Body: Close,
     notes: [
       // the task: "while learning and improving ourselves", "start a meaningful conversation"; the honest gap
       // list of CLAUDE.md (no Azure deployment, the planner has no model, handwriting needs a multimodal reader)
-      "What did I learn? No model is always right. So every contract is read, every answer is traced back to a page, and a lawyer decides. " +
+      "What I learned: no model is always right. So every contract is read, every answer is traced back to a page, and a lawyer decides. " +
         "Not built yet: the Azure platform, the SharePoint connector, a model that plans, and one that reads handwriting well. " +
         "Two questions for you. I assumed that a missed contract hurts more than a false alarm – is that right for Legal? " +
         "And who would pilot it? Thank you.",
@@ -261,7 +264,7 @@ export const ACT6: Slide[] = [
 // The boxes of the card 'live' are its click script: box N is step N of the note ("One:" ... "Six:"),
 // no step without a box and no box without a step (development only).
 if (import.meta.env.DEV) {
-  const script = ACT6.find((s) => s.id === "live")?.notes.join(" ") ?? "";
+  const script = LIVE.find((s) => s.id === "live")?.notes.join(" ") ?? "";
   if (!DEMO.every((_, i) => script.includes(`${NUMBER[i]}:`)) || script.includes(`${NUMBER[DEMO.length]}:`)) {
     console.error(`part 6: card 'live' - the script's numbered steps are not the ${DEMO.length} boxes on the card`);
   }

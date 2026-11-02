@@ -1,10 +1,10 @@
-// Part 3 - the technical solution (decision 90), along the map of the card 'tomorrow' from left to
-// right (decision 88): the process tomorrow, one contract through the fixed steps (M18), the checks
-// on a real wrong answer (M08), then the register - Q1 and Q2 become lookups, and every contract it
-// lists was met before - the lawyer deciding (with M14's hidden instruction: four eyes), and what we
-// use (two prompts, embeddings, the rest code). The proof card 'results' (proof.tsx) closes the part.
-// The two stores (register-index), the technique table and, since decision 96, the hidden instruction
-// (injection) are deep dives. Every number comes from deck-data.json
+// Part 3 - the technical solution (decisions 90, 99): the architecture first - the whole system, from
+// SharePoint to the archive copy (Dima, 2.11.) - then its parts from left to right: what we use (two
+// prompts, embeddings, the rest code), the checks on a real wrong answer (M08), the register - Q1 and
+// Q2 become lookups, and every contract it lists was met before - and the lawyer deciding (with M14's
+// hidden instruction: four eyes). The proof card 'results' (proof.tsx) closes the part. The process
+// tomorrow ('tomorrow', turned into the levers of part 2), one contract step by step (follow-m18), the
+// two stores (register-index) and the hidden instruction (injection) are deep dives. Every number comes from deck-data.json
 // (tools/deck_data.py reads the register), a stored evaluation file or the code (?raw) - nothing is
 // typed by hand.
 import measurement from "../../../../eval/results/2026-10-31_negative_search.json";
@@ -62,6 +62,60 @@ function Tomorrow() {
             <span className="x-box person">check the evidence</span><Arrow /><span className="x-box person">approve</span><Arrow />
             <span className="x-box code">archive copy</span>
           </div>
+        </div>
+      </Build>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- the architecture (decision 99)
+// The whole system on one card (Dima, 2.11.: "wie es aussehen soll - SharePoint und der ganze Prozess"):
+// once per contract and automatic - SharePoint, reading the text (OCR's first word on the main track),
+// one model call that fills a fixed form, the checks, the register - then per question Legal's row in
+// the Workbench, up to the archive copy. The cards after it zoom in from left to right; where each part
+// runs is part 5 ('azure'). Built and target: the prototype runs every step, a folder stands in for
+// SharePoint and a stand-in for the storage API (said here and on 'human').
+const ONCE = [
+  { at: 0, kind: "code", tag: "source", name: "SharePoint", fact: <>a contract is saved · PDF or image</> },
+  { at: 1, kind: "code", tag: "code", name: "Read the text", fact: <>PDF: its text · image: <b>OCR</b>, text recognition · unsure → a person</> },
+  { at: 2, kind: "model", tag: "AI", name: "Fill a form", fact: <>one model call per contract · per clause: found or not, page, quote</> },
+  { at: 2, kind: "code", tag: "code + AI", name: "Check", fact: <>the quote is there · the clause's words · a second model call</> },
+  { at: 2, kind: "store", tag: "result", name: "Register", fact: <>one row per contract · every cell with its evidence</> },
+];
+const LEGAL_ROW = ["ask", "confirm the plan", "every contract: red · orange · green", "check the evidence, decide"];
+
+function Architecture() {
+  return (
+    <div className="x-arch">
+      <div>
+        <div className="x-arch-label">Once per contract · automatic</div>
+        <div className="x-arch-once">
+          {ONCE.map((s, i) => (
+            <div key={s.name} style={{ display: "contents" }}>
+              {i > 0 && <Build at={s.at} className="x-arrow">→</Build>}
+              <Build at={s.at} className={`x-st ${s.kind}`}>
+                <span className="x-st-kind">{s.tag}</span>
+                <span className="x-st-name">{s.name}</span>
+                <span className="x-st-fact">{s.fact}</span>
+              </Build>
+            </div>
+          ))}
+        </div>
+        <Build at={2} className="x-arch-foot">
+          Fixed steps in code – a <b>workflow</b>, not a free agent. The prototype runs every step; a folder stands in for SharePoint.
+        </Build>
+      </div>
+      <Build at={3}>
+        <div className="x-arch-label">Per question · Legal, in the Workbench</div>
+        <div className="x-arch-legal">
+          {LEGAL_ROW.map((step, i) => (
+            <span key={step} style={{ display: "contents" }}>
+              {i > 0 && <span className="x-arrow" aria-hidden>→</span>}
+              <span className="x-box person">{step}</span>
+            </span>
+          ))}
+          <span className="x-arrow" aria-hidden>→</span>
+          <span className="x-box code">archive copy · after approval</span>
         </div>
       </Build>
     </div>
@@ -349,6 +403,8 @@ if (import.meta.env.DEV) {
     !same(LEGACY, ["Arvato", "AfterPay"]) && `card 'register': the notes say "Arvato or AfterPay", the register has ${LEGACY}`,
     (COPY?.id !== "M15" || COPY?.copy_of !== "M01") && "card 'register': the copy is no longer M15 = M01",
     !(WATCH_S > 0) && "card 'follow-m18': the watcher's interval is no longer in pipeline/run.py",
+    !(OCR_MIN > 0 && deck.ocr.handwritten.status === "LOW_QUALITY")
+      && "card 'architecture': the note says a person checks an unsure scan - the OCR threshold or H01's status changed",
     !(M18_DPA_ONLY > 0 && M18_DPA_ONLY === CATALOGUE_DPA_ONLY)
       && `card 'follow-m18': the note says ${M18_DPA_ONLY} of M18's 'not found' are required only in data processing agreements - the playbook has ${CATALOGUE_DPA_ONLY} such clauses`,
     !(ROWS.length < deck.register.documents && ROWS.every((r) => /^M\d\d$/.test(r.id)))
@@ -386,31 +442,58 @@ if (import.meta.env.DEV) {
 
 export const ACT3: Slide[] = [
   {
-    id: "part-3", act: 3, kind: "opener", title: "The technical solution", steps: 0, seconds: 9,
+    id: "part-3", act: 3, kind: "opener", title: "The technical solution", steps: 0, seconds: 8,
     quote: ["An overall technical solution you would present to our team and how it could be implemented"],
-    notes: ["Now the technical solution: how do we deliver these guarantees – and how do I know it works?"],
-    words: [{ word: "guarantees", say: "gair-un-TEEZ" }],
+    notes: ["Now the technical solution: the architecture, its parts, and how I know it works."],
+    words: [{ word: "architecture", say: "AR-kih-tek-cher" }, { word: "guarantee", say: "gair-un-TEE" }],
   },
   {
-    id: "tomorrow", act: 3, kind: "content", title: "Tomorrow: the system reads, the lawyer decides.", steps: 1, seconds: 42, Body: Tomorrow,
+    // decision 99: the whole system, then its parts from left to right; OCR and the playbook are said here first
+    id: "architecture", act: 3, kind: "content", title: "From SharePoint to the archive copy: the system reads, a lawyer decides.", steps: 3, seconds: 77, Body: Architecture,
     notes: [
-      "Today, a lawyer opens, searches, reads and takes notes – for every contract and every question.",
-      // the core design, named once and explained where the register first appears: compile, don't search
-      "Tomorrow, the system reads each contract once, as soon as it is saved in SharePoint. That's the core idea: compile, don't search. " +
-        "The result goes into one table, the register, and a question becomes a lookup. " +
-        "The lawyer asks, and the system shows a plan: which contracts, which check. " +
-        "The lawyer confirms it, checks the evidence and approves the archive copy. The machine reads; the lawyer decides.",
+      "Here is the architecture I propose. It starts where your contracts are: in SharePoint, as PDFs or images.",
+      // a poor scan does not go to a person as such: its findings' confidence is capped (extract.py), so
+      // triage sends them to a lawyer (portfolio.py) - said as "a person checks the findings"
+      "First, the text is read. A PDF usually contains its text; a scan is only an image, so OCR – optical character recognition – " +
+        `turns it into text and says how sure it is. Below ${OCR_MIN} percent, a person checks the findings.`,
+      // the playbook: the task's "comply with our corporate guidelines", as data (pipeline/catalogue.py)
+      "Then one model call per contract fills a fixed form: for each clause in Legal's playbook – your guidelines as data – found or not, with page and quote. " +
+        "Code checks every answer, and the result goes into the register. The steps are fixed in code: a workflow, not a free agent.",
+      "The lower row is Legal's, in the Workbench: ask, confirm the plan, see every contract in red, orange or green with its evidence – and decide. " +
+        "Only then does a copy go to your contract storage.",
     ],
-    words: [{ word: "compile", say: "kum-PILE" }, { word: "register", say: "REJ-ih-ster" }, { word: "evidence", say: "EV-ih-dence" }, { word: "archive", say: "AR-kyv" }],
+    words: [{ word: "architecture", say: "AR-kih-tek-cher" }, { word: "OCR", say: "oh-see-AR" }, { word: "optical", say: "OP-tih-kul" },
+      { word: "recognition", say: "rek-ug-NISH-un" }, { word: "playbook", say: "PLAY-book" }, { word: "Workbench", say: "WURK-bench" }],
   },
   {
-    id: "checks", act: 3, kind: "content", title: "The model is checked: M08 said “found”, the register says “unclear”.", steps: 2, seconds: 57, Body: ChecksM08,
+    // the task: "we encourage any form of AI usage, as long as we understand what is happening",
+    // "Python with FastAPI", "Frontend written in React and TypeScript"
+    id: "what-we-use", act: 3, kind: "content", title: "What we use: two prompts – one reads, one checks. The rest is code.", steps: 2, seconds: 68, Body: WhatWeUse,
     notes: [
-      `But a model can be wrong. Take M08: the model said the liability cap is there, and quoted clause ${M08_CLAUSE}.`,
+      // the model's name and "one contract at a time" are said here since 'follow-m18' is a deep dive (decision 98);
+      // the playbook's clauses are an assumption, because Riverty shares no real guidelines (pipeline/catalogue.py)
+      `The AI sits in ${say(PROMPTS)} prompts on one small model, ${M18_MODEL}. The reader gets ${say(RULES)} rules, Legal's playbook and one whole contract; ` +
+        `the playbook's ${say(CLAUSES)} clauses are my assumption, because I have no real guidelines. ` +
+        "The checker gets only a definition and a quote. No model writes an answer, " +
+        `and reading all ${stats.config.documents} documents once cost ${FULL_RUN_CENTS} cents.`,
+      // pipeline/search.py: hybrid - BM25 keywords + embedding vectors, fused with RRF; embeddings are the meaning half
+      "Embeddings need no prompt. With keywords, they power a search for open questions, like: what does M01 say about liability? " +
+        "They never decide that a clause is missing.",
+      // OCR and its threshold are introduced on 'architecture' (decision 99)
+      "Everything else is code we can test – Python and FastAPI behind it, React and TypeScript in front. " +
+        "Planned: a model that drafts the plan, and Microsoft's Prompt Shields as a second check for hidden instructions.",
+    ],
+    words: [{ word: M18_MODEL, say: "G-P-T four point one mini" }, { word: "embeddings", say: "em-BED-ingz" }, { word: "OCR", say: "oh-see-AR" },
+      { word: "FastAPI", say: "fast-ay-pee-EYE" }, { word: "TypeScript", say: "TYPE-script" }, { word: "Shields", say: "SHEELDZ" }],
+  },
+  {
+    id: "checks", act: 3, kind: "content", title: "The model is checked: M08 said “found”, the register says “unclear”.", steps: 2, seconds: 55, Body: ChecksM08,
+    notes: [
+      `The model is checked before anything counts. Take M08: the reader said the liability cap is there, and quoted clause ${M08_CLAUSE}.`,
       // the task: "ensuring they comply with our corporate guidelines" - the playbook (introduced on 'case-study');
       // maker-checker: the checker prompt sees only a definition and a quote (guarded in prompts-data.ts)
-      "Now our checks start. Guarantee two: the quote is really in the contract. But it lacks the words Legal's playbook expects for a liability cap. " +
-        "Then a second model call checks the first. It sees only the definition and the quote, and says: this is about data protection. That's maker-checker.",
+      "Now our checks run. Guarantee two: the quote is really in the contract. But it lacks the words Legal's playbook expects for a liability cap. " +
+        "And the checker disagrees: this clause is about data protection. That's maker-checker – one call makes, a second one checks.",
       // model_status (what the model said) and status (what the register says after the checks): both stored
       `So the register keeps both answers: the model said found, our checks say unclear, confidence ${M08.confidence} – and a lawyer looks. ` +
         "The model never decides alone: code before and after it, the guardrail sandwich.",
@@ -419,24 +502,24 @@ export const ACT3: Slide[] = [
       { word: String(M08.confidence), say: spell(M08.confidence) }, { word: "guardrail", say: "GARD-rail" }, { word: "sandwich", say: "SAND-wich" }],
   },
   {
-    id: "register", act: 3, kind: "content", title: "Every contract in one table – a question becomes a lookup.", steps: 3, seconds: 68, Body: Register,
+    id: "register", act: 3, kind: "content", title: "Every contract in one table – a question becomes a lookup.", steps: 3, seconds: 66, Body: Register,
     notes: [
-      "This is the register: every contract, read once, clause by clause. Green is found, red is not found, amber is unclear.",
+      "This is the register: every contract, read once, clause by clause. Green is found, red is not found, orange is unclear.",
       // recall first, named once: unclear counts with not found and goes to a lawyer - a missed contract is the expensive error
-      `Q1 is one column: ${Q1.length} contracts, no model call. Red and amber count together, because recall comes first – one too many beats one missed. ` +
-        `Remember: the keyword search had ${AT_K10.false_alarms.length} false alarms and missed ${AT_K10.missed.join(", ")}.`,
+      `Q1 is one column: ${Q1.length} contracts, no model call. Red and orange count together, because recall comes first – one too many beats one missed. ` +
+        `The keyword search had ${AT_K10.false_alarms.length} false alarms and missed ${AT_K10.missed.join(", ")}.`,
       // the task's "comparing them": GET /api/compare (api/register.py) - not in the tool yet (guarded);
       // guarantee one is named here since 'follow-m18' is a deep dive (decision 98)
-      `Coverage: ${ROWS.length} in scope, ${CHECKED} checked, ${COPY.id} excluded with its reason – a copy of ${COPY.copy_of}. Nothing drops out silently. ` +
+      `Coverage: ${ROWS.length} in scope, ${CHECKED} checked, ${COPY.id} excluded with its reason – a copy of ${COPY.copy_of}. ` +
         "That's guarantee one: every contract was read, and we can show it. Comparing works too, so far in the API.",
-      `Legal's second question, Q2: which contracts still name ${LEGACY.join(" or ")}, Riverty's former names? ${Q2.length}. ` +
+      `Your second question, Q2: which contracts still name ${LEGACY.join(" or ")}, Riverty's former names? ${Q2.length}. ` +
         `Not ${FIXED?.id}: its amendment ${FIXED?.by} already renamed it to ${FIXED_TO}.`,
     ],
     words: [{ word: "organised", say: "OR-guh-nyzd" }, { word: "recall", say: "REE-kawl" }, { word: "coverage", say: "KUV-er-ij" },
       { word: "excluded", say: "ik-SKLOO-did" }, { word: "AfterPay", say: "AF-ter-pay" }],
   },
   {
-    id: "human", act: 3, kind: "content", title: "Observations, not verdicts: a lawyer decides.", steps: 2, seconds: 70, Body: LawyerDecides,
+    id: "human", act: 3, kind: "content", title: "Observations, not verdicts: a lawyer decides.", steps: 2, seconds: 67, Body: LawyerDecides,
     notes: [
       // picked up from the deep dive 'injection' (decision 96): M14's hidden instruction (first named on
       // 'rag-fails'), the pattern check, and the task's "represent the company's best interests". Who looks
@@ -444,43 +527,37 @@ export const ACT3: Slide[] = [
       // confidence, not model_status); sure ones are one click, SAMPLE_PERCENT of them opened.
       `Guarantee three: a lawyer decides; the system only reports what the text says. Who looks is decided by our checks, never by the model. ` +
         `A sure finding takes one click, and one in ${say(100 / TRIAGE.sample_percent)} is still opened at random. ` +
-        `If it's unclear or below ${TRIAGE.review_below}, one lawyer looks. If it's risky, two people look – four eyes. ` +
-        `Like ${INJECTED}: our pattern check finds its hidden instruction, because a counterparty's text must never decide for Riverty.`,
+        `Unclear or below ${TRIAGE.review_below}: one lawyer looks. Risky: two people – four eyes. ` +
+        `Like ${INJECTED}: our pattern check finds its hidden instruction, because a counterparty's text must never decide for you.`,
       "The lawyer sees the passage on the page first, then decides, with a reason – stored and reused.",
       // api/review.py: no approval -> 409 "tool gate", logged; api/storage_mock.py: PUT by SHA-256, write
       // once, a receipt - a repeated PUT gets 200 "already_stored", so never "exactly one call". The
       // stand-in is named before its behaviour, so nothing sounds like a fact about Riverty's real storage.
-      "Riverty's storage has a REST API. Our server sends a file there only after approval; before that, the gate refuses. " +
-        "Here a stand-in plays the storage: it keeps each file once, by its fingerprint, with a receipt – and it can't be changed.",
+      "Your contract storage has a REST API. Our server sends a file there only after approval; before that, the gate refuses. " +
+        "Here a stand-in plays the storage: it keeps each file once, by its fingerprint – and it can't be changed.",
     ],
     words: [{ word: "observes", say: "ub-ZURVZ" }, { word: "triage", say: "TREE-ahzh" }, { word: String(TRIAGE.review_below), say: spell(TRIAGE.review_below) },
       { word: "counterparty's", say: "KOWN-ter-par-teez" }, { word: "approval", say: "uh-PROO-vul" }, { word: "receipt", say: "rih-SEET" }],
   },
-  {
-    // the task: "we encourage any form of AI usage, as long as we understand what is happening",
-    // "Python with FastAPI", "Frontend written in React and TypeScript"
-    id: "what-we-use", act: 3, kind: "content", title: "What we use: two prompts – one reads, one checks. The rest is code.", steps: 2, seconds: 80, Body: WhatWeUse,
-    notes: [
-      // the model's name, the fixed form and "one contract at a time" are said here since 'follow-m18' is a deep dive (decision 98)
-      `So what do we use? ${Say(PROMPTS)} prompts and one small model, ${M18_MODEL}. The reader gets ${say(RULES)} rules, Legal's playbook and one whole contract, ` +
-        "and fills a fixed form. The checker gets only a definition and a quote. The AI sees one contract at a time, and no model writes an answer. " +
-        `Reading all ${stats.config.documents} documents once costs ${FULL_RUN_CENTS} cents.`,
-      // pipeline/search.py: hybrid - BM25 keywords + embedding vectors, fused with RRF; embeddings are the meaning half
-      "Embeddings need no prompt. With keywords, they power a search for open questions – like: what does M01 say about liability? " +
-        "But they never decide that a clause is missing.",
-      // OCR and its threshold are introduced here (the cards 'hard' and 'follow-m18' are deep dives, decision 98);
-      // 'live-add' and 'live' rely on "if it's unsure, a person looks"
-      "Everything else is code we can test. OCR – text recognition – reads the scans, and if it's unsure, a person looks. " +
-        "Then the checks, triage, lookups and the approval gate. Python and FastAPI behind it, React and TypeScript in front. " +
-        "Planned: a model that drafts the plan, and Microsoft's Prompt Shields as a second check for hidden instructions.",
-    ],
-    words: [{ word: M18_MODEL, say: "G-P-T four point one mini" }, { word: "embeddings", say: "em-BED-ingz" }, { word: "OCR", say: "oh-see-AR" },
-      { word: "FastAPI", say: "fast-ay-pee-EYE" }, { word: "TypeScript", say: "TYPE-script" }, { word: "Shields", say: "SHEELDZ" }],
-  },
 ];
 
+// A deep dive since decision 99: its message - the system reads, the lawyer decides - is the levers card
+// of part 2 now, the system itself the card 'architecture'. Listed in deep.tsx.
+export const TOMORROW: Slide = {
+  id: "tomorrow", act: 7, kind: "content", title: "Tomorrow: the system reads, the lawyer decides.", steps: 1, seconds: 42, deep: true, Body: Tomorrow,
+  notes: [
+    "Today, a lawyer opens, searches, reads and takes notes – for every contract and every question.",
+    // the core design, named once and explained where the register first appears: compile, don't search
+    "Tomorrow, the system reads each contract once, as soon as it is saved in SharePoint. That's the core idea: compile, don't search. " +
+      "The result goes into one table, the register, and a question becomes a lookup. " +
+      "The lawyer asks, and the system shows a plan: which contracts, which check. " +
+      "The lawyer confirms it, checks the evidence and approves the archive copy. The machine reads; the lawyer decides.",
+  ],
+  words: [{ word: "compile", say: "kum-PILE" }, { word: "register", say: "REJ-ih-ster" }, { word: "evidence", say: "EV-ih-dence" }, { word: "archive", say: "AR-kyv" }],
+};
+
 // A deep dive since decision 98 (flowing speaker notes need room within 22:00): one contract step by
-// step. On the main track, 'what-we-use' names the model, the fixed form and OCR, 'register' guarantee one.
+// step. On the main track, 'architecture' names OCR and the fixed form, 'what-we-use' the model, 'register' guarantee one.
 export const FOLLOW_M18: Slide = {
   id: "follow-m18", act: 7, kind: "content", title: `Follow one contract: M18, a scan from ${M18_YEAR}.`, steps: 5, seconds: 71, deep: true, Body: FollowM18,
   notes: [

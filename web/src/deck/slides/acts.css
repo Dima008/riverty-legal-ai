@@ -231,6 +231,26 @@
   .x-key em { font-style: normal; }
   .x-az-plan { font-size: 1.2cqw; line-height: 1.4; color: var(--ink-2); }
 
+  /* --- the levers (act 2, decision 99): today's steps, and what my approach does with each */
+  .x-lev { display: grid; grid-template-columns: auto auto 1fr auto; gap: 0.9cqw 1.2cqw; align-items: center; }
+  .x-lev-h { font-size: 1cqw; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: var(--ink-3); }
+  .x-lev-h.now { color: var(--mint); }
+  .x-lev .x-box { white-space: normal; }
+  .x-lev-n { font-size: 1.15cqw; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mint); white-space: nowrap; }
+  .x-lev-again { grid-column: 1 / -1; font-size: 1.3cqw; color: var(--amber); }
+
+  /* --- the architecture (act 3, decision 99): once per contract, automatic - then per question, Legal's row */
+  .x-arch { display: flex; flex-direction: column; gap: 2.2cqw; }
+  .x-arch-label { font-size: 1cqw; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: var(--ink-3); margin-bottom: 0.8cqw; }
+  .x-arch-once { display: grid; grid-template-columns: 1fr repeat(4, auto 1fr); gap: 0.6cqw; align-items: stretch; }
+  .x-arch-once .x-arrow { align-self: center; }
+  .x-arch-once .x-st-kind { font-size: 1cqw; }
+  .x-arch-once .x-st-fact { font-size: 1.2cqw; }
+  .x-arch-foot { margin-top: 1.2cqw; font-size: 1.35cqw; color: var(--ink-2); }
+  .x-arch-foot b { color: var(--ink); }
+  .x-arch-legal { display: flex; align-items: center; gap: 0.6cqw; flex-wrap: wrap; }
+  .x-arch-legal .x-box { font-size: 1.2cqw; padding: 0.8cqw 1.1cqw; }
+
   /* --- SharePoint (act 5) */
   .x-sp-tag { font-size: 1.2cqw; color: var(--ink-2); margin-bottom: 1.2cqw; }
   .x-sp-tag .x-tag { margin-right: 0.5cqw; vertical-align: 0.1cqw; }

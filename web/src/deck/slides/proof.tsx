@@ -455,11 +455,11 @@ if (import.meta.env.DEV) {
 
 // ---------------------------------------------------------------- the cards
 export const RESULTS: Slide = {
-  id: "results", act: 3, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 60, Body: Results,
+  id: "results", act: 3, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 61, Body: Results,
   notes: [
     // 'Deliver' is the third phase of the card 'how-i-worked'; the CUAD sentence came from the card
     // 'test-set' (a deep dive since decision 90). The task: "while learning and improving ourselves".
-    `Deliver: does it work? I built the register from scratch ${RUNS.length} times: every expected contract found, no false alarm. ` +
+    `It works on every test: I built the register from scratch ${RUNS.length} times – every expected contract found, no false alarm. ` +
       `On real contracts labelled by legal experts, we agree on ${CUAD_AGREE} of ${CUAD_N} – and they showed ${FOUND_BY_CUAD.length} errors my own traps had missed. All fixed.`,
     `How sure can we be? Q1 found ${Q1_N} of ${Q1_N} – but with 95 percent confidence, the true rate could still be as low as ${Math.round(Q1.recall_lower_95 * 100)} percent. ` +
       `And ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,

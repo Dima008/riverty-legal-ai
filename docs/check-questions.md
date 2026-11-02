@@ -483,3 +483,15 @@ before and after. "Every contract was read" must be a fact we can prove. An agen
 when it is done, so it could only claim it.
 
 *Where:* Notion page "Herangehensweise", `docs/context/briefing.md` section 4, decision 8.
+
+**41. You say reading is the biggest lever. Why reading – and which step did you deliberately not
+automate?**
+
+Reading grows with every contract, and today it starts again for every new question: over 1,100
+contracts at an assumed five minutes each is about 90 hours per question. So the AI reads every
+contract once, when it arrives, into the register – compile, don't search. Then a new question is a
+lookup over every contract (lever 2), and verifying means looking at the exact passage on the page;
+only unclear findings go to a person (lever 3). The decision is not automated: the system reports
+what the text says, a lawyer decides, and only after approval is a copy stored.
+
+*Where:* card "levers" (part 2), card "architecture" (part 3), decision 99.

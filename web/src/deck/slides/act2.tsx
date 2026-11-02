@@ -1,8 +1,9 @@
-// Part 2 - my approach (decision 90): the roadmap (how I worked), then why the usual AI approaches
-// fail. First the test bench (47 documents with known answers, decision 88), then every term before
-// it is used: what a chatbot over documents (RAG) and top-k are, then why they cannot prove absence;
-// then what an agent is, and why a free agent cannot prove it read everything. The register's own
-// result is NOT shown here: part 3 reveals it. The embedding map is a deep dive since decision 90.
+// Part 2 - my approach (decisions 90, 99; Dima, 2.11.: "what did I identify, where are the biggest
+// levers, how did I work"): how I work (the roadmap), then the levers - today's process per step and
+// what my approach does with it - then the options I tested for the biggest lever, on a test bench
+// (47 documents with known answers, decision 88): a chatbot over documents (RAG, top-k) cannot prove
+// absence, a free agent cannot prove it read everything. From that, three guarantees. The register's
+// own result is NOT shown here: part 3 reveals it. The embedding map is a deep dive since decision 90.
 // Numbers come from the test-set files, deck-data.json, eval/results and docs (?raw).
 import measurement from "../../../../eval/results/2026-10-31_negative_search.json";
 import negativeSearchPy from "../../../../eval/negative_search.py?raw";
@@ -10,7 +11,7 @@ import caseStudy from "../../../../docs/context/case-study.md?raw";
 import research from "../../../../docs/research.md?raw";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
-import { CONTRACTS as PORTFOLIO, n } from "./act1";
+import { CONTRACTS as PORTFOLIO, HOURS, n } from "./act1";
 import "./acts.css";
 import deck from "./deck-data.json";
 import { CUAD, DOCS, QUESTIONS_N } from "./testset-data";
@@ -58,6 +59,36 @@ function HowIWorked() {
       <Build at={3} className="x-ai">
         Built with <b>Claude Code</b> · every AI commit marked in git · <b>I can explain every line.</b>
       </Build>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- the levers (decision 99)
+// Today's process for one question, as the case study describes it ("open the documents, search for the
+// relevant content, and verify the results themselves") plus noting and deciding, and per step what my
+// approach does with it: three levers, numbered by their effect, and the one step that is not automated
+// on purpose. The kinds are the colours of the architecture card: code, AI, register, person.
+const LEVERS = [
+  { today: "open every contract", at: 1, kind: "code", now: "arrives once, from SharePoint" },
+  { today: "search and read", at: 1, kind: "model", now: "the AI reads it once – into a register", lever: "1 · biggest" },
+  { today: "note the result", at: 2, kind: "store", now: "a question becomes a lookup", lever: "2" },
+  { today: "verify", at: 3, kind: "code", now: "the passage on the page – only unclear goes to a person", lever: "3" },
+  { today: "decide", at: 3, kind: "person", now: "stays with the lawyer – on purpose" },
+];
+
+function Levers() {
+  return (
+    <div className="x-lev">
+      <span className="x-lev-h">Today · per question, by hand</span><span /><span className="x-lev-h now">My approach</span><span />
+      {LEVERS.map((l) => (
+        <div key={l.today} style={{ display: "contents" }}>
+          <span className="x-box person">{l.today}</span>
+          <Build at={l.at} className="x-arrow">→</Build>
+          <Build at={l.at} className={`x-box ${l.kind}`}>{l.now}</Build>
+          <Build at={l.at} className="x-lev-n">{l.lever ? `lever ${l.lever}` : ""}</Build>
+        </div>
+      ))}
+      <span className="x-lev-again">× every contract · again for every question</span>
     </div>
   );
 }
@@ -312,75 +343,88 @@ if (import.meta.env.DEV) {
 
 export const ACT2: Slide[] = [
   {
-    id: "part-2", act: 2, kind: "opener", title: "My approach", steps: 0, seconds: 6,
+    id: "part-2", act: 2, kind: "opener", title: "My approach", steps: 0, seconds: 7,
     quote: ["A solution explaining how you would tackle the challenge"],
     notes: [
-      "So how would I tackle it? Here is my roadmap.",
+      "My approach: how I work, my levers, and the options I tested.",
     ],
-    words: [{ word: "roadmap", say: "ROHD-map" }],
+    words: [{ word: "levers", say: "LEE-verz" }],
   },
   {
     // "How I work": steps 8 and 9 (platform, adoption) are planned, not done (order pass #6)
     id: "how-i-worked", act: 2, kind: "content", title: "How I work: from the problem to the platform.", steps: 3, seconds: 53, Body: HowIWorked,
     notes: [
-      // part 1 walked steps 1 and 2 (the task's two questions, today's process) - the rethinking is part 3 ('tomorrow')
-      "This is how I work, from the problem to the platform. You've seen the first two steps: Legal's two questions and today's process. " +
-        "Step three, rethinking that process, comes in part three.",
-      "Then the design: for every step, code or AI – with as little AI freedom as works. The architecture follows from that.",
-      "Then delivery: I tested the prototype. Azure and the rollout to the lawyers are planned, not built.",
-      "You encourage AI, and I used it: I built this with Claude Code, every AI-assisted commit is marked in git, and I can explain every line.",
+      // steps 1 to 3: the pilot (part 1), today's process and its rethinking (the next card, 'levers')
+      "I work in three phases. First, understand: I qualified the pilot – your two questions – mapped today's process and looked for the biggest levers.",
+      "Then design: for every step, code or AI – and as little freedom for the AI as works. The architecture follows from that.",
+      "Then deliver: I evaluated the prototype on contracts with known answers. Azure and the rollout are planned, not built yet.",
+      // decision 32: AI as sparring partner and accelerator; priorities, decisions and checks are Dima's
+      "You encourage AI, and I used it: I built this with Claude Code. Every AI-assisted commit is marked in git, every decision is documented, " +
+        "and I can explain every line.",
     ],
     words: [{ word: "pilot", say: "PIE-lut" }, { word: "process", say: "PROH-ses" }, { word: "architecture", say: "AR-kih-tek-cher" }, { word: "Claude", say: "KLAWD" }],
   },
   {
-    id: "contracts", act: 2, kind: "content", title: `Riverty cannot share contracts – so I put together ${ALL_DOCS} with known answers.`, steps: 3, seconds: 59, Body: TestSet,
+    // decision 99 (Dima, 2.11.: "where are the biggest levers, where do I see the most automation") - the
+    // former card 'tomorrow' (a deep dive now), turned into the levers; the architecture opens part 3
+    id: "levers", act: 2, kind: "content", title: "Three levers – the biggest: read every contract only once.", steps: 3, seconds: 53, Body: Levers,
     notes: [
-      "To test any approach, I need contracts with known answers. You can't share yours, so I built a test set.",
+      "To find the levers, I mapped today's process for one question, step by step.",
+      "The biggest lever is the reading. It grows with every contract and is repeated for every question. " +
+        "So the AI reads every contract only once, when it arrives, into a structured register: compile, don't search.",
+      `Second: with the register, a new question becomes a lookup – seconds instead of about ${HOURS} hours, always over every contract.`,
+      "Third, verifying: the lawyer sees the exact passage on the page, and only unclear findings need a person. " +
+        "One step I deliberately don't automate: the decision stays with the lawyer.",
+    ],
+    words: [{ word: "levers", say: "LEE-verz" }, { word: "compile", say: "kum-PILE" }, { word: "deliberately", say: "dih-LIB-er-it-lee" }, { word: "register", say: "REJ-ih-ster" }],
+  },
+  {
+    id: "contracts", act: 2, kind: "content", title: `Riverty cannot share contracts – so I put together ${ALL_DOCS} with known answers.`, steps: 3, seconds: 53, Body: TestSet,
+    notes: [
+      "To test the options, I need contracts with known answers. You can't share yours, so I built a test set.",
       // Riverty's addendum: "These agreements cover both B2B and B2B2C business models"; the scan card 'hard'
       // is a deep dive since decision 98, so M18, M05/M05-A and M02 are introduced here
-      `I wrote ${M_IDS.length} merchant agreements, ${range(M_IDS)}, with traps. They are B2B, and with consumer terms in the checkout also B2B2C. ` +
-        "M18 is a scan. M05 names the former company, and its amendment M05-A renames it. And M02 limits liability in other words.",
+      `I wrote ${M_IDS.length} merchant agreements, ${range(M_IDS)}, B2B and B2B2C, with traps: M18 is a scan, ` +
+        "M05 names the former company and its amendment M05-A renames it, and M02 limits liability in other words.",
       `Then ${V_IDS.length} data processing agreements, the vendor side.`,
       // the evaluation: known answers (the answer key, written first) and CUAD - public contracts with experts' labels
-      `And ${C_IDS.length} real public contracts from CUAD, the Contract Understanding Atticus Dataset, labelled by legal experts. ` +
-        `For ${QUESTIONS_N} test questions, I wrote the answers first.`,
+      `And ${C_IDS.length} real public contracts from CUAD, labelled by legal experts. For all ${QUESTIONS_N} test questions, I wrote the answers first.`,
     ],
     words: [{ word: "B2B2C", say: "bee-two-bee-two-SEE" }, { word: "M05-A", say: "em-zero-five-AY" }, { word: "amendment", say: "uh-MEND-ment" },
       { word: "labelled", say: "LAY-buld" }, { word: "CUAD", say: "KWAD" }],
   },
   {
-    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 59, Body: Rag,
+    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 55, Body: Rag,
     notes: [
-      "So how do most document assistants work? Say you ask about liability in M01, the Nordlicht contract.",
+      "For the biggest lever, the reading, I first tested the usual option: a chatbot over your documents. Say you ask about liability in M01.",
       // the first word on embeddings (rag-fails says "Embeddings rank too"; the map is a deep dive)
-      "A search compares your question with every passage – every short piece of a contract – and returns the most similar ones. " +
-        "It compares meaning: each passage becomes a list of numbers, called an embedding.",
-      `This is called top-k. Here k is ${E.k}: the search keeps only the ${E.k} best passages.`,
-      `Then a language model reads only these ${E.k} and writes the answer. For M01 this works: the search finds clause ${M01_CLAUSE}.`,
-      "This is called RAG, retrieval-augmented generation. The key point: the model only sees what the search returns.",
+      "A search compares your question with every passage of every contract, by meaning: each passage becomes a list of numbers, an embedding.",
+      `It keeps only the ${E.k} most similar passages. That is top-k – here k is ${E.k}.`,
+      `A language model reads only these ${E.k} and writes the answer. For M01 it works: the search finds clause ${M01_CLAUSE}.`,
+      "This is RAG, retrieval-augmented generation: the model sees only what the search returns.",
     ],
     words: [{ word: "Nordlicht", say: "NORD-likht" }, { word: "embeddings", say: "em-BED-ingz" }, { word: "top-k", say: "top-KAY" },
       { word: "retrieval", say: "rih-TREE-vul" }, { word: "augmented", say: "awg-MEN-tid" }],
   },
   {
-    id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 4, seconds: 77, Body: RagFails,
+    id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 4, seconds: 76, Body: RagFails,
     notes: [
-      `Now Legal's real question, our Q1: which merchant agreements lack a limitation of liability – a cap on what a party must pay? ` +
+      `Now your real question, Q1: which merchant agreements lack a limitation of liability – a cap on what a party must pay? ` +
         `That's ${measurement.contracts} contracts, because ${COPY.id} is a copy of ${COPY.copy_of}.`,
       `A keyword search for '${measurement.query}' keeps the top ${K} passages. They come from only ${AT_K.contracts_in_top_k} contracts.`,
       `So for the search, the other ${NOT_RANKED} seem to lack the clause.`,
       `But ${AT_K.false_alarms.length} of them are false alarms: they cap liability in other words or in German, like M02. ` +
-        `And ${AT_K.missed.join(", ")} is missed: it has no cap, but a hidden instruction for the AI mentions liability, so it ranks high.`,
+        `And ${AT_K.missed.join(", ")} is missed: it has no cap, but a hidden instruction for the AI mentions liability.`,
       // Dima's wish (Notion card 10, 1.11.), in his own words (decision 98): why top-k can never prove absence
-      `A missing clause has no passage – so it can never show up. A larger k does not help: ${NEVER} contracts never match the keywords. ` +
+      `A missing clause has no passage, so it can never show up – and a larger k does not help: ${NEVER} contracts never match the keywords. ` +
         "Embeddings rank too. Top-k ranks what is there – search can't prove that something is missing.",
     ],
     words: [{ word: "merchant", say: "MUR-chunt" }, { word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "instruction", say: "in-STRUK-shun" }],
   },
   {
-    id: "agent", act: 2, kind: "content", title: "And an AI agent that reads everything itself?", steps: 3, seconds: 71, Body: Agent,
+    id: "agent", act: 2, kind: "content", title: "And an AI agent that reads everything itself?", steps: 3, seconds: 70, Body: Agent,
     notes: [
-      "The second idea is an agent: a model plans a step, calls a tool – open a file, search, take notes – and repeats.",
+      "The second option is an agent: a model plans a step, calls a tool – open a file, search, take notes – and repeats.",
       // Dima's wish (Notion card 11, 1.11.), in his own words (decision 98)
       "The weak point: it decides itself when it has seen enough – so it can stop early, and nobody notices.",
       `A ${STUDY_YEAR} study, OverclaimBench, told agents to review every file. They skipped files in ${SKIPPED} percent of the runs, ` +
@@ -389,16 +433,16 @@ export const ACT2: Slide[] = [
       // why every contract is read once. The count is the one of 'today' (act1.tsx, parsed from the case study).
       // Riverty's sentence stays on screen too - Dima's one exception to decision 90c. "to read it": the reader
       // is one call per contract (guarded on 'what-we-use'); the checker is a second call for each "found".
-      `Riverty's task says agents fail on the size of the environment. That matches what I found: over ${n(PORTFOLIO)} contracts fit into no context window, so an agent sees only a part. ` +
-        "A missed contract never shows up – and the answer still sounds complete. That's why I read every contract once, completely: one AI call per contract to read it.",
+      `Your case study says agents fail on the size of the environment – and over ${n(PORTFOLIO)} contracts fit into no context window, so an agent sees only a part. ` +
+        "A missed contract never shows up, and the answer still sounds complete. That's why I read every contract once, completely: one AI call per contract to read it.",
     ],
     words: [{ word: "agent", say: "AY-junt" }, { word: "OverclaimBench", say: "OH-ver-klaym-bench" }, { word: "environment", say: "en-VY-run-ment" },
       { word: "context window", say: "KON-tekst WIN-doh" }],
   },
   {
-    id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 24, Body: Needs,
+    id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 25, Body: Needs,
     notes: [
-      "So we need three guarantees.",
+      "From all this, I derived three guarantees.",
       "First, every contract is read – and we can prove it, not just claim it.",
       "Second, every finding shows its passage on the page, so a lawyer can check it in seconds.",
       "And third, a lawyer decides.",

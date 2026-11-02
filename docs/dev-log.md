@@ -7,6 +7,36 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-02 · The talk shows my path: what I identified, my levers, the architecture – the demo right after the solution
+
+- **Problem:** Dima: part 2 "My approach" described how RAG and agents work, not his own path – "what did I
+  identify, where are the biggest levers, where do I see the most automation, how did I work?". The talk had
+  no architecture overview ("SharePoint und der ganze Prozess"), OCR was not explained on the main track,
+  part 1 already told the solution (the playbook, "only a copy – after approval"), and the notes narrated
+  the document ("Next, the technical outline …", "Finding is easy …"). He also asked for infrastructure and
+  adoption after the demo.
+- **Cause:** decision 98 moved `follow-m18` (the pipeline with OCR) to the deep dives and kept `tomorrow` as
+  the only process picture; the approach part grew out of the "why the usual approaches fail" story of
+  decision 88, so the levers lived only in the briefing (section 3) and in `tomorrow`.
+- **Technique and why:** answer-first structure (the first sentence of every note is its message), direct
+  address ("you", "your lawyers"), part 1 without solution. New card `levers` (part 2): today's process per
+  step and what my approach does with it – lever 1 read once instead of per question (compile, don't search),
+  lever 2 a question becomes a lookup, lever 3 verify at the passage on the page; the decision stays with the
+  lawyer on purpose. RAG and the agent are now the options I tested for lever 1. New card `architecture`
+  (part 3, replaces `tomorrow`, now a deep dive): SharePoint → read the text (OCR explained, below 70 % a person
+  checks) → one model call fills a fixed form → checks → register, and Legal's row in the Workbench up to the
+  archive copy after approval; the cards after it zoom in from left to right (`what-we-use` moved up). Part 4
+  is the live demo, then infrastructure (5) and adoption with the close (6). Repetitions removed instead of
+  content: the playbook is introduced once (on `architecture`), OCR once, best of breed once (`azure`).
+- **Rejected alternative:** demo as the finale (decision 90a); the architecture only in the Azure part (the
+  solution without a picture of the whole); keeping `tomorrow` next to `architecture` (the same picture twice,
+  +42 s); moving more cards to the deep dives.
+- **Metric before → after:** main track 26 cards, 2,499 spoken words, 1,311 s (21:51) at 124 wpm → 27 cards,
+  2,467 spoken words, 1,315 s (21:55); with both new cards and no tightening it measured 23:45. At 115 wpm
+  23:24. Dev guards: 0 console errors; `npm run build` green; part starts 0:53 · 2:46 · 9:18 · 16:00 · 18:58 · 20:14.
+- **Links:** decision 99, check question 41, `web/src/deck/slides.ts`, `web/src/deck/slides/act2.tsx`
+  (`levers`), `web/src/deck/slides/act3.tsx` (`architecture`), `docs/approach.md`.
+
 ## 2026-11-02 · The talk starts from Riverty's own case study, and the notes read as spoken prose
 
 - **Problem:** Dima walked through the talk: no real introduction to what the case study says and what I

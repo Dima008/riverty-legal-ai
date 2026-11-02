@@ -1,9 +1,11 @@
-// The order of the talk (decision 76; the parts of decision 90). One place to change the storyline:
-// parts, then screens. The talk follows Riverty's own outline: 1 the problem, 2 my approach, 3 the
-// technical solution (what we use, then the proof), 4 infrastructure, 5 adoption, 6 the basic
-// implementation, live - the finale, so every outline bullet is said before the part whose timing
-// varies most. Each opener shows its line of the case study word for word (guarded below). The
-// deep dives after the close are opened only on a question. Riverty asks for 15-20 minutes; since
+// The order of the talk (decision 76; the parts of decisions 90 and 99). One place to change the
+// storyline: parts, then screens. The talk follows Dima's path through Riverty's outline (decision 99,
+// Dima 2.11.: "identify, how I solve it, what the architecture looks like"): 1 the problem - what I
+// identified, 2 my approach - how I work, the levers, the options I tested, 3 the technical solution -
+// the architecture, its parts, the proof, 4 the basic implementation, live - right after the solution
+// it shows, 5 infrastructure, 6 adoption and the close. Each opener shows its line of the case study
+// word for word (guarded below). The deep dives after the close are opened only on a question.
+// Riverty asks for 15-20 minutes; since
 // 1.11. (Dima: no cuts) each card's seconds are what its notes need at about 115 words per minute
 // (plus about 15 s on the title for Dima's own introduction, 2.11.), and the main track may grow past
 // 20:00 - never past 22:00. To stay under it, decision 96 moved
@@ -15,7 +17,7 @@ import { ACT1 } from "./slides/act1";
 import { ACT2 } from "./slides/act2";
 import { ACT3 } from "./slides/act3";
 import { ADOPTION, INFRASTRUCTURE } from "./slides/act5";
-import { ACT6 } from "./slides/act6";
+import { CLOSE, LIVE } from "./slides/act6";
 import { DEEP } from "./slides/deep";
 import { RESULTS } from "./slides/proof";
 import type { Act, Slide } from "./types";
@@ -24,19 +26,19 @@ export const ACTS: Act[] = [
   { n: 1, title: "The problem" },
   { n: 2, title: "My approach" },
   { n: 3, title: "The technical solution" },
-  { n: 4, title: "Infrastructure" },
-  { n: 5, title: "Adoption" },
-  { n: 6, title: "The basic implementation, live" },
+  { n: 4, title: "The basic implementation, live" },
+  { n: 5, title: "Infrastructure" },
+  { n: 6, title: "Adoption" },
   { n: 7, title: "Deep dives" },
 ];
 
 export const SLIDES: Slide[] = [
-  ...ACT1,                              // 1 the problem
-  ...ACT2,                              // 2 my approach: the roadmap, then why the usual approaches fail
-  ...ACT3, RESULTS,                     // 3 the technical solution, ending with the proof
-  ...INFRASTRUCTURE,                    // 4
-  ...ADOPTION,                          // 5
-  ...ACT6,                              // 6 live, then the close
+  ...ACT1,                              // 1 the problem: what I identified
+  ...ACT2,                              // 2 my approach: how I work, the levers, the options I tested, three guarantees
+  ...ACT3, RESULTS,                     // 3 the technical solution: the architecture, its parts, the proof
+  ...LIVE,                              // 4 the basic implementation, live
+  ...INFRASTRUCTURE,                    // 5
+  ...ADOPTION, ...CLOSE,                // 6 adoption, then the close
   ...DEEP,
 ];
 
@@ -53,8 +55,8 @@ export const CHECKPOINTS = SLIDES.flatMap((s, index) =>
     ? [{ index, label: s.kind === "opener" ? `part ${s.act}` : s.id, at: plannedStart(index) }]
     : []);
 
-/** What to skip when late, in this order - all before the demo; never 'what-we-use', 'run-it',
- *  'live-add' or 'live'. `build`: skip from this build on; none: skip the whole card. */
+/** What to skip when late, in this order - before the demo, so it keeps its time; never 'what-we-use',
+ *  'run-it', 'live-add' or 'live'. `build`: skip from this build on; none: skip the whole card. */
 export const SKIP_IF_LATE: { id: string; build?: number }[] = [{ id: "results", build: 2 }];   // 'what-if' and 'sharepoint' are deep dives (decision 96)
 
 /** 75 -> "1:15" */

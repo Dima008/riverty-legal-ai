@@ -11,7 +11,7 @@ import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import { HARD, TASK, TODAY } from "./act1";
 import { EMBEDDING_MAP } from "./act2";
-import { FOLLOW_M18, INJECTION, REGISTER_INDEX } from "./act3";
+import { FOLLOW_M18, INJECTION, REGISTER_INDEX, TOMORROW } from "./act3";
 import { TEST_SET } from "./act4";
 import { SHAREPOINT } from "./act5";
 import { COST, WHAT_IF } from "./proof";
@@ -463,6 +463,7 @@ export const DEEP: Slide[] = [
     ],
     words: [{ word: "indemnification", say: "in-dem-nih-fih-KAY-shun" }, { word: "similarity", say: "sim-ih-LAR-ih-tee" }],
   },
+  TOMORROW,           // the process tomorrow (decision 99: the levers of part 2 and the card 'architecture' now)
   FOLLOW_M18,         // one contract step by step (decision 98), then its steps in detail
   {
     id: "chunking", act: 7, kind: "content", title: "Chunking: cut at the headings, not at a fixed length.", steps: 2, seconds: 40, deep: true, Body: Chunking,
