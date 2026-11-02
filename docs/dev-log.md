@@ -7,6 +7,35 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-02 · The Workbench as Dima described it: analysis, contracts, Go, every contract green / orange / red, the passage in yellow
+
+- **Problem:** Dima: "I choose the analysis in clear boxes, then the contracts, then Go; then I see
+  which are positive, orange and red; I click one and see the confirmed passage or the missing one –
+  the page in the middle with the yellow marking, the finding on the right." The answer showed only
+  the reported contracts; the 14 that contain the clause were grey tiles that were not counted and
+  opened the wrong file in Q2, Q5 and Q8; a rejected quote was yellow like evidence (M08).
+- **Cause:** A run returned only the evaluation's reported rows, and the UI had no rule for
+  "positive"; one highlight colour served three meanings.
+- **Technique and why:** Decision 95, from a design round (three designs, scored and merged):
+  five separate analysis boxes (missing clause, find a clause, former company name, governing law,
+  copies) and a visible contract step with filters and the scope preview; the answer shows every
+  contract in scope as a lane per colour with counts that add up. One colour rule on the server
+  (tested): red = the issue is there, orange = the register cannot settle it, a person looks (poor
+  scan, a doubtful Found, an unconfirmed law, a Legal correction), green = positive with evidence.
+  The reported rows stay exactly the evaluation's answer; all other evaluated contracts go into a
+  separate list with their evidence. Yellow only for checked evidence, an orange dashed outline for
+  a rejected passage, red for text addressed to AI systems. Every detail view says how we know – also
+  for "not found" (pages read, typical wordings searched). Green rows can be challenged in place.
+- **Rejected alternative:** One mixed box of questions (decision 93); more reported rows (breaks the
+  evaluation's count test); loading green evidence live per contract (about 28 calls for Q1).
+- **Metric before → after:** Q1 green contracts visible 0 → 14, each opening with its passage in
+  yellow (14 of 14); Q2 0 → 39, Q8 0 → 46 green; M08's rejected quote yellow → outlined; window
+  scroll at 1366x768 on the plan screen 12–51 px → 0; pytest 159 → 176 passed; eval Q1–Q8 1.00, CUAD
+  19/20; F37–F45 recorded and fixed.
+- **Links:** decision 95; F37–F45; `pipeline/portfolio.py`, `api/workflow.py`,
+  `web/src/workbench/AnalysisStep.tsx`, `ContractsStep.tsx`, `Lanes.tsx`, `answerRows.ts`,
+  `web/src/components/HowWeKnow.tsx`, `tests/test_portfolio_lights.py`
+
 ## 2026-11-02 · Speaker notes for reading aloud: short sentences, every key idea explained once, room for Dima's introduction
 
 - **Problem:** Dima reads the notes aloud at B2. Many sentences were long, joined by dashes or

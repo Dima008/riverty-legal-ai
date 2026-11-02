@@ -70,8 +70,11 @@ def guardrail_layers(r: dict, flags: list[str]) -> list[dict]:
     elif r["model_status"] == "ABSENT":
         layers.append({"layer": "no_absence_signal", "passed": "signal_despite_absent" not in names,
                        "detail": detail.get("signal_despite_absent")})
-    doc_signals = [n for n in ("low_ocr_quality", "ocr_text", "document_contains_suspected_injection") if n in names]
-    layers.append({"layer": "document_signals", "passed": not doc_signals, "detail": ", ".join(doc_signals) or None})
+    # a poor scan or text addressed to AI systems raise a doubt; "read by OCR" on a good scan is only
+    # information (F39: M18, OCR 93 %, said "1 of 2 checks failed")
+    doubts = {"low_ocr_quality", "document_contains_suspected_injection"} & names
+    notes = [n for n in ("low_ocr_quality", "ocr_text", "document_contains_suspected_injection") if n in names]
+    layers.append({"layer": "document_signals", "passed": not doubts, "detail": ", ".join(notes) or None})
     layers.append({"layer": "register", "result": r["status"], "detail": f"confidence {r['confidence']}"})
     return layers
 
@@ -107,8 +110,7 @@ def contract_matrix(con: sqlite3.Connection = Depends(get_con)) -> dict:
     plus open and resolved former company names - and whether a poor scan leaves a former name
     open (`former_names.not_ruled_out`, F19). The comparison standard is the catalogue
     (definition and the document types where a clause is required). No model call."""
-    clauses = {k: {"label": c["label"], "definition": c["definition"], "required_for": c["required_for"]}
-               for k, c in catalogue.CLAUSES.items()}
+    clauses = playbook_clauses()
     cells: dict[str, dict] = {}
     for r in con.execute("SELECT doc_id, clause_type, status, model_status, confidence FROM clauses"):
         cells.setdefault(r["doc_id"], {})[r["clause_type"]] = {
@@ -156,12 +158,34 @@ def compare_contracts(a: str = Query(..., description="first contract, e.g. M15"
     return result
 
 
+# The playbook's absence signals are regular expressions; a lawyer reads them as words (decision 95:
+# "How we know it is missing"). Shown only - the check itself uses the patterns.
+SIGNAL_WORDS = [(r"\\b", ""), (r"\\\.\?\\s\*", ". "), (r"\.\{0,\d+\}", " … "), (r"\[\w+\]\?", ""),
+                (r"-\?", "-"), (r"\(([^()]*)\)", lambda m: m.group(1).replace("|", "/"))]
+
+
+def plain_signals(patterns: list[str]) -> list[str]:
+    """'limitation (of|on) liability' -> 'limitation of/on liability', 'sub-?processor' -> 'sub-processor'."""
+    out = []
+    for p in patterns:
+        for pattern, words in SIGNAL_WORDS:
+            p = re.sub(pattern, words, p)
+        out.append(" ".join(p.split()))
+    return out
+
+
+def playbook_clauses() -> dict:
+    """Each playbook clause as the tool shows it: label, definition, where it is required, and the typical
+    wordings the absence check searches the whole text for (absence_words). /matrix and /catalogue send it."""
+    return {k: {"label": c["label"], "definition": c["definition"], "required_for": c["required_for"],
+                "absence_words": plain_signals(c["absence_signals"])}
+            for k, c in catalogue.CLAUSES.items()}
+
+
 @router.get("/catalogue")
 def clause_catalogue() -> dict:
-    """Legal's playbook as data: clause definitions and where they are required."""
-    return {"prompt_version": config.PROMPT_VERSION,
-            "clauses": {k: {"label": c["label"], "definition": c["definition"], "required_for": c["required_for"]}
-                        for k, c in catalogue.CLAUSES.items()}}
+    """Legal's playbook as data (playbook_clauses) and the prompt version it belongs to."""
+    return {"prompt_version": config.PROMPT_VERSION, "clauses": playbook_clauses()}
 
 
 # ---------------------------------------------------------------------------- changes

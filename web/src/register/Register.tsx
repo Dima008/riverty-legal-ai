@@ -408,7 +408,7 @@ export function Register() {
                           {r.former_names.open === 1 ? t("1 former name") : t("{n} former names", { n: r.former_names.open })}
                         </span>
                       ) : r.former_names.not_ruled_out ? (
-                        <span className="name-open" title={r.former_names.reason ? nameReason(r.former_names.reason, t) : undefined}>
+                        <span className="name-open name-unsure" title={r.former_names.reason ? nameReason(r.former_names.reason, t) : undefined}>
                           {t("cannot rule out")}
                         </span>
                       ) : r.former_names.resolved > 0 ? (

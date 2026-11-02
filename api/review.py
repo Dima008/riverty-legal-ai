@@ -17,6 +17,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field
 
+from pipeline.portfolio import count_lights
 from pipeline.store import now
 
 from .deps import USERS, current_user, get_con
@@ -29,6 +30,8 @@ router = APIRouter()
 REQUIRED_REVIEWS = {"CONFIRM": 1, "REVIEW": 1, "FOUR_EYES": 2}
 FINAL = {"CONFIRMED", "REJECTED", "CORRECTED"}
 APPROVED = {"CONFIRMED", "CORRECTED"}       # states that unlock the archive copy
+# Legal doubts a Found (decision 95, F34): it stays orange until a run can report the correction
+LEGAL_DOUBT = {"REJECTED", "CORRECTED", "DISPUTED", "IN_REVIEW", "ESCALATED"}
 
 
 def review_state(triage: str, reviews: list[dict]) -> dict:
@@ -84,6 +87,20 @@ def attach_reviews(wb: sqlite3.Connection, run: dict) -> dict:
     run["review_states"] = {s: sum(1 for row in run["rows"] if row["review"]["state"] == s)
                             for s in ("FOUND", "ESCALATED", "IN_REVIEW", "CONFIRMED", "REJECTED", "CORRECTED",
                                       "DISPUTED")}
+    # decision 95: a clause the run did not report (a Found) carries Legal's decision on its finding (D6,
+    # decision 73). Legal doubting a green Found turns it orange - shown, not counted yet (F34); a doubtful
+    # Found that Legal confirmed turns green. Older runs have no unreported rows.
+    for row in run.get("unreported", []):
+        finding = finding_of(run, row)
+        if finding is None:
+            continue
+        row["legal"] = review_state(row["triage"], finding_reviews(wb, finding))
+        if row["light"] == "green" and row["legal"]["state"] in LEGAL_DOUBT:
+            row["light"], row["light_why"] = "orange", "legal"
+        elif row["light_why"] == "not_sure" and row["legal"]["state"] == "CONFIRMED":
+            row["light"], row["light_why"] = "green", "legal_confirmed"
+    if "unreported" in run:
+        run["lights"] = count_lights(run["rows"] + run["unreported"])
     return run
 
 

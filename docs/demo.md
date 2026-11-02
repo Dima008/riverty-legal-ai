@@ -75,46 +75,55 @@ it knows that it cannot rule it out, and a person reads the page.
 
 ## What the Workbench shows for H01
 
-Question Q2 with H01 in the register: 6 contracts to look at – H01 plus M04, M06, M10, M13, M18; 45
-read, 3 excluded with reason. H01's row says **Cannot rule out**, why "Poor scan (OCR 61 %)", next
-step **Review** (the other five: **Confirm**, one of them may say **Spot check** - the sample changes
-per run). In step 3 (Decide) the card says "Cannot rule out → Review", the callout "Poor scan: page 1
-was read by text recognition with only 61 % confidence. Compare with the page." and "The exact search
-found no former company name – but this scan is too poor to prove that none is there. Read the page:
-confirm if it names a former company, reject if it does not." In the contract register H01 is tagged
-"New", its Source says "Photo scan · OCR 61 % · poor scan", its name column "cannot rule out", and the
-summary "6 to check for a former name (5 name one · 1 cannot be ruled out)". Before any question, the
-header says "48 contracts · 1 new" and step 1 shows H01 under "New in the register" with the card's
-lines ("poor scan → a person · not found: Limitation of liability, Data processing agreement ·
-unclear → a person: Consumer terms in checkout · former name: cannot be ruled out – a person checks").
-H01's contract file has the link "Ask about former names for this contract in the Workbench →": it
-opens step 1 with Q2 chosen and "Contracts: H01 (opened from the register)", 1 in scope; after
-"Confirm the plan" the one row opens step 3 directly. Measured on a register copy, 1 Nov
-(screens `scratchpad/wb-finish/shots/H-*.png`).
+The traffic light (decision 95): H01 is **orange** in every question that asks about its text - a
+poor scan proves neither that something is missing nor that it is not there. Measured on a register
+copy with H01, 2 Nov, 1366x768 (screens `scratchpad/traffic/run2/shots/demo-*.png`, `h01-*.png`):
+
+| Question | H01 in the answer | Step 4 for H01 |
+| --- | --- | --- |
+| Q1 (limitation of liability) | orange lane "Unclear", tile **H01**, list row "Not found – poor scan · Poor scan (OCR 61 %) · Review"; still a reported row (the evaluation's answer is unchanged). The answer: red 3 (M03, M14, M18) · orange 3 (H01, M08, M10) · green 14 · excluded 1 (M15) | the photo of the page; strip "? Not found – but this scan was read by OCR at 61 % (threshold 70 %). Compare with the page."; card "Not found – poor scan → Review", "Poor scan: page 1 was read by text recognition with only 61 % confidence. Compare with the page."; the decision "Review · one person, with a reason" |
+| Q2 (former name) | orange lane "Cannot rule out", **H01** next step Review; red 5 · orange 1 · green 39 · excluded 3 | strip "The search found no former name – but this scan is too poor to prove it."; how we know: the exact search for all 4 names, "No hit", "OCR 61 % is below the 70 % threshold: the search cannot prove that no name is there", and - as a doubt - "The model reads our company as Arvato Financial Solutions GmbH – a reading, not evidence" |
+| Q8 (copies) | orange "No copy found – poor scan" (F43); red 1 (M15) · orange 1 · green 46 | "No copy found – but this scan is too poor to prove it. Compare with the page."; "Read the page. Nothing can be recorded here." |
+
+Do not say the system found the former name on H01 - it did not; the model's own reading names
+Arvato, and the tool shows that as a reading, not as evidence. Before any question, the header says
+"48 contracts · 1 new" and step 1 shows H01 under "New in the register" with the card's lines ("poor
+scan → a person · not found: Limitation of liability, Data processing agreement · unclear → a
+person: Consumer terms in checkout · former name: cannot be ruled out – a person checks"); the five
+boxes are a little lower then, and the footer line is hidden so that Confirm the plan stays at y
+651–691 (no window scroll). In the contract register H01 is tagged "New", its Source says "Photo
+scan · OCR 61 % · poor scan", its name column "cannot rule out". H01's contract file has the link
+"Ask about former names for this contract in the Workbench →": it opens steps 1 and 2 with "Former
+company name" chosen and "1 of 48 documents chosen · search: H01", H01 as the first chip; Confirm the
+plan → "0 of 1 contracts still name a former company", the one tile in the orange lane.
 
 ## The click script - card "live" (Q1, with H01 in the register)
 
-The note of the card "live" is this script. Measured in Edge on a register copy with H01 in it,
-2026-11-01, 1366x768, own workflow database and storage folder: **0 window scrolls** for the whole
-script (before the redesign about 5), every button inside the window when it is clicked.
+The note of the card "live" is this script, on the traffic-light Workbench (decision 95). Measured
+in Edge (Playwright) on a register copy with H01 in it, 2026-11-02, 1366x768, own workflow database
+and storage folder, in English and in German: **0 window scrolls** (page height 768 on every
+screen), every element inside the window when it is clicked (y in brackets); the clicks alone take
+23 s.
 
 | Step | Click | What the Workbench shows |
 | --- | --- | --- |
-| (open) | "Open the Legal Workbench →" (`#/tool/workbench`) | Step 1. The header says "48 contracts · 1 new"; "New in the register": "H01 · arrived … · merchant agreement · poor scan → a person · not found: Limitation of liability, Data processing agreement · unclear → a person: Consumer terms in checkout · former name: cannot be ruled out – a person checks". Below it **every question in one box** (decision 93), grouped by topic: Clause not found (5), Former company name, Governing law, Copies; Q1 and Q2 tagged **Pilot**; "Build your own question" at the end of the box |
-| 1 Ask | the first question under "Clause not found", tagged Pilot: "Which merchant agreements do not contain a limitation of liability?" | the row is marked. The plan card on the right: "Question: Limitation of liability – not found or unclear · Contracts: every merchant agreement · In scope: 21 · M15 will be excluded: duplicate of M01 – the original is checked · Cost: register query · no model call · $0" |
-| 2 Confirm the plan | **Confirm the plan** | step 2 |
-| 3 Answer + coverage | – | "6 of 20 merchant agreements to look at"; a tile per merchant agreement, H01 first, M15 hatched; "M15 excluded: duplicate of M01 – the original is checked". The table "To look at": H01 Not found · Poor scan (OCR 61 %) · Review; M03 Not found · Confirm; M08 Unclear · The checks overruled the model · Review; M10 Unclear · The checks overruled the model · Review; M14 Not found · Text addressed to AI systems (page 3) · Four eyes · 0 of 2; M18 Not found · Confirm. A routine row may say **Spot check** instead: the sample changes per run |
-| 4 Evidence on the page | row or tile **M08** | step 3 (Decide): clause 6.2 highlighted on page 1 ("the model's quote · page 1"). Card: "Unclear → Review", "The checks overruled the model. The model said Found, but the quote does not fit the clause, and a second model call disagreed." The decision is on the same screen ("Confirm finding" at y 589–621) |
-| 5 Four eyes | **M14** in the queue → reason → **Confirm finding** → **Continue as Legal Reviewer B** → reason → **Confirm finding** | slot 1 "Legal Reviewer A confirmed", "You approved. The second approval must come from another person."; after B "Confirmed ✓", both reviewers named, the archive copy unlocked. *Optional, +7 s: click "Store archive copy" after A → "Refused by the server: the archive copy needs 2 approvals (1 so far). The attempt is in the audit log."* |
-| 6 Archive copy | **Store archive copy** (y ≈ 711–741) | "M14_Urban.pdf: stored (receipt rcpt-…) · approved by Legal Reviewer A and Legal Reviewer B"; a second click: "already archived (receipt …) · approved by Legal Reviewer A and Legal Reviewer B" |
+| (open) | "Open the Legal Workbench →" (`#/tool/workbench`) | The work bar "1 Analysis › 2 Contracts › 3 Answer › 4 Evidence & decision". The header says "48 contracts · 1 new"; "New in the register": "H01 · arrived … · merchant agreement · poor scan → a person · not found: Limitation of liability, Data processing agreement · unclear → a person: Consumer terms in checkout · former name: cannot be ruled out – a person checks". Below it **the five analysis boxes**: Missing clause (Pilot), Find a clause, Former company name (Pilot), Governing law, Copies |
+| 1 Analysis | box **Missing clause** (y 232–328) | the box gets a mint border and ✓. Panel ①: the five playbook clauses, **Limitation of liability** (Pilot) chosen; "What we look for …"; the legend "You will see every contract – in one of three colours: ✕ Not found · ? Unclear · ✓ Found" |
+| 2 Contracts | – (point at panel ②) | "Merchant agreements 21" chosen; "21 merchant agreements in scope – every one of the type · 20 will be evaluated · 1 not evaluated, each with its reason: M15 copy of M01 – the original is evaluated"; the contracts as grey chips, M15 hatched; "The answer is not shown before you confirm" |
+| 3 Confirm the plan | **Confirm the plan** (y 651–691) | step 3 |
+| 4 Answer + coverage | – | "Limitation of liability: not found in 3 of 20 contracts" / "3 more are unclear – a person looks. 14 contain it, with the passage."; the lanes ✕ 3 Not found: M03, M14, M18 · ? 3 Unclear: **H01**, M08, M10 · ✓ 14 Found · – 1 Excluded: M15 "copy of M01 – the original is evaluated"; "21 in scope = ✕ 3 + ? 3 + ✓ 14 + – 1"; on the right "To decide – 6 to decide · 6 open", H01 "Not found – poor scan · Poor scan (OCR 61 %) · Review". A routine row may say **Spot check**: the sample changes per run |
+| 5 A rejected passage | tile **M08** (y 303–335) | step 4: clause 6.2 on page 1 **outlined, dashed orange, no fill** - "proposed by the model – rejected by the checks · page 1"; strip "? The model proposed clause 6.2 – the checks rejected it. Not evidence."; card "Unclear → Review" |
+| 6 A passage that exists | **M01** in the rail under "✓ Found · 14" (y 706–737) | page 2, clause 7.2 **filled yellow** - "the passage – checked · page 2"; strip "✓ Found on page 2 – the marked passage is the limitation of liability."; card "Found → No decision", the passage, HOW WE KNOW (word for word, the clause's words, a second model call agreed, not from text addressed to AI systems); below "Positive – nothing to decide." |
+| 7 Four eyes | **M14** in the rail (y 361–413) → reason → **Confirm finding** (y 628–660) → **Continue as Legal Reviewer B** (y 658–690) → reason → **Confirm finding** | strip "No limitation of liability on any of the 3 pages – the whole contract was read.", page 3 with the hidden instruction in red; "How we know it is missing: all 3 pages read …"; slot 1 "Legal Reviewer A confirmed"; after B "Confirmed ✓", both reviewers named, the archive copy unlocked |
+| 8 Archive copy | **Store archive copy** (y 717–741) | "M14_Urban.pdf: stored (receipt rcpt-…) · approved by Legal Reviewer A and Legal Reviewer B" |
 | (back) | **← Talk** (header, always visible) | back to the deck, then → to the close |
 
-Do not speak the scope numbers: with H01 they are 21 in scope and 20 read (20 and 19 without it),
-so they would not match the register card of act 3. The note reads its contract ids from the
-register snapshot (`deck-data.json`), so they follow the register; it adds H01 itself. The plan card
-now shows "In scope: 21" before the answer – show it, do not say it.
+Do not speak the scope numbers: with H01 they are 21 in scope and 20 evaluated (20 and 19 without
+it), so they would not match the register card of act 3. Show them, do not say them. The colours
+are the message: red - the clause is missing; orange - a person looks (H01: a poor scan cannot prove
+a clause is missing); green - it is there, with its passage.
 
-Steps 5 and 6 write to the workflow database (`WORKBENCH_DB`) and the storage folder
+Steps 7 and 8 write to the workflow database (`WORKBENCH_DB`) and the storage folder
 (`STORAGE_MOCK_DIR`), and both survive `tools.demo reset`: a review belongs to the finding version
 and every later run reuses it (decision 73). Rehearse the click script only in the dry run (below),
 and start the talk with an empty workflow database and storage folder - otherwise M14 already says
@@ -135,7 +144,10 @@ After `tools.demo reset` that answer said "Out of date: H01 was removed from the
 header "47 contracts" within 1.0 s (1 Nov, register copy, 1366x768).
 
 Card "live": 115 s (was 100 s, decision 92) - one more click (Answer → Decide) and two typed reasons,
-but no scrolling. Measure three rehearsals; if the median is above 115 s, shorten the spoken text.
+but no scrolling. The traffic light (decision 95) adds one stop - M01, a green passage - and about
+two sentences: about +6–8 s, not measured with speech yet. Measure three rehearsals: median up to
+120 s - keep; above - shorten the spoken text; still above - drop the M01 click and point at the
+green lane while saying step six.
 
 Where the time goes: 0–5 s until the watcher's next look (it polls every 5 s), OCR about 1.5 s,
 the extraction call 4.4 s (1,564 → 357 tokens), the checker 0.9 s, families and 6 embeddings
@@ -199,10 +211,10 @@ answer differently, F7). Set the prompt version back to the register's (decision
 | --- | --- | --- |
 | "register not reachable – start the API" | API not running | start terminal 1; the card recovers by itself |
 | 47 stays, "waiting for a new contract …" after 20 s | watcher not running, or the file is not in `data\inbox` | start the watcher - its first pass reads the inbox at once (about 10 s) |
-| 48, "H01 is new · the model is reading it …" and "poor scan → a person", and it stays after 20 s | Azure or the network is down: OCR runs locally, the model call does not. Measured with an unreachable endpoint: in the register after 5.5 s; the watcher retries for 204 s, then logs `H01 extraction failed: Connection error.` | "The model is not reachable right now. The contract is in the register anyway – nothing is lost. OCR already says: a poor scan, a person looks. The findings wait for the model." Then go on: the Workbench answers its questions from the register, without a model call - but skip the H01 sentence of the click script (step 3), and check the answer before you speak its ids |
+| 48, "H01 is new · the model is reading it …" and "poor scan → a person", and it stays after 20 s | Azure or the network is down: OCR runs locally, the model call does not. Measured with an unreachable endpoint: in the register after 5.5 s; the watcher retries for 204 s, then logs `H01 extraction failed: Connection error.` | "The model is not reachable right now. The contract is in the register anyway – nothing is lost. OCR already says: a poor scan, a person looks. The findings wait for the model." Then go on: the Workbench answers its questions from the register, without a model call - but skip the H01 sentence of the click script (step 4), and check the answer before you speak its ids |
 | the watcher prints `pass failed, still watching: …` | one pass hit an error (e.g. a file removed while it was read) | nothing - the watcher keeps polling, the next pass starts from the register as it is; the traceback above the line is for afterwards |
 | The work bar says "Out of date: H01 …" | Q1 was asked before H01 was read | "The register changed since this answer – the tool says so instead of changing it silently." Click **Ask again** |
-| In the Q1 answer H01 is hatched: "not read yet – listed, not checked" | the model call is still running, or failed | "It is not dropped – the answer names it and why." Skip the H01 sentence of step 3 |
+| In the Q1 answer H01 is in the grey "Excluded" lane: "not read yet – listed, not checked" | the model call is still running, or failed | "It is not dropped – the answer names it and why." Skip the H01 sentence of step 4 |
 | nothing works | – | "Live demos. Here is the same idea on a contract that is already in the register:" open the contract register, contract M18 (the old German scan) |
 
 ## Reset after every rehearsal - and after the talk

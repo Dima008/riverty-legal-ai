@@ -1,21 +1,24 @@
 // The words of a finding (spec section 3, decision 91), the same on every screen: what the text says
 // (one word, always with its icon), the next step (the triage level and Legal's decision in one word)
 // and why a person looks. They replace the badges, the flag chips and the warning bars.
-import type { Finding, ReviewState, RunRow, Triage } from "../api";
+import type { Finding, ReviewState, RunRow, Triage, UnreportedRow } from "../api";
 import { useT, type T } from "../i18n";
 import { lawReason, nextStep, OPEN_STATES, overruled, statusWord, WHY, type WhyRule } from "../labels";
-import { statusColor, StatusIcon } from "./Badges";
+import { lightOf, LightIcon, type Lit } from "./Badges";
 import { flagName, type Alert } from "./SafetyBar";
 import "../workbench/workbench.css";
 
-/** What the text says: the status icon and its word, e.g. "Not found". `signal`: counted as one of the
- *  few marks of a finding (data-signal, acceptance C1). */
-export function StatusWord({ status, law, signal = false }: { status: string; law?: string | null; signal?: boolean }) {
+/** What the text says: the light's icon and the word, e.g. "✕ Not found". The light comes from the answer
+ *  (decision 95: a Not found on a poor scan is orange); without one, from the status. `word` replaces the
+ *  status word (e.g. "Found – a person checks"). `signal`: counted as one of the few marks of a finding. */
+export function StatusWord({ status, law, light, word, signal = false }:
+  { status: string; law?: string | null; light?: Lit; word?: string; signal?: boolean }) {
   const t = useT();
+  const lit = light ?? lightOf(status);
   return (
-    <span className={`sw sw-${statusColor(status)}`} data-signal={signal ? "status" : undefined}>
-      <StatusIcon status={status} />
-      {statusWord(status, t, law)}
+    <span className={`sw sw-${lit}`} data-signal={signal ? "status" : undefined}>
+      <LightIcon light={lit} />
+      {word ?? statusWord(status, t, law)}
     </span>
   );
 }
@@ -61,10 +64,11 @@ export interface WhySubject {
   reason?: string | null;       // the row's fixed reason, e.g. why a law is not confirmed (F36)
 }
 
-/** A run row as a why subject. */
-export const rowSubject = (r: RunRow): WhySubject => ({
+/** A row of an answer as a why subject: a reported row with its review, an unreported one with Legal's decision. */
+export const rowSubject = (r: RunRow | UnreportedRow): WhySubject => ({
   docId: r.doc_id, status: r.status, modelStatus: r.model_status, confidence: r.confidence, flags: r.flags,
-  review: r.review, sample: r.sample, docStatus: r.doc_status, ocrConf: r.ocr_mean_conf, reason: r.reason,
+  review: "review" in r ? r.review : r.legal ?? null, sample: r.sample, docStatus: r.doc_status, ocrConf: r.ocr_mean_conf,
+  reason: r.reason,
 });
 
 /** A finding of the register as a why subject; the document's flags count too (an injection is a document flag). */

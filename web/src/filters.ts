@@ -184,6 +184,7 @@ export interface Prefill {
   q: string;
   check: string;
   clause: string;
+  intent: string;      // "find": the analysis box "Find a clause" (decision 95)
   type: string | null;
   filters: ScopeFilters;
 }
@@ -198,6 +199,7 @@ export function readParams(params: URLSearchParams): Prefill {
     q: key("q"),
     check: key("check"),
     clause: key("clause"),
+    intent: get("intent") === "find" ? "find" : "",
     type: params.has("type") ? (get("type") === "all" ? "" : key("type")) : null,
     filters: {
       law: /^[A-Za-z]{2}$/.test(law) ? law.toUpperCase() : law === "none" ? "none" : "",
@@ -209,11 +211,13 @@ export function readParams(params: URLSearchParams): Prefill {
 }
 
 /** The other way round: "type=all&law=NL" with only the parameters that are set. */
-export function toParams(p: { q?: string; check?: string; clause?: string; type?: string | null; filters?: Partial<ScopeFilters> }): string {
+export function toParams(p: { q?: string; check?: string; clause?: string; intent?: string; type?: string | null;
+                                filters?: Partial<ScopeFilters> }): string {
   const out = new URLSearchParams();
   if (p.q) out.set("q", p.q);
   if (p.check) out.set("check", p.check);
   if (p.clause) out.set("clause", p.clause);
+  if (p.intent) out.set("intent", p.intent);
   if (p.type != null) out.set("type", p.type || "all");
   for (const [k, v] of Object.entries(p.filters ?? {})) if (v) out.set(k, v);
   return out.toString();

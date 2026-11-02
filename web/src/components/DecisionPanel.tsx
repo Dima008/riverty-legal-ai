@@ -25,9 +25,11 @@ interface Props {
   target: Target;
   onChanged: () => void;        // a decision was stored: reload the run or the finding
   focusKey?: number;            // changes when the lawyer picks a row: the reason field (or "Continue as") gets the focus
+  inAnswer?: boolean;           // a finding decided inside an answer (decision 95): it stays in the answer, no way back
+  challenge?: boolean;          // a green Found that the lawyer doubts: "Challenge"
 }
 
-export function DecisionPanel({ target, onChanged, focusKey = 0 }: Props) {
+export function DecisionPanel({ target, onChanged, focusKey = 0, inAnswer = false, challenge = false }: Props) {
   const t = useT();
   const user = useUser();
   const switchUser = useSwitchUser();
@@ -65,6 +67,7 @@ export function DecisionPanel({ target, onChanged, focusKey = 0 }: Props) {
   // the requirement in words, or where the decision stands once it is made
   const head = decided ? nextStep(review, triage, sample, t)
     : required === 2 ? t("Four eyes · two people, each with a reason")
+    : challenge ? t("Challenge · one person, with a reason")
     : triage === "CONFIRM" ? t("Confirm · one person, no reason needed") : t("Review · one person, with a reason");
   const votes = review.reviews.filter((r) => r.decision !== "ESCALATED");
 
@@ -97,7 +100,7 @@ export function DecisionPanel({ target, onChanged, focusKey = 0 }: Props) {
   return (
     <section className="decision" aria-label={t("Your decision")}>
       <div className="dp-head">
-        <b>{t("Your decision")}</b> · <span>{head}</span>
+        <b>{challenge ? t("Challenge this finding") : t("Your decision")}</b> · <span>{head}</span>
       </div>
       {(required === 2 || votes.length > 0) && (
         <ApprovalSlots review={review} here={target.kind === "run" ? target.run.run_id : "register"} compact />
@@ -157,6 +160,12 @@ export function DecisionPanel({ target, onChanged, focusKey = 0 }: Props) {
             </>
           )}
         </ArchiveStep>
+      ) : inAnswer ? (
+        // decided inside an answer: stored with the finding; the answer's reported rows do not change (F34)
+        <p className="dp-note">
+          {state === "DISPUTED" ? t("The two decisions differ. Nothing is archived.")
+            : t("Stored with this finding – the register and every answer show it. It does not yet move the contract to 'Not found' in an answer (F34, open). No archive copy for a contract the answer does not report.")}
+        </p>
       ) : (
         <p className="dp-note">
           {state === "DISPUTED" ? t("The two decisions differ. Nothing is archived.")

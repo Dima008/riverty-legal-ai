@@ -7,6 +7,12 @@ unknown type is always in scope; and every contract in scope lands in exactly on
 checked (with status and evidence) or excluded with a stated reason (duplicate, amendment, type
 unknown, not extracted). The tests count scope = checked + excluded against the register.
 
+Every checked contract also gets a traffic light (decision 95): red, orange or green, by one rule
+(light() below). The answer keeps three lists, and every contract in scope is in exactly one:
+`rows` - the reported contracts, exactly what the evaluation counts (red and orange); `unreported` -
+every other checked contract, with its evidence and its light (mostly green: "Found", "no former
+name", "same law", "unique"); and `coverage.excluded` with the reason.
+
 Legal may choose the scope (decision 75): a selection of contracts from the register. Then the
 selection is the scope - every chosen contract is checked or excluded with a reason (also one of
 another type), an id that is not in the register is refused, and the coverage says "N of 47,
@@ -114,6 +120,31 @@ def validate_scope(scope) -> dict:
     return {"doc_ids": sorted(set(ids)), "filters": filters}
 
 
+# ---------------------------------------------------------------------------- the traffic light
+# Decision 95: one colour rule for every analysis, computed here and tested (tests/test_portfolio_lights.py).
+# red = the issue the question looks for is in the text; orange = the register cannot settle it, a person
+# looks; green = positive: no issue, and here is the evidence.
+RED = {"ABSENT", "LEGACY_NAME", "OTHER_LAW", "DUPLICATE"}
+ORANGE = {"UNCLEAR", NAME_NOT_RULED_OUT, LAW_UNKNOWN, LAW_NOT_CONFIRMED, "SAME_LAW_NOT_CHECKED"}
+GREEN = {"PRESENT", "NO_FORMER_NAME", "NAME_RESOLVED", "SAME_LAW", "UNIQUE", "ORIGINAL"}
+
+
+def light(status: str, triage: str | None, doc_status: str | None) -> tuple[str, str]:
+    """The light of one contract for one question, with the reason for it (light_why).
+    Doubt never turns green: a poor scan proves neither absence nor presence (F19, decision 89) - not of a
+    clause, and not of a copy: a misread text is not "unique" (F43). A Found that needs Review or Four eyes
+    is not routine. Red stays red - a person sees it anyway."""
+    if status in ORANGE:
+        return "orange", "status"
+    if doc_status == "LOW_QUALITY" and status in ("ABSENT", "PRESENT", "UNIQUE"):
+        return "orange", "poor_scan"
+    if status in RED:
+        return "red", "status"
+    if status in GREEN:
+        return ("green", "status") if triage in (None, "CONFIRM") else ("orange", "not_sure")
+    raise ValueError(f"no light for status {status!r}")     # an unknown status is never silently green
+
+
 # ---------------------------------------------------------------------------- triage
 def triage(status: str, confidence: float | None, flags: list[str]) -> str:
     """FOUR_EYES: injection suspected or contradicting metadata. REVIEW: a status in REVIEW_STATUSES,
@@ -133,7 +164,8 @@ def sampled(run_id: str, doc_id: str) -> bool:
 # ---------------------------------------------------------------------------- scope
 def _documents(con) -> list[dict]:
     rows = con.execute(
-        "SELECT d.doc_id, d.status, d.ocr_mean_conf, d.duplicate_of, d.family_id, d.flags, d.ingested_at, m.doc_type,"
+        "SELECT d.doc_id, d.status, d.ocr_mean_conf, d.duplicate_of, d.family_id, d.flags, d.ingested_at, d.page_count,"
+        " d.text_sha256 AS doc_sha256, m.doc_type,"
         " m.title, m.counterparty_name, m.governing_law, m.is_amendment, m.text_sha256 AS extracted_sha256,"
         " m.prompt_version, m.governing_law_quote, m.law_page, m.law_char_start, m.law_char_end, m.law_flags"
         " FROM documents d LEFT JOIN metadata m ON m.doc_id = d.doc_id ORDER BY d.doc_id").fetchall()
@@ -165,51 +197,56 @@ def _exclusion(doc: dict, check: str, doc_type: str | None = None) -> str | None
 
 
 def _row(doc: dict, **fields) -> dict:
-    """A reported row. It also carries the document's scan quality and arrival, so every check can
-    say "poor scan" or "new" - also those whose rows have no low_ocr_quality flag (names, law, copies)."""
+    """A row of the answer, reported or not. It also carries the document's scan quality, page count and
+    arrival, so every check can say "poor scan", "whole contract read: 2 pages" or "new" - also those whose
+    rows have no low_ocr_quality flag (names, law, copies)."""
     return {"doc_id": doc["doc_id"], "title": doc["title"], "counterparty_name": doc["counterparty_name"],
             "doc_type": doc["doc_type"], "doc_status": doc["status"], "ocr_mean_conf": doc["ocr_mean_conf"],
-            "ingested_at": doc["ingested_at"], **fields}
+            "ingested_at": doc["ingested_at"], "page_count": doc["page_count"], **fields}
 
 
 # ---------------------------------------------------------------------------- checks
-def _missing_clause(con, docs: list[dict], params: dict) -> tuple[list[dict], dict, dict]:
+def _missing_clause(con, docs: list[dict], params: dict) -> tuple[list[dict], list[dict], dict, dict]:
+    """Not found and unclear are reported; a Found goes to `unreported`, with its passage (decision 95)."""
     findings = {r["doc_id"]: dict(r) for r in
                 con.execute("SELECT * FROM clauses WHERE clause_type=?", (params["clause_type"],))}
-    rows, counts = [], Counter()
+    rows, unreported, counts = [], [], Counter()
     for d in docs:
         f = findings.get(d["doc_id"])
         if f is None:     # every extraction stores every clause type; if not, unknown = unclear (recall first)
             f = {"status": "UNCLEAR", "model_status": None, "confidence": 0.0, "quote": None, "page": None,
-                 "section": None, "rationale": "no finding stored for this clause", "flags": "[]"}
+                 "section": None, "char_start": None, "char_end": None,
+                 "rationale": "no finding stored for this clause", "flags": "[]"}
         counts[f["status"]] += 1
-        if f["status"] == "PRESENT":
-            continue
         flags = json.loads(f["flags"] or "[]") + d["flags"]
-        rows.append(_row(d, status=f["status"], model_status=f["model_status"], confidence=f["confidence"],
-                         quote=f["quote"], page=f["page"], section=f["section"], rationale=f["rationale"],
-                         flags=flags, triage=triage(f["status"], f["confidence"], flags),
-                         # the finding version, so reviews made elsewhere can be reused (decision 73)
-                         text_sha256=d["extracted_sha256"], prompt_version=d["prompt_version"]))
-    return rows, dict(counts), {}
+        row = _row(d, status=f["status"], model_status=f["model_status"], confidence=f["confidence"],
+                   quote=f["quote"], page=f["page"], section=f["section"], char_start=f["char_start"],
+                   char_end=f["char_end"], rationale=f["rationale"],
+                   flags=flags, triage=triage(f["status"], f["confidence"], flags),
+                   # the finding version, so reviews made elsewhere can be reused (decision 73)
+                   text_sha256=d["extracted_sha256"], prompt_version=d["prompt_version"])
+        (unreported if f["status"] == "PRESENT" else rows).append(row)
+    return rows, unreported, dict(counts), {}
 
 
-def _legacy_names(con, docs: list[dict], params: dict) -> tuple[list[dict], dict, dict]:
+def _legacy_names(con, docs: list[dict], params: dict) -> tuple[list[dict], list[dict], dict, dict]:
     """Exact matches of the former names (families.py). A poor scan without any match is not
-    "without hits" but a REVIEW row: the exact match cannot prove absence there (F19, decision 89)."""
+    "without hits" but a REVIEW row: the exact match cannot prove absence there (F19, decision 89).
+    Unreported: "no former name" (no hit on a good scan) and "resolved by an amendment" (with its hits)."""
     ids = {d["doc_id"] for d in docs}
     hits: dict[str, list[dict]] = {}
-    resolved: dict[str, str] = {}
+    resolved: dict[str, list[dict]] = {}      # the hits an amendment replaced, each with the amendment's id
     found = Counter()             # every exact match per contract, open or resolved
     for h in con.execute("SELECT doc_id, name, page, snippet, resolved_by FROM name_hits ORDER BY doc_id, char_start"):
         if h["doc_id"] not in ids:
             continue
         found[h["doc_id"]] += 1
+        hit = {"name": h["name"], "page": h["page"], "snippet": h["snippet"]}
         if h["resolved_by"]:
-            resolved[h["doc_id"]] = h["resolved_by"]
+            resolved.setdefault(h["doc_id"], []).append({**hit, "resolved_by": h["resolved_by"]})
         else:
-            hits.setdefault(h["doc_id"], []).append({"name": h["name"], "page": h["page"], "snippet": h["snippet"]})
-    rows, unsure = [], 0
+            hits.setdefault(h["doc_id"], []).append(hit)
+    rows, unreported, unsure = [], [], 0
     for d in docs:
         if d["doc_id"] in hits:   # exact name match: deterministic, so no confidence needed
             rows.append(_row(d, status="LEGACY_NAME", confidence=None, hits=hits[d["doc_id"]], flags=d["flags"],
@@ -219,41 +256,71 @@ def _legacy_names(con, docs: list[dict], params: dict) -> tuple[list[dict], dict
             rows.append(_row(d, status=NAME_NOT_RULED_OUT, confidence=None, hits=[],
                              reason=poor_scan_reason(d["ocr_mean_conf"]), ocr_mean_conf=d["ocr_mean_conf"],
                              flags=d["flags"], triage=triage(NAME_NOT_RULED_OUT, None, d["flags"])))
+        elif d["doc_id"] in resolved:
+            unreported.append(_row(d, status="NAME_RESOLVED", confidence=None, hits=resolved[d["doc_id"]],
+                                   flags=d["flags"], triage=None))
+        else:
+            unreported.append(_row(d, status="NO_FORMER_NAME", confidence=None, hits=[], flags=d["flags"], triage=None))
     # every checked contract in exactly one count - the four add up to "checked"
     counts = {"with_open_hits": len(hits), "not_ruled_out_poor_scan": unsure,
               "resolved_by_amendment": len(set(resolved) - set(hits)),
               "without_hits": len(docs) - len(set(hits) | set(resolved)) - unsure}
-    return rows, counts, {"resolved_by_amendment": [{"doc_id": k, "resolved_by": v} for k, v in sorted(resolved.items())
-                                                    if k not in hits]}
+    info = {"resolved_by_amendment": [{"doc_id": k, "resolved_by": v[0]["resolved_by"]} for k, v in sorted(resolved.items())
+                                      if k not in hits],
+            # what the exact search looked for, so every screen can name it (the question names only two)
+            "searched_names": catalogue.OWN_ENTITY_LEGACY}
+    return rows, unreported, counts, info
 
 
-def _governing_law_not(con, docs: list[dict], params: dict) -> tuple[list[dict], dict, dict]:
+def _governing_law_not(con, docs: list[dict], params: dict) -> tuple[list[dict], list[dict], dict, dict]:
     """Laws are stored as ISO 3166 codes, with the state for federal countries (US-NY, CA-BC); the
     check compares the country (F16). Where a contract lands is queries.law_answer: the same law counts
     only when its quote confirmed it on a good scan (decision 94); a poor scan or a failed quote check is
     a REVIEW row with a fixed reason (F36). Every row carries the law's quote, page and span as evidence.
     The five counts add up to "checked"."""
-    rows, counts = [], Counter()
+    rows, unreported, counts = [], [], Counter()
     for d in docs:
         status = law_answer(d["status"], d["governing_law"], d["law_flags"], params["law"])
         counts[status] += 1
-        if status not in LAW_REPORTED:     # the same law: SAME_LAW or SAME_LAW_NOT_CHECKED
-            continue
-        rows.append(_row(d, status=status, governing_law=d["governing_law"], confidence=None,
-                         law_quote=d["governing_law_quote"], law_page=d["law_page"],
-                         law_char_start=d["law_char_start"], law_char_end=d["law_char_end"], law_flags=d["law_flags"],
-                         reason=law_reason(d["status"], d["ocr_mean_conf"], d["governing_law"], d["law_flags"]),
-                         flags=d["flags"], triage=triage(status, None, d["flags"])))
-    return rows, {"other_law": counts["OTHER_LAW"], "law_unknown": counts[LAW_UNKNOWN],
+        reported = status in LAW_REPORTED      # else the same law: SAME_LAW or SAME_LAW_NOT_CHECKED
+        (rows if reported else unreported).append(_row(
+            d, status=status, governing_law=d["governing_law"], confidence=None,
+            law_quote=d["governing_law_quote"], law_page=d["law_page"],
+            law_char_start=d["law_char_start"], law_char_end=d["law_char_end"], law_flags=d["law_flags"],
+            reason=law_reason(d["status"], d["ocr_mean_conf"], d["governing_law"], d["law_flags"]),
+            flags=d["flags"], triage=triage(status, None, d["flags"]) if reported else None))
+    return rows, unreported, {"other_law": counts["OTHER_LAW"], "law_unknown": counts[LAW_UNKNOWN],
                   "law_not_confirmed": counts[LAW_NOT_CONFIRMED], "same_law": counts["SAME_LAW"],
                   # read before extract-v3: no quote yet, the old answer stands until the contract is read again
                   "same_law_not_checked": counts["SAME_LAW_NOT_CHECKED"]}, {}
 
 
-def _duplicates(con, docs: list[dict], params: dict) -> tuple[list[dict], dict, dict]:
-    rows = [_row(d, status="DUPLICATE", duplicate_of=d["duplicate_of"], confidence=None, flags=d["flags"],
-                 triage=triage("DUPLICATE", None, d["flags"])) for d in docs if d["duplicate_of"]]
-    return rows, {"duplicates": len(rows), "unique": len(docs) - len(rows)}, {}
+def _duplicates(con, docs: list[dict], params: dict) -> tuple[list[dict], list[dict], dict, dict]:
+    """A copy is reported; every other document is unreported: an original (with its copies) or unique.
+    `match` says how the copy was found (families.py): the same text, or at least 98 % the same text."""
+    text_hash = dict(con.execute("SELECT doc_id, text_sha256 FROM documents").fetchall())
+    copies: dict[str, list[str]] = {}
+    for d in docs:
+        if d["duplicate_of"]:
+            copies.setdefault(d["duplicate_of"], []).append(d["doc_id"])
+    rows, unreported = [], []
+    for d in docs:
+        if d["duplicate_of"]:
+            same = d["doc_sha256"] is not None and d["doc_sha256"] == text_hash.get(d["duplicate_of"])
+            rows.append(_row(d, status="DUPLICATE", duplicate_of=d["duplicate_of"], confidence=None, flags=d["flags"],
+                             match="same_text" if same else "near_identical",
+                             triage=triage("DUPLICATE", None, d["flags"])))
+        else:
+            mine = copies.get(d["doc_id"], [])
+            unreported.append(_row(d, status="ORIGINAL" if mine else "UNIQUE", copies=mine, confidence=None,
+                                   flags=d["flags"], triage=None))
+    return rows, unreported, {"duplicates": len(rows), "unique": len(docs) - len(rows)}, {}
+
+
+def count_lights(rows: list[dict]) -> dict:
+    """How many contracts are red, orange and green - always all three keys."""
+    n = Counter(r["light"] for r in rows)
+    return {k: n[k] for k in ("red", "orange", "green")}
 
 
 RUNNERS = {"missing_clause": _missing_clause, "legacy_names": _legacy_names,
@@ -284,12 +351,18 @@ def run_check(con, plan: dict, run_id: str = "") -> dict:
             excluded.append({"doc_id": d["doc_id"], "reason": reason})
         else:
             checked.append(d)
-    rows, counts, info = RUNNERS[check](con, checked, params)
+    rows, unreported, counts, info = RUNNERS[check](con, checked, params)
     for r in rows:
         r["sample"] = r["triage"] == "CONFIRM" and sampled(run_id, r["doc_id"])
+    for r in unreported:
+        r["sample"] = False           # nothing to decide, so never a spot check
+    for r in rows + unreported:
+        r["light"], r["light_why"] = light(r["status"], r["triage"], r["doc_status"])
     return {
         "plan": plan,
-        "rows": rows,
+        "rows": rows,                 # reported: exactly the evaluation's answer (red and orange)
+        "unreported": unreported,     # every other checked contract, with its evidence and its light
+        "lights": count_lights(rows + unreported),
         "counts": counts,
         "info": info,
         # checked_ids: the answer names every contract it covered, so a stored run can later tell

@@ -9,6 +9,12 @@ export type Triage = "CONFIRM" | "REVIEW" | "FOUR_EYES";
 export type Stage = "reading" | "ready" | "failed";
 export type ReviewStateName = "FOUND" | "IN_REVIEW" | "CONFIRMED" | "REJECTED" | "CORRECTED" | "DISPUTED" | "ESCALATED";
 export type Decision = "CONFIRMED" | "REJECTED" | "CORRECTED";
+// The traffic light of one contract in an answer (decision 95, pipeline/portfolio.py light): red = the issue
+// is in the text, orange = a person looks, green = positive, with evidence. light_why says why: "poor_scan"
+// (a poor scan proves nothing), "not_sure" (a Found that needs Review or Four eyes), "legal" (Legal doubts a
+// Found, F34), "legal_confirmed" (Legal confirmed a doubtful Found), "status" (the status itself)
+export type Light = "red" | "orange" | "green";
+export type LightWhy = "status" | "poor_scan" | "not_sure" | "legal" | "legal_confirmed";
 
 export interface Plan {
   check: string;
@@ -34,6 +40,7 @@ export interface CheckSpec {
   label: string;
   params: Record<string, string[] | string>;
   required: string[];
+  names?: string[];                // legacy_names: the former names the exact search looks for
 }
 
 export interface Review {
@@ -73,6 +80,7 @@ export interface NameHit {
   name: string;
   page: number;
   snippet: string;
+  resolved_by?: string | null;     // NAME_RESOLVED: the amendment that replaced the name
 }
 
 export interface RunRow {
@@ -106,6 +114,26 @@ export interface RunRow {
   // the document behind the row, for every check (a poor scan also in Q2, Q5 and Q8); missing in older runs
   doc_status?: string | null;
   ingested_at?: string | null;
+  page_count?: number | null;
+  // the traffic light (decision 95); missing in older runs (then lightOf(status))
+  light?: Light;
+  light_why?: LightWhy;
+  char_start?: number | null;      // where the passage is in the text (missing clause)
+  char_end?: number | null;
+  text_sha256?: string | null;     // the finding version (decision 73)
+  prompt_version?: string | null;
+  match?: "same_text" | "near_identical";   // DUPLICATE: how the copy was found
+  copies?: string[];               // ORIGINAL: its copies
+}
+
+/** A contract the answer evaluated but does not report (decision 95): mostly green, with its evidence. It
+ *  needs no decision; a clause row carries Legal's decision on its finding (legal, D6). */
+export interface UnreportedRow extends Omit<RunRow, "review" | "triage" | "sample" | "light" | "light_why"> {
+  triage: Triage | null;           // the finding's own triage (clauses); null for names, law, copies
+  sample: false;
+  light: Light;
+  light_why: LightWhy;
+  legal?: ReviewState;             // missing-clause rows: Legal's decision on this finding version
 }
 
 export interface Coverage {
@@ -125,9 +153,12 @@ export interface Run {
   question: string | null;
   plan: Plan;
   prompt_version: string;
-  rows: RunRow[];
+  rows: RunRow[];                   // reported: exactly the evaluation's answer (red and orange)
+  unreported?: UnreportedRow[];     // every other evaluated contract (decision 95); missing in older runs
+  lights?: Record<Light, number>;
+  intent?: "missing" | "find" | null;   // the analysis box: "find" = "Find a clause"
   counts: Record<string, number>;
-  info: { resolved_by_amendment?: { doc_id: string; resolved_by: string }[] };
+  info: { resolved_by_amendment?: { doc_id: string; resolved_by: string }[]; searched_names?: string[] };
   coverage: Coverage;
   triage: Partial<Record<Triage, number>>;
   review_states: Record<ReviewStateName, number>;
@@ -160,6 +191,7 @@ export interface Finding {
   rationale: string | null;
   quote: string | null;
   quote_verified: boolean;
+  quote_score?: number | null;     // how closely the quote matches the text, 0-100
   page: number | null;
   char_start: number | null;
   char_end: number | null;
@@ -261,6 +293,7 @@ export interface ClauseSpec {
   label: string;
   definition: string;
   required_for: string[];
+  absence_words?: string[];        // /catalogue: the absence check's typical wordings, in words
 }
 
 export interface Matrix {
@@ -422,8 +455,9 @@ export const api = {
   users: () => request<Record<string, string>>("/users"),
   examples: () => request<Example[]>("/examples"),
   checks: () => request<Record<string, CheckSpec>>("/checks"),
-  catalogue: () => request<{ clauses: Record<string, { label: string; definition: string }> }>("/catalogue"),
-  createRun: (plan: Plan, question: string | null) => post<Run>("/runs", { plan, question }),
+  catalogue: () => request<{ clauses: Record<string, ClauseSpec> }>("/catalogue"),
+  createRun: (plan: Plan, question: string | null, intent: "missing" | "find" | null = null) =>
+    post<Run>("/runs", { plan, question, intent }),
   previewRun: (plan: Plan) => post<Preview>("/runs/preview", { plan }),
   changes: (after?: number) => request<Changes>(after == null ? "/changes" : `/changes?after=${after}`),
   run: (id: string) => request<Run>(`/runs/${id}`),

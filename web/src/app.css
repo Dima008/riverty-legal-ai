@@ -24,6 +24,15 @@
   --red-tint: #fdecef;
   --green: #107c41;
   --green-tint: #e7f4ec;
+  /* the traffic light (decision 95): one meaning per colour on every screen. mark = borders, bars, icons
+     (>= 3:1 on white); ink = text (>= 4.5:1 on white, on the fill and on the lane); fill = a tile; lane = a
+     lane's tint; on-desk = the verdict strip on the dark desk. Status green is not the mint: mint means
+     "your choice", green "positive" */
+  --red-mark: #c4314b;    --red-ink: #a3243b;    --red-fill: #f9d3da;    --red-lane: #fdf2f4;
+  --orange-mark: #b86e00; --orange-ink: #8f5300; --orange-fill: #fde3b8; --orange-lane: #fff6e8;
+  --green-mark: #2b7a2b;  --green-ink: #1e5e1e;  --green-fill: #d9efd5;  --green-lane: #f1f8ef;
+  --grey-mark: #6f7c79;   --grey-ink: #4a5754;   --grey-fill: #eef2f1;
+  --red-on-desk: #ff8a96; --orange-on-desk: #ffc56b; --green-on-desk: #7fdc8a;
   --radius: 12px;
   --shadow: 0 1px 2px rgba(16, 32, 28, 0.08), 0 3px 10px rgba(16, 32, 28, 0.06);
   --shadow-hover: 0 4px 14px rgba(16, 32, 28, 0.14);
@@ -104,70 +113,16 @@ p { margin: 0; }
 .section-title.small { margin: 18px 0 8px; }
 .note { font-size: 13px; color: var(--ink-3); margin-top: 8px; line-height: 1.45; }
 
-/* ---------------------------------------------------------------- ask */
-/* the example questions in plain categories, as borderless rows (one level of cards: the panel) */
-.q-groups { columns: 2 340px; column-gap: 32px; }
-.q-group { break-inside: avoid; margin-bottom: 12px; }
-.q-kind { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); margin: 0 0 4px 2px; }
-.q-kind-icon { display: inline-grid; color: var(--brand); }
-.q-list { list-style: none; margin: 0; padding: 0; }
-.q-row {
-  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer;
-  padding: 7px 10px 7px 12px; border: none; border-left: 3px solid transparent; border-radius: 0 8px 8px 0;
-  background: transparent; font: inherit; color: var(--ink); transition: background 0.15s;
-}
-.q-row:hover { background: #eef3f1; }
-.q-row:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
-.q-row.selected { border-left-color: var(--brand); background: var(--brand-tint); }
-.q-text { flex: 1; font-size: 14.5px; line-height: 1.4; }
-.q-check { flex: none; color: var(--brand); }
-
-.builder { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; padding: 4px 0 6px; }
-.builder .fui-Dropdown { min-width: 260px; }
-
+/* ---------------------------------------------------------------- shared small parts */
 .plan-label { font-size: 14px; font-weight: 600; color: var(--ink-2); }
-
-/* ---------------------------------------------------------------- overview */
-/* the answer as one sentence, and one tile per contract in scope - the talk's tile picture on paper */
-.ov-question { margin: 2px 0 4px; font-size: 15px; line-height: 1.4; color: var(--ink-2); }
-.ctiles { list-style: none; margin: 16px 0 0; padding: 4px 0 0; display: flex; flex-wrap: wrap; gap: 8px 5px; }
-.ctiles > li:not(.ctile) { display: contents; }   /* a reported tile is a button inside its li */
-/* one width for every tile, so 20 merchant agreements fit one line at 1280 px; a reported tile has
-   the colour of its status badge and the status icon on its corner */
-.ctile {
-  position: relative; min-width: 52px; height: 36px; padding: 0 7px; display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 8px; border: 1px solid var(--line); background: #f3f6f5; color: var(--ink-3);
-  font: inherit; font-family: var(--font-display); font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums;
-}
-.ctile .si { position: absolute; top: -7px; right: -7px; background: #fff; border-radius: 50%; }
-.ctile.rep { cursor: pointer; color: var(--ink); transition: transform 0.15s var(--ease), box-shadow 0.15s; }
-/* a reported tile must survive a washed-out projector: a solid 2px border in the status colour
-   (red 5.4:1, amber 4.0:1 against the white panel; 3:1 is the floor for graphics), a deeper tint
-   and the ID in a dark shade of the same colour (5.4 / 5.2 / 5.7:1 on its tint) */
-.ctile.t-danger, .ov-sw.t-danger::before { background: #f9d3da; border: 2px solid var(--red); }
-.ctile.t-warning, .ov-sw.t-warning::before { background: #fde3b8; border: 2px solid var(--amber); }
-.ctile.t-informative, .ov-sw.t-informative::before { background: #dde8f5; border: 2px solid #4f6f96; }
-.ctile.rep.t-danger { color: #a3243b; }
-.ctile.rep.t-warning { color: #8a5100; }
-.ctile.rep.t-informative { color: #3b5a80; }
-.ctile.rep:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
-.ctile:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.ctile.on { outline: 2.5px solid var(--brand); outline-offset: 2px; }
-.ctile.excluded { color: var(--ink-2); background: repeating-linear-gradient(45deg, #eef2f1, #eef2f1 4px, #e2e8e6 4px, #e2e8e6 8px); border-style: dashed; border-color: var(--line-strong); }
-.ctile.wide { width: auto; padding: 0 10px; font-family: inherit; font-weight: 600; font-size: 13px; }
-.ov-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: 13px; color: var(--ink-2); }
-.ov-sw { white-space: nowrap; }   /* the swatch never ends a line without its word */
-.ov-sw::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--line-strong); background: #f3f6f5; }
-.ov-sw.excluded::before { border-style: dashed; background: repeating-linear-gradient(45deg, #eef2f1, #eef2f1 2px, #d9e0de 2px, #d9e0de 4px); }
-.ov-stats { display: flex; flex-wrap: wrap; gap: 4px 0; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-2); }
-.ov-stats span:not(:last-child)::after { content: "·"; margin: 0 10px; color: var(--ink-3); }
 
 /* ---------------------------------------------------------------- status icons */
 .si { display: inline-grid; place-items: center; width: 18px; height: 18px; }
-.si-danger, .si-severe { color: var(--red); }
-.si-warning { color: var(--amber-ink); }
-.si-success { color: var(--green); }
-.si-informative, .si-subtle { color: var(--ink-2); }
+/* the light's icon: red ✕, orange ?, green ✓, excluded – (components/Badges.tsx) */
+.si-red { color: var(--red-mark); }
+.si-orange { color: var(--orange-mark); }
+.si-green { color: var(--green-mark); }
+.si-excluded { color: var(--grey-mark); }
 .fui-Badge { white-space: nowrap; }
 
 /* ---------------------------------------------------------------- evidence */
@@ -220,17 +175,27 @@ p { margin: 0; }
 }
 .page-frame { position: relative; background: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35); border-radius: 2px; }
 .page-frame img { display: block; width: 100%; height: auto; border-radius: 2px; }
-.hl { position: absolute; background: rgba(255, 200, 40, 0.42); box-shadow: 0 0 0 1px rgba(214, 140, 0, 0.55); border-radius: 2px; pointer-events: none; mix-blend-mode: multiply; }
-/* text addressed to AI systems (a suspected prompt injection) is never evidence: red, as in the
-   talk, not the yellow evidence marker */
-.hl.suspect { background: rgba(196, 49, 75, 0.2); box-shadow: 0 0 0 1.5px rgba(196, 49, 75, 0.9); }
+/* three looks on the page (decision 95): yellow fill = checked evidence only; a dashed orange outline without
+   fill = "look here – not evidence" (a passage the checks rejected, a hint); red = text addressed to AI systems */
+.hl { position: absolute; border-radius: 2px; pointer-events: none; }
+.hl.ev { background: rgba(255, 200, 40, 0.42); box-shadow: 0 0 0 1px rgba(214, 140, 0, 0.55); mix-blend-mode: multiply; }
+.hl.look { background: transparent; outline: 2.5px dashed var(--orange-mark); outline-offset: 1px; }
+.hl.suspect { background: rgba(196, 49, 75, 0.2); box-shadow: 0 0 0 1.5px rgba(196, 49, 75, 0.9); mix-blend-mode: multiply; }
+.hl-swatch.ev { background: rgba(255, 200, 40, 0.6); box-shadow: 0 0 0 1px rgba(214, 140, 0, 0.55); }
+.hl-swatch.look { background: transparent; box-shadow: none; outline: 2px dashed var(--orange-mark); outline-offset: -2px; }
 .hl-swatch.suspect { background: rgba(196, 49, 75, 0.25); box-shadow: 0 0 0 1.5px var(--red); }
+.hl-swatch.none { background: repeating-linear-gradient(45deg, #fff, #fff 2px, #dfe5e3 2px, #dfe5e3 4px); box-shadow: 0 0 0 1px var(--line-strong); }
 .hl-hint.suspect { color: var(--red); }
+.hl-hint.look { color: var(--orange-ink); }
+.hl-hint.none { color: var(--ink-2); font-weight: 500; }
+.hl-hint.failed { color: var(--orange-ink); background: var(--orange-lane); border-radius: 6px; padding: 2px 8px; }
 .text-excerpt {
   white-space: pre-wrap; font-family: Georgia, "Times New Roman", serif; font-size: 13.5px; line-height: 1.6; max-height: calc(100vh - 200px);
   overflow: auto; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 18px 22px; margin: 0;
 }
-.text-excerpt mark { background: rgba(255, 200, 40, 0.5); padding: 1px 0; }
+.text-excerpt mark.ev, mark.ev { background: rgba(255, 200, 40, 0.5); color: inherit; padding: 1px 0; }
+.text-excerpt mark.look { background: transparent; outline: 2px dashed var(--orange-mark); }
+.text-excerpt mark.suspect { background: rgba(196, 49, 75, 0.2); }
 
 /* decision: the approvals as slots (Approvals.tsx), shown in the decision panel (workbench.css).
    "Correct": only now the reviewer says what the clause actually is - nothing chosen in advance */
@@ -339,7 +304,9 @@ p { margin: 0; }
 .mx-cell.opt button:hover { color: var(--ink); }
 .mx-cell.none { color: var(--ink-3); }
 .mx-name { text-align: center; white-space: nowrap; font-size: 12px; }
-.name-open { color: var(--amber-ink); font-weight: 600; background: var(--amber-tint); border-radius: 999px; padding: 2px 8px; }
+/* a former name is the issue the question looks for: red; "cannot rule out" is orange (decision 95) */
+.name-open { color: var(--red-ink); font-weight: 600; background: var(--red-lane); border-radius: 999px; padding: 2px 8px; }
+.name-open.name-unsure { color: var(--orange-ink); background: var(--orange-lane); }
 .name-resolved { color: var(--ink-3); }
 .name-ok { color: var(--ink-3); }
 

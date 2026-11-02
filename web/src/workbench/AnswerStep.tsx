@@ -1,102 +1,76 @@
-// Step 2 · Answer (spec 2.2): the answer in one sentence, one tile per contract in scope - from the
-// answer's own snapshot, so a contract that arrives later never changes it (A3) - the coverage with
-// every exclusion and its reason, and the table "To look at". A reported tile opens the contract in
-// step 3; a quiet or excluded tile opens its read-only contract file.
+// Step 3 · Answer (decision 95, spec 1.2): on the left the picture - the answer in two sentences, the key
+// to the colours, one lane per colour with every contract in scope as a tile, and the coverage as a sum
+// that adds up; on the right the work - the list "To decide" and the way into step 4. Everything comes from
+// the answer's own snapshot, so a contract that arrives later never changes it.
 import { Button } from "@fluentui/react-components";
-import type { Matrix, Run, RunRow } from "../api";
-import { statusColor, StatusIcon } from "../components/Badges";
-import { statusLabel } from "../components/Words";
+import type { ClauseSpec, Run, RunRow } from "../api";
+import { LightIcon } from "../components/Badges";
 import { describe, readRecorded } from "../filters";
 import { useFormat, useT } from "../i18n";
-import { DOC_TYPE_LABEL, exclusionReason, OF_TYPE, OPEN_STATES, scopeText } from "../labels";
-import { BatchButton, ChipBar, chipRows, Showing, ToLookAtTable, type Chips } from "./ToLookAt";
+import { ANALYSES, DOC_TYPE_LABEL, OF_TYPE, scopeText } from "../labels";
+import { answerItems, headline, isOpen, lightsOf, passes, toDecide, type Filter, type Item } from "./answerRows";
+import { Lanes } from "./Lanes";
+import { BatchButton, ChipBar, DecideList } from "./ToLookAt";
 import "./workbench.css";
-
-// The answer sentence per scope; whole sentences as keys, because German needs the dative after "von"
-const ANSWER: Record<string, string> = {
-  merchant_agreement: "{n} of {of} merchant agreements to look at",
-  data_processing_agreement: "{n} of {of} data processing agreements to look at",
-  other_commercial_agreement: "{n} of {of} other commercial agreements to look at",
-  amendment: "{n} of {of} amendments to look at",
-};
-
-/** The IDs of every contract in scope. A run stores them (coverage.checked_ids, A3); an older run stored
- *  only counts, so its scope is rebuilt from the register with the rule of pipeline/portfolio.py
- *  run_check - and used only if it matches the run's own counts. null: summarise the quiet ones. */
-function scopeIds(run: Run, matrix: Matrix | null): string[] | null {
-  const c = run.coverage;
-  if (c.checked_ids) return [...c.checked_ids, ...c.excluded.map((e) => e.doc_id)].sort();
-  let ids: string[] | null = run.plan.scope?.doc_ids ?? null;
-  if (!ids && matrix) {
-    const type = run.plan.params.doc_type;
-    ids = matrix.rows.filter((r) => !type || r.doc_type === type || r.doc_type == null || r.doc_type === "unknown").map((r) => r.doc_id);
-  }
-  if (!ids) return null;
-  const known = new Set(ids);
-  const consistent = ids.length === c.in_scope && run.rows.every((r) => known.has(r.doc_id)) && c.excluded.every((e) => known.has(e.doc_id));
-  return consistent ? [...ids].sort() : null;   // the register changed since the run: no tile is better than a wrong one
-}
 
 interface Props {
   run: Run;
-  question: string;
-  matrix: Matrix | null;
-  chips: Chips;
+  clauses: Record<string, ClauseSpec>;
+  filter: Filter;
   fresh: Set<string>;               // contracts that arrived in the last 24 hours
   busy: boolean;
-  onChips: (c: Chips) => void;
-  onDecide: (docId: string) => void;     // step 3 for this contract
-  onFile: (docId: string) => void;       // the read-only contract file
+  onFilter: (f: Filter) => void;
+  onOpen: (docId: string) => void;       // step 4 for this contract
+  onFile: (docId: string) => void;       // an older answer's contract: the read-only contract file
   onBatch: (rows: RunRow[]) => void;
 }
 
-export function AnswerStep({ run, question, matrix, chips, fresh, busy, onChips, onDecide, onFile, onBatch }: Props) {
+/** The analysis box an answer came from: "Find a clause" when the run says so, else by its check. */
+export const analysisOf = (run: Pick<Run, "plan" | "intent">) =>
+  ANALYSES.find((a) => (run.intent === "find" ? a.id === "find" : a.check === run.plan.check && a.id !== "find")) ?? ANALYSES[0];
+
+/** The first contract to open: the first open red row, then orange; else the first green passage (Find a
+ *  clause) or simply the first contract. */
+export function firstToOpen(items: Item[], find: boolean): Item | undefined {
+  return (find ? items.find((i) => i.lane === "green") : items.find(isOpen)) ?? items.find(toDecide) ?? items[0];
+}
+
+export function AnswerStep({ run, clauses, filter, fresh, busy, onFilter, onOpen, onFile, onBatch }: Props) {
   const t = useT();
   const { usd } = useFormat();
   const c = run.coverage;
   const sel = c.selection;
-  const rows = new Map<string, RunRow>(run.rows.map((r) => [r.doc_id, r]));
-  const shown = chipRows(run.rows, chips, fresh);
-  const visible = new Set(shown.map((r) => r.doc_id));
-  // the server's reason is a fixed template: shown in the chosen language
-  const excluded = new Map(c.excluded.map((e) => [e.doc_id, exclusionReason(e.reason, t)]));
-  const ids = scopeIds(run, matrix);
-  const statuses = [...new Set(run.rows.map((r) => r.status))];
   const recorded = sel ? readRecorded(sel.filters) : null;
-  // "Decide →" opens the first row the chips show that still needs a person
-  const firstOpen = shown.find((r) => OPEN_STATES.includes(r.review.state)) ?? shown[0];
-
-  const tile = (id: string) => {
-    const row = rows.get(id);
-    if (row) {
-      const label = `${id} · ${statusLabel(row.status, t)}`;
-      // hidden by a chip: outline only, never faded (the text keeps its contrast)
-      return (
-        <li key={id}>
-          <button type="button" className={`ctile rep t-${statusColor(row.status)}${visible.has(id) ? "" : " dim"}`}
-                  onClick={() => onDecide(id)} aria-label={label} title={label}>
-            {id}
-            <StatusIcon status={row.status} />
-          </button>
-        </li>
-      );
-    }
-    const reason = excluded.get(id);
-    const label = reason ? `${id} · ${t("Excluded")}: ${reason}` : `${id} · ${t("Read, nothing to report")}`;
-    return (
-      <li key={id}>
-        <button type="button" className={`ctile ${reason ? "excluded" : "quiet"}`} onClick={() => onFile(id)} aria-label={label} title={label}>
-          {id}
-        </button>
-      </li>
-    );
-  };
+  const items = answerItems(run);
+  const shown = items.filter((i) => passes(i, filter));
+  const analysis = analysisOf(run);
+  const clause = run.plan.params.clause_type ? t(clauses[run.plan.params.clause_type]?.label ?? run.plan.params.clause_type) : "";
+  const [line1, line2] = headline(run, items, t, clause);
+  const l = lightsOf(run, items);
+  const open = items.filter(isOpen);
+  const todo = items.filter(toDecide).length;
+  const greens = items.filter((i) => i.lane === "green").length;
+  const find = run.intent === "find";
+  const first = firstToOpen(items, find);
+  const param = run.plan.params.clause_type ? clause : run.plan.params.law ? t("expected: {law} law", { law: run.plan.params.law }) : "";
+  const types = c.scope === "all documents" ? t("documents") : t(DOC_TYPE_LABEL[c.scope] ?? c.scope);
+  const searched = run.info.searched_names ?? [];
 
   return (
-    <>
+    <div className="answer-grid">
       <section className="panel answer-sum" aria-label={t("Answer")}>
-        <p className="ov-question">{question}</p>
-        <h2>{t(ANSWER[c.scope] ?? "{n} of {of} documents to look at", { n: c.reported, of: c.checked })}</h2>
+        {/* the footer is hidden on this work screen: its line "lawyers decide" stands beside the eyebrow */}
+        <div className="answer-top">
+          <div className="eyebrow">{[t(analysis.title), param, `${c.in_scope} ${types}`].filter(Boolean).join(" · ")}</div>
+          <span className="answer-obs">{t("observations about the text – lawyers decide")}</span>
+        </div>
+        <h2>{line1}</h2>
+        <p className="answer-line2">{line2}</p>
+        <p className="key-line">
+          <span><LightIcon light="red" /> <b className="sw-red">{t("red")}</b> – {t("the issue is there")}</span>
+          <span><LightIcon light="orange" /> <b className="sw-orange">{t("orange")}</b> – {t("not sure, a person looks")}</span>
+          <span><LightIcon light="green" /> <b className="sw-green">{t("green")}</b> – {t("positive: in order, with evidence")}</span>
+        </p>
         {sel && (
           <p className="sel-line">
             {t("A selection: {part} ({filters}) – this answer covers only these.", {
@@ -107,56 +81,51 @@ export function AnswerStep({ run, question, matrix, chips, fresh, busy, onChips,
           </p>
         )}
 
-        <ul className="ctiles" aria-label={t("Every contract in scope")}>
-          {ids ? ids.map(tile) : (
-            // an older answer without the list: the reported and excluded ones by name, the rest as a count
-            <>
-              {[...rows.keys(), ...excluded.keys()].sort().map(tile)}
-              {c.checked - c.reported > 0 && (
-                <li className="ctile quiet wide">{t("+{n} read, nothing to report", { n: c.checked - c.reported })}</li>
-              )}
-            </>
-          )}
-        </ul>
-        <div className="ov-legend" aria-hidden>
-          {statuses.map((s) => <span key={s} className={`ov-sw t-${statusColor(s)}`}>{statusLabel(s, t)}</span>)}
-          <span className="ov-sw quiet">{t("Read, nothing to report")}</span>
-          {c.excluded.length > 0 && <span className="ov-sw excluded">{t("Excluded")}</span>}
-          {!ids && <span>{t("(older answer – quiet contracts summarised)")}</span>}
-        </div>
+        <Lanes run={run} items={items} filter={filter} onFilter={onFilter} onOpen={onOpen} onFile={onFile} />
 
-        <p className="ov-stats">
-          <span>{t("{n} in scope ({types})", { n: c.in_scope, types: t(DOC_TYPE_LABEL[c.scope] ?? c.scope) })}</span>
-          <span>{t("{n} read completely, with evidence", { n: c.checked })}</span>
-          {c.excluded.map((e) => <span key={e.doc_id}>{t("{id} excluded: {reason}", { id: e.doc_id, reason: excluded.get(e.doc_id) ?? e.reason })}</span>)}
-          {run.info.resolved_by_amendment?.map((r) => (
-            <span key={r.doc_id}><b>{r.doc_id}</b> {t("former name already resolved by amendment {id}", { id: r.resolved_by })}</span>
-          ))}
-          <span>{t("this question: {usd} – reading every contract cost {total}, once", { usd: usd(run.cost.usd), total: usd(run.cost.register_total_usd) })}</span>
+        <p className="cov-sum">
+          <b>{t("{n} in scope", { n: c.in_scope })}</b> ={" "}
+          <LightIcon light="red" /> {l.red} + <LightIcon light="orange" /> {l.orange}
+          {run.unreported && <> + <LightIcon light="green" /> {l.green}</>}
+          {c.excluded.length > 0 && <> + <LightIcon light="excluded" /> {c.excluded.length}</>}
+          {!run.unreported && <> + {t("{n} evaluated earlier", { n: c.checked - run.rows.length })}</>}
+          {" · "}
+          {run.plan.check === "duplicates" ? t("every document compared") : t("every evaluated contract read in full")}
+          {" · "}
+          {t("this question: {usd} – reading every contract cost {total}, once", { usd: usd(run.cost.usd), total: usd(run.cost.register_total_usd) })}
+          {searched.length > 0 && <> · {t("searched for: {names}", { names: searched.join(", ") })}</>}
         </p>
-      </section>
-
-      <section className="panel tla-panel" aria-labelledby="tla-title">
-        <div className="tla-head">
-          <h3 id="tla-title">{t("To look at")}</h3>
-          {run.rows.length > 0 && <ChipBar rows={run.rows} chips={chips} fresh={fresh} onChips={onChips} />}
-          <div className="spacer" />
-          <BatchButton rows={run.rows} busy={busy} onBatch={onBatch} />
-          {firstOpen && (
-            <Button appearance="primary" size="small" onClick={() => onDecide(firstOpen.doc_id)}>{t("Decide →")}</Button>
-          )}
-        </div>
-        <Showing shown={shown.length} rows={run.rows} chips={chips} onChips={onChips} />
-        {run.rows.length === 0 ? (
-          <p className="lead">
-            {c.excluded.length > 0
-              ? t("No contract in scope has this issue – {n} read, {k} excluded ({ids}).", { n: c.checked, k: c.excluded.length, ids: c.excluded.map((e) => e.doc_id).join(", ") })
-              : t("No contract in scope has this issue.")}
-          </p>
-        ) : (
-          <ToLookAtTable rows={shown} fresh={fresh} onOpen={onDecide} />
+        {!run.unreported && (
+          <p className="sel-line">{t("This answer is older than the traffic light – Ask again shows every contract with its evidence.")}</p>
         )}
       </section>
-    </>
+
+      <section className="panel todo-panel" aria-labelledby="todo-title">
+        <div className="todo-head">
+          <h3 id="todo-title">{t("To decide")}</h3>
+          <span className="todo-count">{t("{n} to decide · {open} open", { n: todo, open: open.length })}</span>
+        </div>
+        <ChipBar items={items} filter={filter} onFilter={onFilter} />
+        {shown.length === 0 ? (
+          <p className="lead">{filter === "todo" ? t("Nothing to decide: no contract in scope is red or orange.") : t("No contract in this colour.")}</p>
+        ) : (
+          <div className="dlist-scroll">
+            <DecideList items={shown} fresh={fresh} searched={searched.length} onOpen={onOpen} />
+          </div>
+        )}
+        {greens > 0 && filter !== "green" && (
+          <p className="green-note"><LightIcon light="green" /> {t("The {n} green contracts need no decision. Click a green tile to see its evidence.", { n: greens })}</p>
+        )}
+        <div className="todo-go">
+          <BatchButton rows={run.rows} busy={busy} onBatch={onBatch} />
+          <div className="spacer" />
+          {first && (
+            <Button appearance="primary" onClick={() => onOpen(first.id)}>
+              {find ? t("Open the first passage →") : open.length ? t("Decide the {n} open →", { n: open.length }) : t("Look at the evidence →")}
+            </Button>
+          )}
+        </div>
+      </section>
+    </div>
   );
 }

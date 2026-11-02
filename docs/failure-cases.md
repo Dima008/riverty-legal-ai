@@ -38,6 +38,15 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F28 | The header scrolled away during four eyes: once the page scrolled, the reviewer switch was off screen, while the tool told the lawyer to "switch the reviewer at the top" (M14) | frontend | nobody at first - found by the end-to-end walkthrough of the four-eyes path | fixed - sticky header at 0, "Continue as Legal Reviewer B" in the decision panel |
 | F29 | An answer was lost on a tab switch: the run lived only in memory, so Register → Workbench showed an empty step 1 | frontend | nobody at first - found by the screen map of the tool | fixed - the run is in the address (`?run=`), the Workbench tab returns to it |
 | F30 | A stored answer did not keep which contracts it checked: after a new contract arrived, its tiles were dropped without a word, and nothing said the answer was out of date (H01) | api / frontend | nobody at first - found by the design review of the Workbench redesign | fixed - runs store `checked_ids` and `register_version`; the work bar says "out of date" with Ask again |
+| F37 | A doubtful Found never reached a person: in Q3/Q4 M14's Found (confidence 0.70, text addressed to AI systems, triage four eyes) was a grey "Read, nothing to report" tile (M14) | queries / frontend | nobody at first - found by the traffic-light design review (decision 95) | fixed - orange, decided on the finding with four eyes (D6) |
+| F38 | A contract without a finding in Q2, Q5 and Q8 opened on the limitation-of-liability quote, whatever was asked (M01, M05) | frontend | nobody at first - found by the screen map of the tool (decision 95) | fixed - every tile opens step 4 on the question's own subject |
+| F39 | A good scan read by OCR (93 %) said "1 of 2 checks failed" on a routine Not found (M18) | api | nobody at first - found by the screen map of the tool | fixed - "read by OCR" is information, regression test |
+| F40 | One failed evidence call blanked the page, the card and the decision ("Error: Not Found", Q5 M06) | frontend | nobody at first - found by the screen map of the tool | fixed - every optional call degrades, the page says so |
+| F41 | A quote the checks rejected was marked in the same yellow, with the same label, as checked evidence (M08) | frontend | nobody at first - found by the screen map of the tool | fixed - a dashed orange outline "proposed by the model – rejected by the checks" |
+| F42 | The Q2 question names 2 former names, the check searches 4, and no screen listed them | api / frontend | nobody at first - found by the screen map of the tool | fixed - the plan, the answer and the card name all 4 |
+| F43 | A poor scan was green "Unique" in the copy question - a misread text cannot prove that no copy exists (H01) | queries | nobody at first - found by building the traffic light against a register copy with H01 | fixed - orange "No copy found – poor scan", regression test |
+| F44 | The step-4 rail put two green lanes under the last lane's word: "RESOLVED · 39" in Q2, "ORIGINAL · 46" in Q8 | frontend | the screenshot check of the unfinished build (before commit) | fixed - the rail has the lanes' groups and order |
+| F45 | An answer from before the traffic light said "not found in 0 of 19 contracts" and "0 more are unclear" next to 3 red and 2 orange tiles | frontend | the screenshot check of the unfinished build (before commit) | fixed - counted from its rows, its own headline |
 | F31 | A register selection made with the type toggle would have left out a contract that is still being read: its type is not known yet, so "Merchant agreements" did not contain it (H01) | frontend | nobody at first - found by the design review of the Workbench redesign | fixed - the tick boxes are gone; a filter keeps what it cannot judge and names it (decision 91) |
 | F32 | Former names counted 5 on the Workbench's start strip but 6 in Q2 with the poor scan: the strip counted only contracts with a name hit, not "cannot be ruled out" (H01) | frontend | nobody at first - found by the design review of the Workbench redesign | fixed - one rule for the register and Q2, the strip is gone; regression test |
 | F33 | Raw server text reached the lawyer: "tool gate: archive copy only after approval; M14 is IN_REVIEW" (M14) | frontend | nobody at first - found by the end-to-end walkthrough of the four-eyes path | fixed - fixed sentences in lawyers' words, EN and DE |
@@ -1728,6 +1737,251 @@ panel-question design (2026-11-01).
 
 ---
 
+## F37 - A doubtful Found never reached a person (M14)
+
+**Symptom.** Q3 asks which merchant agreements lack the consumer terms in checkout. M14 has them,
+says the register (PRESENT) - but only with confidence 0.70 and with text addressed to AI systems in
+the contract, so the triage says four eyes. In the answer M14 was a grey tile, "Read, nothing to
+report": not counted, not in the list, not in front of any person.
+
+**Evidence.** `scratchpad/traffic/today.md` (1 Nov, register copy): "The 14 contracts that *have*
+the clause ... are grey "Read, nothing to report" tiles with no icon and no number." The run row:
+flags `checker_agreed, document_contains_suspected_injection, prompt_injection_suspected`, triage
+`FOUR_EYES`; it is the only Found with a non-routine triage in Q1-Q8.
+
+**Root cause.** `pipeline/portfolio.py` `_missing_clause` skipped every PRESENT row (`continue`), so
+its triage was computed for nobody. A Found has no place in the evaluation's answer, and nothing
+else carried it.
+
+**Layer.** queries / frontend.
+
+**Fix.** Decision 95: every checked contract is in the answer, with one light. The reported `rows`
+stay exactly the evaluation's answer; every other checked contract goes to `unreported`, with its
+evidence and its triage. `portfolio.light()`: a Found that needs Review or Four eyes is orange
+("not_sure"). The Workbench shows it in the orange lane, "Found – a person checks", and decides it
+on the finding (D6, decision 73) with its own triage - here four eyes.
+
+**Proof.** Register copy, 2 Nov: Q3 `lights {"red": 4, "orange": 1, "green": 14}`, rows unchanged
+`['M04', 'M08', 'M12', 'M19']`; step 4 for M14: "Found – a person checks → Four eyes · 0 of 2",
+the passage on page 1 in yellow, "Text addressed to AI systems on page 3. It is never used as
+evidence, so two people approve." `eval.check_register`: recall and precision 1.00 on Q1-Q8, as
+before.
+
+**Reproduce.** `POST /runs` with the plan of Q3;
+`tests/test_portfolio_lights.py::test_a_doubtful_found_is_orange_and_not_reported`.
+
+---
+
+## F38 - A tile of Q2, Q5 or Q8 opened the wrong subject (M01, M05)
+
+**Symptom.** In the former-name question a lawyer clicks M01 (no former name). The contract file
+opens on the limitation-of-liability quote, marked in yellow. The same for German law (Q5) and for
+the original of a copy (Q8). Nothing on the screen says "no former name" or how we know.
+
+**Evidence.** `scratchpad/traffic/today.md`: "In all three the file opens on the
+*limitation-of-liability* quote, highlighted in yellow, whatever was asked. `Workbench.tsx:197`
+passes `clause_type ?? null`, and `ContractFile.firstFinding` then picks the first required
+clause." and "For "no former name" the screen says nothing at all, because `FormerNames` returns
+`null`."
+
+**Root cause.** A tile without a reported row opened the read-only contract file, which knows
+clauses only; a question without a clause fell back to the first required clause.
+
+**Layer.** frontend.
+
+**Fix.** Every tile opens step 4 of the answer on the question's own subject: the names with each
+hit marked (or "None of the 4 former names on either of the 2 pages – exact search over the whole
+text."), the law, the copy ("M15 is a copy of this contract – counted once."). The card says how
+we know.
+
+**Proof.** 2 Nov, 1366x768: Q2 M01 "No former name → No decision", nothing of the liability clause
+marked; Q2 M05 "Resolved by M05-A", "Arvato Financial Solutions" marked on pages 1 and 2; Q8 M01
+"Original – copy: M15". Screens `scratchpad/traffic/run2/shots/1366-en-ev-Q2-M01.png`, `-Q2-M05`,
+`-Q8-M01`.
+
+**Reproduce.** Ask Q2, click M01.
+
+---
+
+## F39 - "1 of 2 checks failed" on a good scan (M18)
+
+**Symptom.** M18 is a routine Not found (Confirm, nothing to explain), but its card said in red
+"1 of 2 checks failed".
+
+**Evidence.** `scratchpad/traffic/today.md`: "M18 says "Why a person looks: –" and "Confirm" in step
+2, yet its card shows red "1 of 2 checks failed". The "failed" check is only `document_signals:
+ocr_text`: the contract was OCR-read at 94 %, which is a good scan."
+
+**Root cause.** `api/register.py` `guardrail_layers` counted every document signal as a failed
+layer, also `ocr_text` ("read by OCR"), which is information.
+
+**Layer.** api.
+
+**Fix.** Only a poor scan (`low_ocr_quality`) and text addressed to AI systems raise a doubt;
+`ocr_text` stays in the detail. The card says "n of m checks raised a doubt" instead of "failed".
+
+**Proof.** `GET /documents/M18/findings`: `document_signals` passed, detail `ocr_text`; the card
+"2 checks passed". Test `tests/test_portfolio_lights.py::test_m18_read_by_ocr_raises_no_doubt`.
+
+**Reproduce.** Open M18 in Q1.
+
+---
+
+## F40 - One failed evidence call blanked the whole workspace (Q5, M06)
+
+**Symptom.** In Q5 a lawyer opens M06. Instead of the page, the card and the decision the screen
+shows only "Error: Not Found".
+
+**Evidence.** `scratchpad/traffic/today.md`: "`load()` is all-or-nothing, so one 404 on
+`/law/highlight` replaces the page, the card *and* the decision panel with "Error: Not Found"."
+(the UI ran the new law code against an older API).
+
+**Root cause.** `web/src/components/evidence.ts` `load()` awaited every call in a row without a
+fallback; one optional marking decided whether anything was shown.
+
+**Layer.** frontend.
+
+**Fix.** Every optional call (law marking, quote marking, name location, text) falls back to "no
+marking"; the page bar then says "The marking could not be loaded – the page is shown without it."
+
+**Proof.** Playwright with `/law/highlight` answering 404 (2 Nov, 1366x768): the page, the card
+"Governing law · Other law (NL) → Confirm" and "Your decision · Confirm" are shown, with the hint
+"The marking could not be loaded – the page is shown without it." (`1366-en-E6-law-404.png`).
+
+**Reproduce.** `page.route("**/law/highlight", r => r.fulfill({ status: 404 }))`, open Q5 M06.
+
+---
+
+## F41 - A rejected quote looked like evidence (M08)
+
+**Symptom.** For M08 the model proposed clause 6.2 as the limitation of liability; the checks
+rejected it (a data-protection clause, the checker disagreed). The page marked 6.2 in the same
+yellow, labelled "the model's quote", as a checked passage on a Found contract.
+
+**Evidence.** `scratchpad/traffic/today.md`: "A verified Found quote (M01, green), a quote that the
+checks *rejected* (M08, Unclear ...) and a former-name hit all get the same `.hl` yellow and mostly
+the same label, "the model's quote"."
+
+**Root cause.** `evidence.ts` had one look for every box and one label.
+
+**Layer.** frontend.
+
+**Fix.** Three looks (decision 95): yellow fill only for checked evidence; a dashed orange outline,
+no fill, "proposed by the model – rejected by the checks" for a rejected quote or a hint; red for
+text addressed to AI systems (unchanged). The card repeats the passage in the same look.
+
+**Proof.** 2 Nov: M08 and M10 have 0 yellow boxes and 1 outline each, hint "proposed by the model –
+rejected by the checks · page 1"; the 14 green Q1 contracts each have yellow boxes and "the passage
+– checked · page n" (14 of 14, at both sizes and in both languages).
+
+**Reproduce.** Open M08 in Q1.
+
+---
+
+## F42 - The former names searched for were named nowhere
+
+**Symptom.** Q2 reads "Which contracts still name a legacy provider (Arvato Financial Solutions,
+AfterPay) ...". The check searches 4 names. No screen said which.
+
+**Evidence.** `scratchpad/traffic/today.md`: "Q2 never says that an exact search over the whole text
+found none of the **4** former names. The question itself names only 2 ... and no endpoint lists
+the 4."
+
+**Root cause.** `catalogue.OWN_ENTITY_LEGACY` was used by the check only; neither `/checks` nor the
+run carried it.
+
+**Layer.** api / frontend.
+
+**Fix.** `GET /checks` names them for the former-name check, the run carries
+`info.searched_names`; the plan, the answer's coverage line and the card list all 4.
+
+**Proof.** Q2: "searched for: Arvato Financial Solutions, AfterPay, Arvato Payment Solutions, arvato
+infoscore"; test `test_q2_names_the_searched_names_and_the_resolved_one`.
+
+**Reproduce.** Ask Q2.
+
+---
+
+## F43 - A poor scan was green "Unique" in the copy question (H01)
+
+**Symptom.** With H01 in the register (handwritten, OCR 61 %), the copy question (Q8) showed H01
+green, "Unique" - "positive, nobody needs to look". But a misread text cannot be compared: a copy of
+another contract, read this badly, stays below the 98 % similarity and is never found.
+
+**Evidence.** API on a register copy with H01, before the fix (2 Nov):
+
+```
+Q8 {'red': 1, 'orange': 0, 'green': 47} excluded 0 H01: [('UNIQUE', 'green', 'status', 'unreported')]
+```
+
+**Root cause.** `portfolio.light()` turned a poor scan orange only for clause statuses (ABSENT,
+PRESENT). F36 had already named the gap ("only Q8 may under-report it"), but green made it look
+proven.
+
+**Layer.** queries.
+
+**Fix.** A poor scan is orange also for UNIQUE ("No copy found – poor scan", "No copy found – but
+this scan is too poor to prove it. Compare with the page."). The evaluation's answer does not move:
+the row stays unreported, Q8 still reports exactly M15.
+
+**Proof.** The same copy after the fix: `Q8 {"red": 1, "orange": 1, "green": 46}`, H01 "No copy
+found – poor scan → Read the page", how we know: "Fingerprint compared with all 48 documents" and
+"Poor scan: OCR 61 %, below the 70 % threshold – a word can be misread." Test
+`test_a_poor_scan_never_proves_a_clause_missing` (M03 as a poor scan: Q8 UNIQUE orange, rows still
+`['M15']`).
+
+**Reproduce.** Register copy with H01, `POST /runs` with the plan of Q8.
+
+---
+
+## F44 - The rail named two green lanes with one word (Q2, Q8)
+
+**Symptom.** In step 4 of Q2 the rail's green group said "RESOLVED · 39" over 38 contracts without
+a former name and M05; in Q8 "ORIGINAL · 46" over 45 unique documents and M01.
+
+**Evidence.** Screenshots of the unfinished build on a register copy, 2 Nov, 1366x768 (`ev-Q2-M05`,
+`ev-Q8-M01`): rail heads "RESOLVED · 39" and "ORIGINAL · 46".
+
+**Root cause.** `DecideStep` mapped the lane word by colour (`{green: word}`); the second green lane
+overwrote the first, and the rail grouped by colour, not by lane.
+
+**Layer.** frontend.
+
+**Fix.** The rail takes the lanes of step 3 - the same groups, in the same order, each with its own
+word and count.
+
+**Proof.** 2 Nov: Q2 rail "NO FORMER NAME · 38", then "RESOLVED · 1" (`1600-en-ev-Q2-M05.png`).
+
+**Reproduce.** Ask Q2, open any contract.
+
+---
+
+## F45 - An older answer counted 0 red next to 3 red tiles
+
+**Symptom.** An answer stored before the traffic light (no `lights`, no `unreported`) said
+"Limitation of liability: not found in 0 of 19 contracts", "0 more are unclear", "20 in scope = ✕ 0
++ ? 0 + ✓ 0 + – 1 + 14 evaluated earlier", and "whole contract read · ? pages" - beside three red
+and two orange tiles.
+
+**Evidence.** Run `run-20261030-090000-older1` (a Q1 run without the new fields, scratch workflow
+DB, 2 Nov), screenshot `1366-en-D5-older.png` of the unfinished build.
+
+**Root cause.** The headline and the sum read `run.lights`, which an older run does not have
+(fallback 0); the page count came from a field the older rows lack.
+
+**Layer.** frontend.
+
+**Fix.** An older answer is counted from its rows (`answerRows.lightsOf`), has its own headline
+("3 red, 2 orange – the other contracts were evaluated, details not stored" / "Ask again to see
+every contract with its evidence."), no empty "Found" lane, and leaves out an unknown page count.
+
+**Proof.** The same run, 2 Nov: lanes "3 Not found", "2 Unclear", "14 Evaluated – details not
+stored", "1 Excluded"; "20 in scope = ✕ 3 + ? 2 + – 1 + 14 evaluated earlier".
+
+**Reproduce.** Remove `unreported` and `lights` from a stored run, open it.
+
+---
+
 ## Engineering issues (short)
 
 | Issue | Fix |
@@ -1743,6 +1997,7 @@ panel-question design (2026-11-01).
 | Found by the design and end-to-end reviews of the tool redesign (before commit): the new screen-reader text "current" in the register's company column (`.sr-only`, position absolute) escaped the matrix's scroll box - 1,900 px of empty page below the footer ("All documents": scrollHeight 2986 vs footer 1059) and a sideways scroll at 1093 px (1154 > 1093) | `.mx-scroll { position: relative }`; page height = footer bottom at 1093, 1280, 1366, 1600 |
 | Found by the end-to-end review (before commit): after reviewer A's archive attempt was refused, switching to reviewer B kept A's red refusal in B's decision box ("tool gate: archive copy only after approval; M14 is IN_REVIEW") - exactly the four-eyes demo path | the decision box clears the last reviewer's refusal or receipt when the user changes |
 | Found by the full test run before the F19 commit (2026-11-01): after Dima's first live rehearsal (H01 dropped 09:01, reset 09:07) the real register keeps 2 re-labelled calls `forgotten:H01@2026-11-01T08:07:55+00:00`, by design. `test_demo_status_and_reset_see_leftovers` copies that register and expected exactly 1 such call after its own reset: `assert 3 == 1`. No wrong result in the system, the test assumed a register without rehearsals | The test counts the forgotten calls before its reset and expects one more. Proof: `tests/test_forget.py` 14 passed against the rehearsed register |
+| Found by the screenshot check of the unfinished traffic-light build (2 Nov, register copy): the plan screen scrolled at 1366x768 - page height 797 (Q1), 819 (Q2 with 47 chips and three exclusions), 772 (German, dated from 2023) - and the German Q2 answer 799 | the contract chips stop at two rows ("+n more"), the exclusions share one line, tighter clause rows, the footer hidden while "New in the register" shows, an empty lane on one line, "lawyers decide" beside the eyebrow. Proof: 112 screens (2 sizes × 2 languages × 28) at 768 / 900 px page height, every tile inside the window |
 
 ## Caveat for the presentation
 

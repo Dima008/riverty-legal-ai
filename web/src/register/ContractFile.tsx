@@ -9,7 +9,7 @@ import {
 import { Dismiss24Regular } from "@fluentui/react-icons";
 import { useEffect, useState, type MouseEvent } from "react";
 import { api, ApiError, type ClauseSpec, type DocText, type DocumentInfo, type Finding } from "../api";
-import { findingBoxes } from "../components/evidence";
+import { findingBoxes, type Look } from "../components/evidence";
 import { FindingCard } from "../components/FindingCard";
 import { EvidenceSkeleton } from "../components/Loading";
 import { arrivedAt } from "../components/newLines";
@@ -22,7 +22,7 @@ import { useRegisterLive } from "../live";
 import { workbenchHref } from "../routing";
 import "./register.css";
 
-type Clauses = Record<string, Pick<ClauseSpec, "label" | "definition">>;
+type Clauses = Record<string, ClauseSpec>;
 type Opened = { docId: string; clause: string | null };
 
 interface Props {
@@ -52,6 +52,7 @@ interface Highlight {
   boxes: Record<number, number[][]>;
   hint: string | null;
   suspect?: boolean;       // the passage lies in text addressed to AI systems: red, not evidence
+  look?: Look;             // evidence (yellow), look here (dashed), or AI-addressed text (red) - decision 95
 }
 
 /** One contract as loaded: its findings in playbook order (the clauses required for its type first), the
@@ -167,7 +168,7 @@ function FileBody({ docId, clause, clauses, onClose, onOpen }: Opened & Omit<Pro
     let cancelled = false;
     findingBoxes(docId, finding).then((r) => {
       if (cancelled) return;
-      setHl({ boxes: r.boxes, hint: r.hint, suspect: r.suspect });
+      setHl({ boxes: r.boxes, hint: r.hint, suspect: r.suspect, look: r.look });
       setPage(r.page);
     });
     return () => {
@@ -177,7 +178,7 @@ function FileBody({ docId, clause, clauses, onClose, onOpen }: Opened & Omit<Pro
 
   const showName = async (name: string, onPage: number) => {
     const r = await api.locate(docId, onPage, name);
-    setHl({ boxes: { [onPage]: r.boxes }, hint: "the former company name" });
+    setHl({ boxes: { [onPage]: r.boxes }, hint: "the former company name", look: "ev" });
     setPage(onPage);
   };
 
@@ -293,7 +294,7 @@ function FileContent({ file, finding, selected, hl, page, lang, clauses, onSelec
           {text ? (
             <TextExcerpt text={text.text} start={finding?.char_start ?? null} end={finding?.char_end ?? null} />
           ) : (
-            <PageView doc={doc} page={page} onPage={onPage} boxes={hl.boxes} hint={hl.hint} suspect={hl.suspect} />
+            <PageView doc={doc} page={page} onPage={onPage} boxes={hl.boxes} hint={hl.hint} look={hl.look} />
           )}
         </div>
 
@@ -337,7 +338,8 @@ function FileContent({ file, finding, selected, hl, page, lang, clauses, onSelec
           {!stage && finding && (
             // read-only: what the text says, why a person looks, Legal's decision as a line, "Decide in the Workbench →"
             <div className="panel">
-              <FindingCard doc={doc} finding={finding} legal alerts={alerts} suspect={hl.suspect} onPage={text ? undefined : onPage} />
+              <FindingCard doc={doc} finding={finding} legal alerts={alerts} suspect={hl.suspect} clause={clauses[finding.clause_type] ?? null}
+                           onPage={text ? undefined : onPage} />
             </div>
           )}
           {!stage && finding && clauses[finding.clause_type]?.definition && (

@@ -1,62 +1,58 @@
-// One finding as a card (spec 2.3), the same in the Workbench - with the decision below it - and in the
-// contract file - read-only, with Legal's decision as one line (prop `legal`). From top to bottom: what
-// the finding is about, what the text says and the next step, why a person looks, the evidence, and
-// folded away how the register decided. A lawyer reads four marks, not eighteen (spec 3.7).
+// One contract's finding as a card (decision 95, spec 1.3), the same in the Workbench - with the decision below
+// it - and in the contract file - read-only, with Legal's decision as one line (prop `legal`). From top to
+// bottom: what it is about, the verdict and the next step, why a person looks (red and orange only), the
+// evidence (the checked passage, the passage the checks rejected, or "Not in this contract"), how we know,
+// what we looked for, and folded away how the register decided. The right column is never empty (E5).
 import { ChevronRight16Regular } from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
-import { api, type DocumentInfo, type Finding, type FindingReviewState, type ReviewState, type RunRow } from "../api";
+import { api, type ClauseSpec, type DocumentInfo, type Finding, type FindingReviewState, type ReviewState } from "../api";
 import { useFormat, useLang, useT, type T } from "../i18n";
-import { statusWord, warningLabels } from "../labels";
+import { exclusionReason, statusWord, warningLabels } from "../labels";
 import { workbenchHref } from "../routing";
+import { itemWord, type AnyRow, type Item } from "../workbench/answerRows";
+import { lightOf } from "./Badges";
+import type { Look } from "./evidence";
 import { Checks, Quote } from "./Finding";
+import { HowWeKnow } from "./HowWeKnow";
 import type { Alert } from "./SafetyBar";
 import { findingSubject, NextStep, rowSubject, StatusWord, whyLines, type Standing } from "./Words";
 import "../workbench/workbench.css";
 
 interface Props {
   doc: DocumentInfo;
-  finding: Finding | null;          // a clause finding; null for a former name, the law or a copy (then `row` says it;
-                                    // the law's quote comes from `doc`, decision 94)
-  row?: RunRow | null;              // the run row: its status, the name hits, the law, the original of a copy
-  standing?: Standing | null;       // where Legal's decision stands, shown as the next step (a run row is one)
-  alerts?: Alert[];                 // the document's alerts from load(): the page of an injection, the worst OCR page
-  suspect?: boolean;                // the passage that hints at the clause lies in text addressed to AI systems
-  onPage?: (page: number) => void;  // "Show page n"
-  onName?: (name: string, page: number) => void;   // highlight a former name on its page
-  onOpenDoc?: (docId: string) => void;             // open the original of a copy
+  finding: Finding | null;          // a clause finding; null for a former name, the law or a copy (then `row` says it)
+  row?: AnyRow | null;              // the answer's row: its status, the name hits, the law, the copies
+  item?: Item | null;               // the answer's contract: its light and kind (decision 95)
+  check?: string;                   // the analysis (run.plan.check)
+  clause?: ClauseSpec | null;       // the playbook entry: definition and absence wordings
+  searched?: string[];              // the former names the exact search looked for
+  documents?: number;               // copies: how many documents were compared
+  standing?: Standing | null;       // where Legal's decision stands, shown as the next step
+  next?: string | null;             // the next step when nothing can be decided ("No decision needed")
+  alerts?: Alert[];                 // the document's alerts: the page of an injection, the worst OCR page
+  suspect?: boolean;                // the hint lies in text addressed to AI systems
+  look?: Look;                      // how the passage is marked on the page
+  onPage?: (page: number) => void;  // "Show on page"
+  onName?: (name: string, page: number) => void;   // mark one former name on its page
+  onOpenDoc?: (docId: string) => void;             // open another contract (the original of a copy, an amendment)
   legal?: boolean;                  // the contract file: Legal's decision as a line, and "Decide in the Workbench →"
 }
 
-/** What the card is about: the clause, or the question's subject for a run row of another check. */
-function title(finding: Finding | null, row: RunRow | null | undefined, t: T): string {
+const NAME_STATUSES = ["LEGACY_NAME", "NAME_NOT_RULED_OUT", "NO_FORMER_NAME", "NAME_RESOLVED"];
+const LAW_STATUSES = ["OTHER_LAW", "LAW_UNKNOWN", "LAW_NOT_CONFIRMED", "SAME_LAW", "SAME_LAW_NOT_CHECKED"];
+const COPY_STATUSES = ["DUPLICATE", "ORIGINAL", "UNIQUE"];
+
+/** What the card is about: the clause, or the question's subject. */
+function title(finding: Finding | null, status: string, item: Item | null | undefined, t: T): string {
+  if (item?.kind === "excluded") return t("Not evaluated");
   if (finding) return t(finding.label);
-  const status = row?.status;
-  if (status === "LEGACY_NAME" || status === "NAME_NOT_RULED_OUT") return t("Former company name");
-  if (LAW_STATUSES.includes(status ?? "")) return t("Governing law");
-  if (status === "DUPLICATE") return t("Copy of {id}", { id: row?.duplicate_of ?? "" });
+  if (NAME_STATUSES.includes(status)) return t("Former company name");
+  if (LAW_STATUSES.includes(status)) return t("Governing law");
+  if (COPY_STATUSES.includes(status)) return t("Copies");
   return "";
 }
 
-const LAW_STATUSES = ["OTHER_LAW", "LAW_UNKNOWN", "LAW_NOT_CONFIRMED"];
-
-/** What the register checked about the law's quote (decision 94), in one sentence. null: nothing to add -
- *  a failed check is said above among the reasons why a person looks, and on a poor scan the "not
- *  confirmed" sentence says it once (never "Checked" next to "too poor to confirm"). */
-function lawCheck(lawFlags: string[] | null | undefined, poorScan: boolean, t: T): string | null {
-  if (lawFlags == null) return t("No quote yet: this contract was read before the register asked for the law's quote.");
-  return lawFlags.length === 0 && !poorScan ? t("Checked: the quote is in the contract and names this law.") : null;
-}
-
-/** Why the law is not confirmed (F36), in the card's words: the quote failed its check (the reason is
- *  said above), or a poor scan - whose quote may name the law all the same. */
-function notConfirmed(law: string, poorScan: boolean, quoteNamesLaw: boolean, t: T): string {
-  if (!poorScan) return t("The register read {law} law, but cannot confirm it from the contract. Read the choice of law and decide.", { law });
-  return quoteNamesLaw
-    ? t("The quote names {law} law, but this scan is too poor to confirm it. Read the choice of law and decide.", { law })
-    : t("The register read {law} law, but this scan is too poor to confirm it. Read the choice of law and decide.", { law });
-}
-
-/** Legal's decision in one line, for the contract file: "Confirmed by Legal Reviewer A and Legal Reviewer B, 1 Nov, 09:16". */
+/** Legal's decision in one line: "Confirmed by Legal Reviewer A and Legal Reviewer B, 1 Nov, 09:16". */
 function legalLine(review: ReviewState, t: T, when: (ts: string) => string): string {
   const votes = review.reviews.filter((r) => r.decision !== "ESCALATED");
   const names = votes.map((v) => v.reviewer_name).join(` ${t("and")} `);
@@ -71,64 +67,95 @@ function legalLine(review: ReviewState, t: T, when: (ts: string) => string): str
   }
 }
 
-export function FindingCard({ doc, finding, row, standing, alerts = [], suspect, onPage, onName, onOpenDoc, legal = false }: Props) {
+/** The id an exclusion points to: "duplicate of M01 - ..." -> M01, "amendment of M05 - ..." -> M05. */
+const pointsTo = (reason: string | null) => reason?.match(/(?:duplicate|amendment) of (\S+)/)?.[1] ?? null;
+
+export function FindingCard({ doc, finding, row, item, check, clause, searched = [], documents = 0, standing, next, alerts = [],
+                              suspect = false, look = "ev", onPage, onName, onOpenDoc, legal = false }: Props) {
   const t = useT();
   const lang = useLang();
   const { num } = useFormat();
   // the contract file loads Legal's decision itself: it shows it, it never changes it
   const [legalReview, setLegalReview] = useState<FindingReviewState | null>(null);
-  const clause = finding?.clause_type;
+  const clauseKey = finding?.clause_type;
   useEffect(() => {
-    if (!legal || !clause) return;
+    if (!legal || !clauseKey) return;
     let cancelled = false;
     setLegalReview(null);
-    api.findingReview(doc.doc_id, clause).then((r) => !cancelled && setLegalReview(r)).catch(() => undefined);
+    api.findingReview(doc.doc_id, clauseKey).then((r) => !cancelled && setLegalReview(r)).catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, [legal, doc.doc_id, clause]);
+  }, [legal, doc.doc_id, clauseKey]);
   const shown: Standing | null = standing ?? (legalReview ? { review: legalReview, triage: legalReview.triage, sample: false } : null);
-
-  const status = finding?.status ?? row?.status ?? "";
-  // a run row is the snapshot the lawyer decides on; the document fills in what an older run did not store
-  const subject = row
-    ? { ...rowSubject(row), docStatus: row.doc_status ?? doc.status, ocrConf: row.ocr_mean_conf ?? doc.ocr_mean_conf }
-    : finding ? findingSubject(finding, doc, shown?.review ?? null) : null;
-  const whys = subject ? whyLines(subject, { alerts, suspect }, t, num) : [];
-  const checks = finding?.layers.filter((l) => l.layer !== "model" && l.layer !== "register") ?? [];
-  const failed = checks.filter((l) => l.passed === false).length;
-  // the law's evidence is the register's current one, like a clause finding (the page shows the same passage)
-  const m = doc.metadata;
-  const law = LAW_STATUSES.includes(status) && m?.governing_law ? m : null;
-  const poorScan = subject?.docStatus === "LOW_QUALITY";
   const when = (ts: string) =>
     new Date(ts).toLocaleString(lang === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
+  const status = row?.status ?? finding?.status ?? "";
+  const lane = item?.lane === "older" ? lightOf(status) : item?.lane ?? row?.light ?? lightOf(status);
+  const word = item ? itemWord(item, t) : undefined;
+  const pages = doc.page_count;
+  const kind = check ?? (finding ? "missing_clause" : "");
+
+  if (item?.kind === "excluded") {
+    const other = pointsTo(item.reason);
+    return (
+      <article className="fcard" aria-label={t("Not evaluated")}>
+        <h3 className="fc-title">{t("Not evaluated")}</h3>
+        <div className="fc-status"><StatusWord status="" light="excluded" word={t("Excluded")} signal /></div>
+        <div className="fc-block grey">
+          <b>{exclusionReason(item.reason ?? "", t)}</b>
+          <span>{t("The answer names it, so nothing is dropped silently.")}</span>
+        </div>
+        {other && onOpenDoc && (
+          <button type="button" className="link-btn fc-open" onClick={() => onOpenDoc(other)}>{t("Open {id} →", { id: other })}</button>
+        )}
+        <p className="fc-obs">{t("An observation about the text, not a legal assessment.")}</p>
+      </article>
+    );
+  }
+
+  // why a person looks: only for red and orange - a green row has nothing to explain
+  const subject = row
+    ? { ...rowSubject(row), docStatus: row.doc_status ?? doc.status, ocrConf: row.ocr_mean_conf ?? doc.ocr_mean_conf }
+    : finding ? findingSubject(finding, doc, shown?.review ?? null) : null;
+  const whys = subject && lane !== "green" ? whyLines(subject, { alerts, suspect }, t, num) : [];
+  const checks = finding?.layers.filter((l) => l.layer !== "model" && l.layer !== "register") ?? [];
+  const doubts = checks.filter((l) => l.passed === false).length;
+  const m = doc.metadata;
+  const missing = status === "ABSENT" || (status === "UNCLEAR" && !finding?.quote);
+  // F34: Legal disagrees with a Found that the answer does not report - said honestly, kept orange
+  const legalDoubt = row && !("review" in row) && row.light_why === "legal" && row.legal ? row.legal : null;
+
   return (
-    <article className="fcard" aria-label={title(finding, row, t)}>
-      <h3 className="fc-title">{title(finding, row, t)}</h3>
+    <article className="fcard" aria-label={title(finding, status, item, t)}>
+      <h3 className="fc-title">{title(finding, status, item, t)}</h3>
       <div className="fc-status">
-        <StatusWord status={status} law={row?.governing_law} signal />
-        {shown && (
+        <StatusWord status={status} law={row?.governing_law} light={lane} word={word} signal />
+        {(shown || next) && (
           <>
             <span className="fc-arrow" aria-hidden>→</span>
-            <NextStep standing={shown} signal />
+            {shown ? <NextStep standing={shown} signal /> : <span className="ns done" data-signal="next">{next}</span>}
           </>
         )}
       </div>
 
-      {whys.length > 0 && (
-        // every reason as a sentence; red when two people approve
+      {(whys.length > 0 || legalDoubt) && (
+        // every reason as a sentence; red when two people approve, amber otherwise
         <div className={`fc-why${whys.some((w) => w.red) ? " red" : ""}`} data-signal="why">
+          {legalDoubt && (
+            <p>
+              {legalLine(legalDoubt, t, when)}.{" "}
+              {t("The register still says Found, so this answer and the evaluation do not count it yet (F34). It stays orange so it is not lost.")}
+            </p>
+          )}
           {whys.map((w) => (
             <p key={w.id}>
               {w.callout}
               {w.page != null && onPage && (
                 <>
                   {" "}
-                  <button type="button" className="link-btn" onClick={() => onPage(w.page!)}>
-                    {t("Show page {page}", { page: w.page })}
-                  </button>
+                  <button type="button" className="link-btn" onClick={() => onPage(w.page!)}>{t("Show page {page}", { page: w.page })}</button>
                 </>
               )}
             </p>
@@ -136,62 +163,116 @@ export function FindingCard({ doc, finding, row, standing, alerts = [], suspect,
         </div>
       )}
 
-      {/* the evidence: the quote, the names, the law, the original */}
-      {finding && <Quote key={`${doc.doc_id}-${finding.clause_type}`} finding={finding} clamp />}
-      {status === "LEGACY_NAME" && (row?.hits?.length ?? 0) > 0 && (
-        <ul className="fc-hits">
-          {row!.hits!.map((h, i) => (
-            <li key={i}>
-              <button type="button" className="link-btn" onClick={() => onName?.(h.name, h.page)} disabled={!onName}>
-                {h.name} · {t("page {n}", { n: h.page })}
-              </button>{" "}
-              <span className="fc-snippet">…{h.snippet}…</span>
-            </li>
-          ))}
-        </ul>
+      {/* the evidence: the passage, what is missing, the names, the law, the copies */}
+      {finding?.quote && (status === "PRESENT" || status === "UNCLEAR") && (
+        <Quote key={`${doc.doc_id}-${finding.clause_type}`} finding={finding} clamp look={status === "PRESENT" ? look : "look"}
+               label={status === "PRESENT" ? t("The passage · page {n}", { n: finding.page ?? "?" })
+                 : t("The proposed passage – rejected · page {n}", { n: finding.page ?? "?" })}
+               onShow={onPage && finding.page ? () => onPage(finding.page!) : undefined} />
+      )}
+      {missing && kind === "missing_clause" && (
+        lane === "orange" && subject?.docStatus === "LOW_QUALITY" ? (
+          <div className="fc-block orange">
+            <b>{t("Not found – but this scan was read by OCR at {conf} %", { conf: Math.floor(doc.ocr_mean_conf ?? 0) })}</b>
+            <span>{t("Below the 70 % threshold a word can be misread, so the scan cannot prove the clause is missing.")}</span>
+          </div>
+        ) : (
+          <div className={`fc-block ${lane === "red" ? "red" : "orange"}`}>
+            <b>{t("Not in this contract")}</b>
+            <span>
+              {t("Whole contract read: {n} of {n} pages", { n: pages })} ·{" "}
+              {doc.ocr_mean_conf != null ? t("scan, OCR {conf} %", { conf: Math.floor(doc.ocr_mean_conf) }) : t("text layer")}
+            </span>
+          </div>
+        )
+      )}
+
+      {(status === "LEGACY_NAME" || status === "NAME_RESOLVED") && (row?.hits?.length ?? 0) > 0 && (
+        <div className="fc-names">
+          <div className="fc-label">{status === "NAME_RESOLVED" ? t("Former name – replaced by an amendment") : t("Former company name in the text")}</div>
+          <ul className="fc-hits">
+            {row!.hits!.map((h, i) => (
+              <li key={i}>
+                <button type="button" className="link-btn" onClick={() => onName?.(h.name, h.page)} disabled={!onName}>
+                  {h.name} · {t("page {n}", { n: h.page })}
+                </button>{" "}
+                <span className="fc-snippet">…{h.snippet}…</span>
+                {h.resolved_by && <span className="fc-snippet"> · {t("replaced by {id}", { id: h.resolved_by })}</span>}
+              </li>
+            ))}
+          </ul>
+          {status === "NAME_RESOLVED" && row?.hits?.[0]?.resolved_by && onOpenDoc && (
+            <button type="button" className="link-btn fc-open" onClick={() => onOpenDoc(row.hits![0].resolved_by!)}>
+              {t("Open {id} →", { id: row.hits[0].resolved_by })}
+            </button>
+          )}
+        </div>
+      )}
+      {status === "NO_FORMER_NAME" && (
+        <div className="fc-block green">
+          <b>{t("None of the {k} former names in this contract", { k: searched.length || 4 })}</b>
+          <span>{t("Exact search over the whole text: {n} of {n} pages", { n: pages })}</span>
+        </div>
       )}
       {status === "NAME_NOT_RULED_OUT" && (
-        <p className="fc-text">
-          {t("The exact search found no former company name – but this scan is too poor to prove that none is there. Read the page: confirm if it names a former company, reject if it does not.")}
-        </p>
+        <div className="fc-block orange">
+          <b>{t("The search found no former name – but this scan is too poor to prove it.")}</b>
+          <span>{t("Read the page: confirm if it names a former company, reject if it does not.")}</span>
+        </div>
       )}
-      {law?.governing_law_quote && (
-        <Quote key={`${doc.doc_id}-law`} finding={{ quote: law.governing_law_quote, section: null, page: law.law_page ?? null }} clamp />
+
+      {LAW_STATUSES.includes(status) && m?.governing_law_quote && (
+        <Quote key={`${doc.doc_id}-law`} finding={{ quote: m.governing_law_quote, section: null, page: m.law_page ?? null }} clamp
+               look={(m.law_flags ?? []).length === 0 ? look : "look"} label={t("The choice of law · page {n}", { n: m.law_page ?? "?" })}
+               onShow={onPage && m.law_page ? () => onPage(m.law_page!) : undefined} />
       )}
-      {status === "OTHER_LAW" && row?.governing_law && (
-        <p className="fc-text">{t("The register read: {law} law", { law: row.governing_law })}</p>
+      {LAW_STATUSES.includes(status) && !m?.governing_law_quote && status !== "LAW_UNKNOWN" && (
+        <div className={`fc-block ${lane}`}>
+          <b>{statusWord(status, t, row?.governing_law ?? m?.governing_law)}</b>
+          <span>
+            {(row?.law_flags ?? m?.law_flags) == null
+              ? t("The register read the law before it quoted it (extract-v2). Read the choice of law on the page.")
+              : t("No passage for the law is stored. Read the choice of law on the page.")}
+          </span>
+        </div>
       )}
-      {status === "LAW_NOT_CONFIRMED" && (
-        <p className="fc-text">{notConfirmed(row?.governing_law ?? "?", poorScan, law?.law_flags?.length === 0, t)}</p>
+      {status === "LAW_UNKNOWN" && (
+        <div className="fc-block orange"><b>{t("No choice of law on any of the {n} pages", { n: pages })}</b></div>
       )}
-      {law && (
-        <p className="fc-text">
-          {lawCheck(law.law_flags, poorScan, t)}{" "}
-          {law.law_page != null && onPage && (
-            <button type="button" className="link-btn" onClick={() => onPage(law.law_page!)}>
-              {t("Show page {page}", { page: law.law_page })}
-            </button>
-          )}
-        </p>
-      )}
+
       {status === "DUPLICATE" && row?.duplicate_of && (
-        <p className="fc-text">
-          {t("Copy of {id} – the original is checked; this copy is not counted twice.", { id: row.duplicate_of })}{" "}
-          {onOpenDoc && (
-            <button type="button" className="link-btn" onClick={() => onOpenDoc(row.duplicate_of!)}>
-              {t("Open {id} →", { id: row.duplicate_of })}
-            </button>
-          )}
-        </p>
+        <div className="fc-block red">
+          <b>{t("Same text as {id} – counted once", { id: row.duplicate_of })}</b>
+          <span>{row.match === "near_identical" ? t("at least 98 % the same text, same party") : t("identical after normalising")}</span>
+          {onOpenDoc && <button type="button" className="link-btn fc-open" onClick={() => onOpenDoc(row.duplicate_of!)}>{t("Open {id} →", { id: row.duplicate_of })}</button>}
+        </div>
       )}
+      {status === "ORIGINAL" && (
+        <div className="fc-block green">
+          <b>{t("{ids} is a copy of this contract – counted once", { ids: (row?.copies ?? []).join(", ") })}</b>
+          {onOpenDoc && (row?.copies ?? []).map((c) => (
+            <button key={c} type="button" className="link-btn fc-open" onClick={() => onOpenDoc(c)}>{t("Open {id} →", { id: c })}</button>
+          ))}
+        </div>
+      )}
+      {status === "UNIQUE" && (lane === "green"
+        ? <div className="fc-block green"><b>{t("No other document has this text")}</b></div>
+        : <div className="fc-block orange"><b>{t("No copy found – but this scan is too poor to prove it.")}</b></div>
+      )}
+
+      <HowWeKnow missing={missing}
+                 input={{ status, finding, row: row ?? null, doc, alerts, suspect, absenceWords: clause?.absence_words ?? [], searched, documents }} />
+
+      {/* the contract file shows the playbook in its own panel below the card */}
+      {missing && clause?.definition && !legal && <LookedFor definition={clause.definition} />}
 
       {finding && (
         <details className="checks fc-fold" key={`fold-${doc.doc_id}-${finding.clause_type}`}>
           <summary>
             <ChevronRight16Regular className="checks-chevron" aria-hidden />
             <span className="section-title">{t("How the register decided")}</span>
-            <span className={`fc-sum${failed ? " failed" : ""}`} data-signal="fold">
-              {failed ? t("{failed} of {n} checks failed", { failed, n: checks.length }) : t("{n} checks passed", { n: checks.length })}
+            <span className={`fc-sum${doubts ? " failed" : ""}`} data-signal="fold">
+              {doubts ? t("{failed} of {n} checks raised a doubt", { failed: doubts, n: checks.length }) : t("{n} checks passed", { n: checks.length })}
             </span>
           </summary>
           <p className="fc-model">
@@ -208,11 +289,22 @@ export function FindingCard({ doc, finding, row, standing, alerts = [], suspect,
       {legal && finding && (
         <div className="fc-legal">
           <span>{legalReview ? legalLine(legalReview, t, when) : ""}</span>
-          <a className="fc-decide" href={workbenchHref({ doc: doc.doc_id, clause: finding.clause_type })}>
-            {t("Decide in the Workbench →")}
-          </a>
+          <a className="fc-decide" href={workbenchHref({ doc: doc.doc_id, clause: finding.clause_type })}>{t("Decide in the Workbench →")}</a>
         </div>
       )}
     </article>
+  );
+}
+
+/** "What we looked for · the playbook": the clause's definition, two lines and "Show all". */
+function LookedFor({ definition }: { definition: string }) {
+  const t = useT();
+  const [all, setAll] = useState(false);
+  return (
+    <section className="fc-looked">
+      <div className="fc-label">{t("What we looked for · the playbook")}</div>
+      <p className={all ? undefined : "clamp-2"}>{definition}</p>
+      {!all && <button type="button" className="link-btn" onClick={() => setAll(true)}>{t("Show all")}</button>}
+    </section>
   );
 }

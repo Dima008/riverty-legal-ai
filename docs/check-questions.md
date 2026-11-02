@@ -361,7 +361,21 @@ click, and it is stored and audited as a run. So the lawyer checks the scope fir
 result.
 
 *Where:* `POST /runs/preview` in `api/workflow.py` (writes nothing, returns no rows),
-`web/src/workbench/PlanCard.tsx`, decision 91.
+`web/src/workbench/ContractsStep.tsx`, decision 91.
+
+**39. In the Workbench answer, M08 is orange, not green – although the model said it found the
+liability cap. And its passage is only outlined, not yellow. Why?**
+
+The colour comes from our checks, not from the model. The model proposed clause 6.2, but the
+quote does not fit the clause and a second model call disagreed. So the register says "unclear",
+and unclear is never green: a person looks. Yellow means one thing only: checked evidence. A
+passage the checks rejected is not evidence, so it is only outlined, with the words "not
+evidence". Green contracts open with their checked passage in yellow; red ones say "not found –
+the whole contract was read" and how we know.
+
+*Numbers:* Q1 over 20 merchant agreements: 3 red, 2 orange, 14 green, 1 excluded (M15, a copy).
+*Where:* `pipeline/portfolio.py` (one colour rule), `web/src/workbench/Lanes.tsx`,
+`web/src/components/HowWeKnow.tsx`, decision 95, F41.
 
 ## Running it
 

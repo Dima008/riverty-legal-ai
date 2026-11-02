@@ -97,7 +97,7 @@ const fromTemplate = (text: string, templates: Template[], t: T) => {
   return text;
 };
 const EXCLUSION: Template[] = [
-  [/^duplicate of (\S+) - the original is checked$/, "duplicate of {id} – the original is checked", (m) => ({ id: m[1] })],
+  [/^duplicate of (\S+) - the original is checked$/, "copy of {id} – the original is evaluated", (m) => ({ id: m[1] })],
   [/^amendment of (\S+) - read together with its base agreement$/, "amendment of {id} – read together with its base agreement", (m) => ({ id: m[1] })],
   [/^amendment, base agreement not in register$/, "amendment, base agreement not in register", () => ({})],
   [/^document type unknown - check manually$/, "document type unknown – check manually", () => ({})],
@@ -166,6 +166,13 @@ export const STATUS_WORD: Record<string, string> = {
   LAW_UNKNOWN: "No law found",
   LAW_NOT_CONFIRMED: "Law not confirmed ({law})",
   DUPLICATE: "Copy",
+  // the positive side of each analysis (decision 95): what the answer shows in green
+  NO_FORMER_NAME: "No former name",
+  NAME_RESOLVED: "Resolved by an amendment",
+  SAME_LAW: "{law} law",
+  SAME_LAW_NOT_CHECKED: "{law} law – not checked yet",
+  UNIQUE: "Unique",
+  ORIGINAL: "Original",
 };
 export const statusWord = (status: string, t: T, law?: string | null) =>
   t(STATUS_WORD[status] ?? status, { law: law ?? "?" });
@@ -231,7 +238,7 @@ export const WHY: WhyRule[] = [
     callout: "Poor scan: page {page} was read by text recognition with only {conf} % confidence. Compare with the page." },
   // the law's quote failed its check (decision 94); the callout is the row's reason (lawReason)
   { id: "law_not_confirmed", short: "Law not confirmed by its quote" },
-  { id: "overruled", short: "The checks overruled the model" },   // the callout: overruled()
+  { id: "overruled", short: "proposed passage rejected" },   // the callout: overruled()
   { id: "hint", flags: ["signal_despite_absent"], short: "The text hints at the clause",
     callout: "The model found nothing, but the text mentions …{snippet}… – read the highlighted passage." },
   { id: "base_missing", flags: ["amendment_base_not_in_register"], short: "Base agreement not in the register" },
@@ -251,14 +258,14 @@ const OVERRULED_BY: Record<string, string> = {
   signal_despite_absent: "the text hints at the clause",
 };
 
-/** "The checks overruled the model. The model said Found, but the quote does not fit the clause, and a
- *  second model call disagreed." - the callout when the register's status differs from the model's. */
+/** "The checks rejected the model's passage. The model said Found, but the quote does not fit the clause, and
+ *  a second model call disagreed." - the callout when the register's status differs from the model's. */
 export function overruled(modelStatus: string, flags: string[], t: T): string {
   const why = [...new Set(flags.map((f) => OVERRULED_BY[f.split(":")[0]]).filter(Boolean))].map((w) => t(w));
   const model = statusWord(modelStatus, t);
-  if (why.length === 0) return t("The checks overruled the model. The model said {model}.", { model });
+  if (why.length === 0) return t("The checks rejected the model's answer. The model said {model}.", { model });
   const reasons = why.length > 1 ? why.slice(0, -1).join(", ") + t(", and ") + why[why.length - 1] : why[0];
-  return t("The checks overruled the model. The model said {model}, but {reasons}.", { model, reasons });
+  return t("The checks rejected the model's passage. The model said {model}, but {reasons}.", { model, reasons });
 }
 
 /** Where a contract stands (3.4, the API's stage); "ready" needs no word. */
@@ -302,11 +309,13 @@ export const OF_TYPE: Record<string, string> = {
   amendment: "{n} of {of} amendments",
 };
 
-/** The question a plan asks, for the plan card's "Question" row (3.5): "Limitation of liability – not found or unclear". */
-export function planQuestion(plan: Plan, clauses: Record<string, { label: string }>, t: T): string {
+/** The question a plan asks, in words, when it is not one of the example questions (Q1-Q8):
+ *  "Limitation of liability – not found or unclear"; intent "find": "Limitation of liability – where is it?" */
+export function planQuestion(plan: Plan, clauses: Record<string, { label: string }>, t: T, intent?: string | null): string {
   const p = plan.params;
   if (plan.check === "missing_clause" && p.clause_type) {
-    return t("{clause} – not found or unclear", { clause: t(clauses[p.clause_type]?.label ?? p.clause_type) });
+    const clause = t(clauses[p.clause_type]?.label ?? p.clause_type);
+    return intent === "find" ? t("{clause} – where is it, with the passage?", { clause }) : t("{clause} – not found or unclear", { clause });
   }
   if (plan.check === "governing_law_not" && p.law) return t("Not governed by {law} law", { law: p.law });
   if (plan.check === "duplicates") return t("Copies (duplicates)");
@@ -337,3 +346,52 @@ export function serverMessage(status: number, message: string, review: Pick<Revi
   }
   return message;
 }
+
+// ---- Decision 95: the Workbench as a traffic light. Step 1 chooses the analysis in five boxes; each box says
+// what it asks, how it proves it, and which three words its answer uses (red ✕ / orange ? / green ✓).
+export type AnalysisId = "missing" | "find" | "names" | "law" | "copies";
+export interface Analysis {
+  id: AnalysisId;
+  check: string;                    // the check type it runs (pipeline/portfolio.py CHECKS)
+  title: string;
+  question: string;
+  proof: string;                    // how the register knows, in one line
+  pilot?: boolean;                  // one of the case study's two pilot questions
+  legend: [string, string][];       // the three words of its answer with their meaning, red · orange · green (find: green first)
+}
+export const ANALYSES: Analysis[] = [
+  { id: "missing", check: "missing_clause", title: "Missing clause", pilot: true,
+    question: "Which contracts lack a clause of the playbook?", proof: "proves absence – every contract read",
+    legend: [["Not found", "the clause is missing – the whole contract was read"],
+             ["Unclear", "the register cannot settle it – a person looks"],
+             ["Found", "positive – with the checked passage and its page"]] },
+  { id: "find", check: "missing_clause", title: "Find a clause",
+    question: "Where do contracts contain a clause – with the passage?", proof: "the same check, read from the found side",
+    legend: [["Found", "the clause is there – with the checked passage and its page"],
+             ["Unclear", "the register cannot settle it – a person looks"],
+             ["Not found", "the clause is missing – the whole contract was read"]] },
+  { id: "names", check: "legacy_names", title: "Former company name", pilot: true,
+    question: "Which contracts still name a former company?", proof: "exact search for the former names",
+    legend: [["Former name", "a former company name is in the text"],
+             ["Cannot rule out", "a poor scan – the search cannot prove that no name is there"],
+             ["No former name", "none of the names in the whole text"]] },
+  { id: "law", check: "governing_law_not", title: "Governing law",
+    question: "Which contracts are not under the expected law?", proof: "the law read in every contract",
+    legend: [["Other law", "the contract chooses another law"],
+             ["Not confirmed", "no law found, or no checked passage yet – a person looks"],
+             ["Expected law", "the expected law, with the checked passage"]] },
+  { id: "copies", check: "duplicates", title: "Copies",
+    question: "Which documents are copies of another?", proof: "same text, every document compared",
+    legend: [["Copy", "the same text as another document – counted once"],
+             ["Cannot rule out", "a poor scan – a misread text cannot prove that no copy exists"],
+             ["Original or unique", "no other document has this text"]] },
+];
+
+/** "20 merchant agreements in scope – every one of the type": whole phrases per type (German declines). */
+export const IN_SCOPE_EVERY: Record<string, string> = {
+  "": "{n} documents in scope – every document",
+  merchant_agreement: "{n} merchant agreements in scope – every one of the type",
+  data_processing_agreement: "{n} data processing agreements in scope – every one of the type",
+  other_commercial_agreement: "{n} other commercial agreements in scope – every one of the type",
+  amendment: "{n} amendments in scope – every one of the type",
+};

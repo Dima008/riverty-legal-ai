@@ -1,6 +1,7 @@
-// The work bar under the header (spec 2.0): the three steps - done steps are links, the current one is
-// tinted, the ones not reached yet are grey - the question on one line, and on the right whether the
-// answer is still up to date. Sticky under the header, so it never scrolls away.
+// The work bar under the header (decision 95, spec 1.0): the four steps - 1 Analysis · 2 Contracts · 3 Answer ·
+// 4 Evidence & decision; done steps are links, the current one is tinted, the ones not reached yet are grey -
+// the question on one line, and on the right whether the answer is still up to date. Steps 1 and 2 share
+// one screen. Sticky under the header, so it never scrolls away.
 import { Button } from "@fluentui/react-components";
 import { useEffect, useState, type ReactNode } from "react";
 import type { Plan, Run } from "../api";
@@ -9,7 +10,7 @@ import { useLang, useT } from "../i18n";
 import { useRegisterLive } from "../live";
 import "./workbench.css";
 
-export type Step = 1 | 2 | 3;
+export type Step = 1 | 2 | 3 | 4;
 
 interface Props {
   step: Step;
@@ -18,7 +19,7 @@ interface Props {
   right?: ReactNode;                       // freshness: "Up to date · asked 09:14", or out of date with Ask again
 }
 
-const STEPS: [Step, string][] = [[1, "Ask"], [2, "Answer"], [3, "Decide"]];
+const STEPS: [Step, string][] = [[1, "Analysis"], [2, "Contracts"], [3, "Answer"], [4, "Evidence & decision"]];
 
 export function WorkBar({ step, hrefs, question, right }: Props) {
   const t = useT();
@@ -26,7 +27,7 @@ export function WorkBar({ step, hrefs, question, right }: Props) {
     <div className="workbar">
       <ol className="wb-steps" aria-label={t("Workbench")}>
         {STEPS.map(([n, label]) => {
-          const inner = <><span className="wb-num">{n}</span> {t(label)}</>;
+          const inner = <><span className="wb-num">{n < step ? "✓" : n}</span> {t(label)}</>;
           const href = hrefs[n];
           return (
             <li key={n} className={n === step ? "current" : n < step ? "done" : "todo"} aria-current={n === step ? "step" : undefined}>

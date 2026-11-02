@@ -12,11 +12,12 @@ import json
 import sqlite3
 import uuid
 from datetime import datetime, timezone
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from pipeline import config, portfolio, queries
+from pipeline import catalogue, config, portfolio, queries
 from pipeline.store import now
 
 from .deps import USERS, current_user, get_con
@@ -51,6 +52,9 @@ class RunRequest(BaseModel):
     question: str | None = Field(None, max_length=1000,
                                  examples=["Which merchant agreements do not contain a limitation of liability?"])
     plan: Plan
+    # the analysis box the lawyer chose (decision 95): "find" reads a missing-clause check from the found
+    # side ("Find a clause") - the same register query, so it changes only what the answer shows first
+    intent: Literal["missing", "find"] | None = None
 
 
 @router.get("/users")
@@ -61,8 +65,9 @@ def list_users() -> dict:
 
 @router.get("/checks")
 def list_checks() -> dict:
-    """The fixed list of check types with their allowed parameters."""
-    return portfolio.CHECKS
+    """The fixed list of check types with their allowed parameters; the former-name check also names
+    the names its exact search looks for (the tool shows them before and after the question)."""
+    return {**portfolio.CHECKS, "legacy_names": {**portfolio.CHECKS["legacy_names"], "names": catalogue.OWN_ENTITY_LEGACY}}
 
 
 @router.get("/examples")
@@ -88,6 +93,7 @@ def create_run(req: RunRequest, user: str = Depends(current_user), con: sqlite3.
     run = {
         "run_id": run_id, "created_at": now(), "created_by": user, "question": req.question,
         "prompt_version": config.PROMPT_VERSION,
+        "intent": req.intent,
         "register_version": version,      # the register as it was asked (GET /changes counts on from here)
         "cost": {"model_calls": 0, "usd": 0.0,
                  "note": "answered from the register; reading the contracts was paid once at ingest",
@@ -98,7 +104,7 @@ def create_run(req: RunRequest, user: str = Depends(current_user), con: sqlite3.
                " model_calls, cost_usd) VALUES (?,?,?,?,?,?,?,?,?)",
                (run_id, run["created_at"], user, req.question, json.dumps(result["plan"]),
                 json.dumps(run, ensure_ascii=False), config.PROMPT_VERSION, 0, 0.0))
-    audit(wb, user, "run_created", run_id, plan=result["plan"], reported=len(result["rows"]),
+    audit(wb, user, "run_created", run_id, plan=result["plan"], reported=len(result["rows"]), lights=result["lights"],
           coverage={k: v for k, v in result["coverage"].items() if k != "excluded"})
     wb.commit()
     return attach_reviews(wb, run)

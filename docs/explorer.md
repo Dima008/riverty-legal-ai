@@ -187,8 +187,9 @@ interview (decision 97): the register stays on extract-v2, its law rows say "No 
 by hand: match 100, page 1, characters 32700–32818; `GET /documents/C09` → `metadata.law_flags: []`,
 `law_quote_verified: true`; `GET /documents/M06/law/highlight` → 10 word boxes on page 2. In the
 Workbench the card shows the quote, "Checked: the quote is in the contract and names this law." and
-"Show page 2"; the page highlights the passage ("the choice of law"). A quote that failed is shown
-as "the model's quote", never as the choice of law. On a poor scan the card says it in one sentence –
+"Show page 2"; the page marks the passage in yellow ("the choice of law – checked"). A quote that
+failed is only outlined, dashed ("proposed by the model – not confirmed by the checks", decision
+95), never filled as the choice of law. On a poor scan the card says it in one sentence –
 "The quote names DE law, but this scan is too poor to confirm it." – never "Checked" next to "too
 poor to confirm".
 
@@ -296,12 +297,48 @@ answer also names every contract it checked (`coverage.checked_ids`, next to the
 and every reported row carries its document's scan quality and arrival (`doc_status`,
 `ocr_mean_conf`, `ingested_at`) – so the names, law and copy checks can say "poor scan" too.
 
-In the Workbench the question is step 1 (decision 93): all eight example questions in one box,
-grouped by topic - clause not found (5), former company name, governing law, copies - the case
-study's two pilot questions (Q1, Q2) tagged "Pilot", and "Build your own question" at the end of the
-same box. One click fills the plan card beside it; nothing runs before "Confirm the plan".
+**Every contract gets a colour (decision 95).** The answer keeps three lists, and every contract in
+scope is in exactly one: `rows` - the reported contracts, exactly what the evaluation counts (a
+test compares them for Q1–Q8); `unreported` - every other checked contract, with its evidence (the
+quote, page and character span of a Found; the hits of a former name an amendment replaced; the
+law's fields; the copies of an original), snapshotted in the run; and `coverage.excluded`, with the
+reason. One rule on the server, `portfolio.light()`, gives every checked contract a light: **red** -
+the issue the question looks for is in the text (not found, former name, other law, copy);
+**orange** - the register cannot settle it, a person looks (unclear, cannot rule out, law not
+confirmed or not checked yet); **green** - positive, with evidence (found, no former name, resolved
+by an amendment, same law, original, unique). Doubt never turns green: a poor scan proves neither
+absence nor presence (F19), so on a scan below 70 % a Not found, a Found and a "unique" are orange
+(F43); a Found that needs Review or Four eyes is orange too (F37). Red stays red - it is in front of a
+person anyway. The run adds `lights` (the three counts), `intent` ("find" for Find a clause) and, for
+the names, `info.searched_names` (all 4 names, F42). Register copy, 2 Nov: Q1 red 3 · orange 2 ·
+green 14 · excluded 1; Q2 5 · 0 · 39 (38 no former name + M05 resolved by M05-A) · 3; Q3 4 · 1 (M14,
+a Found for two people) · 14 · 1; Q5 5 · 14 ("not checked yet": the register is on extract-v2,
+decision 97) · 0 · 1; Q8 1 · 0 · 46 · 0. With H01 in the register: Q1 3 · 3 (H01 "Not found – poor
+scan") · 14 · 1. Legal's decision on a Found is attached too: a Found that Legal corrected,
+rejected or is reviewing turns orange "Found – Legal disagrees" - shown, not counted yet (F34).
 
-Legal can also narrow the question down (decisions 75 and 91): in the plan, by type, law, dated
+In the Workbench (decision 95) the work bar has four steps: **1 Analysis · 2 Contracts · 3 Answer ·
+4 Evidence & decision**; steps 1 and 2 share one screen. Step 1 is five boxes, one per analysis:
+Missing clause (Pilot), Find a clause, Former company name (Pilot), Governing law, Copies. Below
+them panel ① asks the one thing the analysis needs - which clause (the pilot clause pre-selected),
+which law - says what the register looks for (the playbook definition, the 4 names) and shows the
+legend "You will see every contract – in one of three colours". "Find a clause" runs the same
+register query and reads it from the found side - one complete query answers "who has it" and "who
+lacks it". Panel ② is step 2, always open: the type with its count, law, dated from/to, party or IDs,
+then the preview's coverage ("20 merchant agreements in scope · 19 will be evaluated · 1 not
+evaluated, each with its reason: M15 copy of M01 – the original is evaluated"), the contracts as
+neutral chips (never the answer), and the one main button, **Confirm the plan** ("evaluates 19
+contracts · from the register · no model call · $0"). Step 3, the answer, is two columns: on the
+left the answer in two sentences ("Limitation of liability: not found in 3 of 19 contracts" / "2
+more are unclear – a person looks. 14 contain it, with the passage."), the key line, one lane per
+colour with every contract as a tile (✕ ? ✓ – on each tile, so no colour stands without its shape
+and word) and the sum "20 in scope = ✕ 3 + ? 2 + ✓ 14 + – 1"; on the right the list "To decide" (red
+and orange), "The 14 green contracts need no decision" and **Decide the 5 open →**. Every tile opens
+step 4. Measured on a register copy, 2 Nov: all boxes, panels and Confirm the plan, and every tile
+of Q1, Q2, Q3, Q5 and Q8, inside 1366x768 and 1600x900 in English and German without a window scroll
+(112 screens).
+
+Legal can also narrow the question down (decisions 75 and 91): in panel ②, by type, law, dated
 from/to, or party and contract IDs (picking by hand = IDs separated by commas); the register hands
 its filters over with "Ask in the Workbench →". There is one idea of scope – the register's tick
 boxes are gone. A type alone sends no selection: the server's own rule applies (the type plus
@@ -323,23 +360,30 @@ extracted (status LOW_QUALITY)" – the tool words it "not read yet – listed, 
 
 **Why this way.** Compile, don't search (4); negative search checks every contract, with
 coverage (5); filters, not vector search, select contracts (17); one way to narrow the scope, a
-filter keeps what it cannot judge, the preview shows the scope but never the answer (91).
+filter keeps what it cannot judge, the preview shows the scope but never the answer (91); one colour
+rule for every analysis, doubt never green, the reported rows stay the evaluation's answer, five
+analysis boxes and a visible contracts step (95).
 
 **What went wrong.** F10 – a filter that excludes documents can hide a miss. Since then every
 exclusion is listed with its reason. F16 – "not governed by US law" compared "US" with "US-NY"
 and reported every contract under a US state's law; the check now compares the country. The
 coverage "assertion" the docstring relied on could never fail and was removed - the real
-guarantees are named instead.
+guarantees are named instead. F37 – M14's doubtful Found in Q3/Q4 was a grey tile nobody looked at.
+F42 – the Q2 question names 2 former names, the check searches 4, and no screen said so. F43 – a poor
+scan was green "Unique" in Q8. F45 – an answer stored before the traffic light counted "0 of 19" next
+to 3 red tiles; it now counts from its rows and says "details not stored – Ask again".
 
 **Live.** `POST /runs` with the plan of Q1 (`GET /examples`):
 "20 merchant agreements in scope · 19 checked · excluded: M15 (duplicate of M01, the original
-is checked) · reported: M03, M08, M10, M14, M18". The same plan with
+is checked) · reported: M03, M08, M10, M14, M18", `lights {"red": 3, "orange": 2, "green": 14}`,
+14 `unreported` rows, each with its quote, page and `char_start`. The same plan with
 `"scope": {"doc_ids": ["M01", "M03", "M08", "M15", "V01"]}`: 5 in scope, M03 and M08 reported,
 M15 (duplicate) and V01 (another type) excluded with reason. `POST /runs/preview` with the same
-body: the same `coverage` without `reported`, no `rows` (733 bytes for Q2, 4 ms).
+body: the same `coverage` without `reported`, no `rows`, no `lights` (733 bytes for Q2, 4 ms). In
+the tool: `#/tool/workbench?q=Q1` (step 1 prefilled), then Confirm the plan.
 
-**Diagram.** A bar of all contracts in scope: checked (with result), excluded (with reason),
-nothing in between.
+**Diagram.** A bar of all contracts in scope: red, orange, green (each with its count), excluded
+(with reason), nothing in between - the lanes of step 3.
 
 ---
 
@@ -384,10 +428,31 @@ that reports the same version reuses it, so review work shrinks with every quest
 the extraction or the status changes, the old review no longer applies.
 
 Decisions are made in one place, the Workbench (decision 91: the register looks up, the Workbench
-works). Step 3 "Decide" shows the queue, the page with the passage highlighted, the finding card and
-the decision panel on one screen; the panel is pinned, so "Confirm finding" never leaves the screen
-(1366x768: y 589–621 for M08, 617–660 for M14, "Store archive copy" at 711–741; before, Confirm
-was at y 1067 after the answer and 1697 in the drawer - F27). After the first of two approvals the
+works). Step 4 "Evidence & decision" (decision 95) shows, on one screen, the rail with every contract
+of the answer grouped like the lanes of step 3, the contract page in the middle, the finding card on
+the right and, pinned below it, what can be done; the window does not scroll (1366x768: "Confirm
+finding" at y 628–660 for M14, "Store archive copy" at 717–741; before the redesign of decision 91,
+Confirm was at y 1067 after the answer and 1697 in the drawer - F27). Above the page a verdict strip
+on the dark desk says what the page shows - or what is not on it: "Found on page 2 – the marked
+passage is the limitation of liability." / "No limitation of liability on either of the 2 pages – the
+whole contract was read." with page chips "Pages read 1 ✓ 2 ✓" (absence has no place on the paper,
+so it is said above it). Three looks on the page: a yellow fill only for checked evidence ("the
+passage – checked"), a dashed orange outline for a passage that is not evidence ("proposed by the
+model – rejected by the checks", M08, F41), red for text addressed to AI systems (M14). The card is
+never empty: the verdict and the next step ("Found → No decision", "Not found → Confirm"), why a
+person looks, the passage (or "Not in this contract · Whole contract read: 2 of 2 pages"), **How we
+know** (✓ word for word in the contract, ✓ a second model call agreed, ✓ none of 8 typical wordings
+in the whole text, ! a poor scan, i read by OCR at 93 % - information, not a doubt, F39), what the
+playbook looks for, and the fold "n of m checks raised a doubt". The panel below depends on the row:
+a reported red or orange row gets the decision (four eyes, reasons, escalation, archive copy after
+approval - unchanged); a green Found says "Positive – nothing to decide." with **Challenge this
+finding ›**, which opens the same decision on the finding in place (D6, the address keeps `?run=`);
+after "Correct → does not contain it" the contract turns orange "Found – Legal disagrees" with the
+honest line that this answer and the evaluation do not count it yet (F34); an orange Found that needs
+two people (M14 in Q3) gets that decision at once; a green name, law or copy row is inspect-only
+("Challenging this result is not built yet"); an excluded contract says why and offers "Open M01 →".
+No archive copy for a row the answer does not report - the server refuses it (404 on a run review).
+If an optional marking cannot be loaded, the page, card and decision still show (F40). After the first of two approvals the
 panel says "You approved. The second approval must come from another person." and offers
 "Continue as Legal Reviewer B" (the Entra ID stand-in; the server still refuses the same person
 twice). "Not sure? Ask for a second person" (with a reason) escalates a one-person finding to four
@@ -423,7 +488,7 @@ reason; both votes on M03 without a reason → 422.
 matrix (✓ confirmed by Legal · ✗ Legal disagrees · … in review).
 `POST /findings/M03/liability_limitation/reviews` with `ESCALATED` and a reason → a new Q1 run
 counts `"ESCALATED": 1`; `GET /monitoring` → `workflow.open` 5 of 5 rows. In the tool:
-`#/tool/workbench?run=<id>&doc=M14` (step 3 of a stored answer; a reload or a tab switch keeps it).
+`#/tool/workbench?run=<id>&doc=M14` (step 4 of a stored answer; a reload or a tab switch keeps it); `#/tool/workbench?run=<id>&doc=M01` → Challenge this finding → `POST /findings/M01/liability_limitation/reviews` 201, then the run says M01 `light "orange", light_why "legal"`, `lights {"red": 3, "orange": 3, "green": 13}`, its `rows` unchanged.
 
 **Diagram.** State machine FOUND → IN_REVIEW → CONFIRMED / REJECTED / CORRECTED, with the
 DISPUTED branch; two avatars (A, B) on the four-eyes path.
