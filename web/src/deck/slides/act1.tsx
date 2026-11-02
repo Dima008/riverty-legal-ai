@@ -1,5 +1,6 @@
 // Part 1 - the problem (decision 90): Riverty's case study as Riverty wrote it - sentence screenshots
-// of the PDF, part by part, with what I identified in each (decisions 98, 99) - and the problem
+// of the PDF, part by part, with what I identified in each - numbered problems, rules and the goal
+// (decisions 98, 99, 100: Dima 2.11., 'which problems did I identify, and how') - and the problem
 // everything else builds on: to prove that something is missing you read everything, and today that
 // reading starts again for every new question. Part 1 says no solution (Dima, 2.11.): the levers
 // open part 2, the architecture part 3. The former cards 'task', 'today' and 'hard' are deep dives
@@ -11,6 +12,7 @@ import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import "./acts.css";
 import deck from "./deck-data.json";
+import { say } from "./prompts-data";
 
 // 47 documents in the register; the ones lacking a required clause glow (decorative)
 const GAPS = new Set([2, 7, 9, 13, 17, 22, 30, 36, 41]);
@@ -144,15 +146,20 @@ function Hard() {
 // task, then the environment, then the conditions. The points of the former cards 'task', 'today' and
 // 'hard' (deep dives since decision 98) are said here.
 interface Crop { id: string; sentence: string }
-const SECTIONS: { label: string; crops: Crop[]; took: string[] }[] = [
+/** What I identified in a part of the document: a problem to solve, a rule to keep, or the goal. */
+interface Found { kind: "problem" | "rule" | "goal"; text: string }
+const P = (text: string): Found => ({ kind: "problem", text });
+const R = (text: string): Found => ({ kind: "rule", text });
+const G = (text: string): Found => ({ kind: "goal", text });
+const SECTIONS: { label: string; crops: Crop[]; found: Found[] }[] = [
   { label: "The task",
     crops: [
       { id: "the-task", sentence: "contracts that do not contain a certain text passage or contracts in which a company name needs to be updated." },
       { id: "semi-manual", sentence: "So far, this is semi-manual work: they have to open the documents, search for the relevant content, and verify the results themselves." },
       { id: "repetitive", sentence: "They approached us to ask whether AI could help with this task, as it is purely repetitive work that nobody enjoys doing." },
     ],
-    took: ["Find what is missing – in every contract", "Find every former company name",
-      `${n(CONTRACTS)}+ contracts × ${MINUTES} min ≈ ${HOURS} h per question`] },
+    found: [P("Prove that a passage is missing – in every contract"), P("Find every former company name"),
+      P(`By hand today: ${n(CONTRACTS)}+ contracts ≈ ${HOURS} h per question`)] },
   { label: "Technical outline",
     crops: [
       { id: "workload", sentence: "the main workload still consists of organizing and reviewing contracts, comparing them, and ensuring they comply with our corporate guidelines and represent the company's best interests." },
@@ -160,18 +167,26 @@ const SECTIONS: { label: string; crops: Crop[]; took: string[] }[] = [
       { id: "storage", sentence: "You may solely use it to store an additional copy of a contract in a legally compliant manner." },
       { id: "principles", sentence: "First, we evaluate best-of-breed solutions and what they offer. Second, as we are a Microsoft shop, we compare these solutions against what Microsoft provides." },
     ],
-    took: ["Read PDFs and images", "Amendments, other words", "Check against your guidelines", "Storage: only an additional copy",
-      "Best of breed, compared with Microsoft"] },
+    found: [P("Guidelines: the same clause in other words, amendments"),
+      P("Some contracts are only images"),
+      R("The storage API: an additional copy only"),
+      R("Best of breed, compared with Microsoft")] },
   { label: "Problem description",
     crops: [
       { id: "engineers", sentence: "create more with the same number of engineers" },
       { id: "agents-fail", sentence: "in day-to-day operations they often fail due to the sheer size and complexity of the environments they have to operate in." },
     ],
-    took: ["More with the same people", "Every contract – provably"] },
+    found: [G("More with the same people"), P("Agents fail on the size of the environment – coverage must be proven")] },
   { label: "AI usage",
     crops: [{ id: "understand", sentence: "As a team, we encourage any form of AI usage, as long as we understand what is happening." }],
-    took: ["Evidence for every result"] },
+    found: [R("Evidence for every result")] },
 ];
+/** P1, P2 ... for problems, R1 ... for rules, G1 the goal - numbered across the parts, so later cards can point back. */
+export const FOUND = (() => {
+  const counters: Record<Found["kind"], number> = { problem: 0, rule: 0, goal: 0 };
+  return SECTIONS.flatMap((s, part) => s.found.map((f) => ({ ...f, part, id: `${f.kind[0].toUpperCase()}${++counters[f.kind]}` })));
+})();
+export const PROBLEMS = FOUND.filter((f) => f.kind === "problem").length;
 
 function CaseStudyCard() {
   const step = Math.min(useStep(), SECTIONS.length - 1);
@@ -180,13 +195,17 @@ function CaseStudyCard() {
     <div className="x-cs">
       {/* keyed by the build, so each part of the document fades in on its own */}
       <div key={step} className="x-cs-doc">
-        <div className="x-cs-label">Your case study · {part.label}</div>
+        <div className="x-cs-label">Case study · {part.label}</div>
         {part.crops.map((c) => <img key={c.id} className="x-cs-crop" src={`/case-study/${c.id}.png`} alt={c.sentence} />)}
       </div>
       <div className="x-cs-took">
         <div className="x-cs-label">What I identified</div>
         <ul>
-          {SECTIONS.slice(0, step + 1).flatMap((s, i) => s.took.map((t) => <li key={t} className={i === step ? "now" : undefined}>{t}</li>))}
+          {FOUND.filter((f) => f.part <= step).map((f) => (
+            <li key={f.id} className={`${f.kind}${f.part === step ? " now" : ""}`}>
+              <span className="x-cs-n">{f.id}</span><span>{f.text}</span>
+            </li>
+          ))}
         </ul>
       </div>
     </div>
@@ -211,12 +230,14 @@ if (import.meta.env.DEV) {
     ...SECTIONS.flatMap((s) => s.crops).filter((c) => !CASE.includes(c.sentence.replace(/’/g, "'")))
       .map((c) => `card 'case-study': crop '${c.id}' is not a sentence of the case study: "${c.sentence}"`),
     SECTIONS.length !== 4 && `card 'case-study' has ${SECTIONS.length} parts - its notes walk through 4`,
+    PROBLEMS !== 6 && `card 'case-study': the notes say 'the sixth problem' - the list has ${PROBLEMS} problems`,
+    FOUND.filter((f) => f.kind === "goal").length !== 1 && "card 'case-study': the title says one goal",
     SNIPPETS.length !== 6 && `card 'task': the title says six sentences - the card shows ${SNIPPETS.length}`,
     // the title note: "Your case study is about making your legal team more efficient", "the repetitive part"
     !(CASE.includes("making our legal team more efficient") && CASE.includes("purely repetitive work"))
       && "card 'title': the note says the case study is about making the legal team more efficient, and the repetitive part - the case study no longer says so",
     SECTIONS[0].label !== "The task" && "card 'case-study': the notes start with the task (decision 99)",
-    !(VENDORS > 0 && MERCHANTS > 0) && "card 'today': the vendor or merchant count is no longer in the case study",
+    !(VENDORS > 0 && MERCHANTS > 0) && "card 'today': the vendor or merchant count is no longer in the case study",   // 'today' (a deep dive) still names both
     !RENAME?.contract && "card 'hard': the register has no amendment that renames a contract",
     !(RENAME?.old.startsWith("Arvato") && RENAME?.to.startsWith("Riverty")) && "card 'hard': the note calls the old name Riverty's old name - the amendment renames something else",
     RENAME && year(RENAME.amends_date) !== year(deck.register.rows.find((r) => r.id === RENAME.contract)?.date)
@@ -237,8 +258,8 @@ export const ACT1: Slide[] = [
     id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 53, Body: TitleBody,
     notes: [
       "Hello, I'm Dima. [Here you introduce yourself – in your own words.] " +
-        "Your case study is about making your legal team more efficient. " +
-        "Most of their work is reviewing and comparing contracts, and checking them against your guidelines – largely by hand. " +
+        "The case study is about making the legal team more efficient. " +
+        "Most of their work is reviewing and comparing contracts, and checking them against the corporate guidelines – largely by hand. " +
         "AI should take over the repetitive part, so the same lawyers can answer more questions. " +
         "I'll show you what I identified, how I would solve it and what the architecture looks like – " +
         "then the prototype, live, and finally the infrastructure and adoption.",
@@ -251,31 +272,31 @@ export const ACT1: Slide[] = [
     quote: ["One of these challenges is making our legal team more efficient."],
     notes: [
       // Dima, 2.11.: not "Legal asked whether AI could help" - the title says what the case study is about
-      "First, what I identified in your case study.",
+      "First, the problem: what I identified in the case study.",
     ],
     words: [{ word: "identified", say: "eye-DEN-tih-fyd" }],
   },
   {
     // decisions 98, 99: Riverty's case study as sentence screenshots, part by part, and what I identified -
     // findings and requirements only; the playbook (the guidelines as data) is solution, said on 'architecture'
-    id: "case-study", act: 1, kind: "content", title: "Your case study – and what I identified.", steps: 3, seconds: 83, Body: CaseStudyCard,
+    id: "case-study", act: 1, kind: "content", title: `The case study, sentence by sentence: ${say(PROBLEMS)} problems, ${say(FOUND.filter((f) => f.kind === "rule").length)} rules, one goal.`, steps: 3, seconds: 84, Body: CaseStudyCard,
     notes: [
-      // the numbers of the former card 'today' (a deep dive now); five minutes per contract is my assumption
-      "I identified two questions that come back again and again: which contracts lack a certain passage, and which name a company that must be updated. " +
-        "Today a lawyer opens every document, searches and checks by hand. " +
-        `With over ${n(VENDORS)} vendors and over ${n(MERCHANTS)} merchants, that is over ${n(CONTRACTS)} contracts – ` +
-        `at an assumed ${MINUTES} minutes each, about ${HOURS} hours per question.`,
-      // the difficulties of the former card 'hard' (a deep dive now): scans, amendments, other words
-      "The contracts are PDFs on SharePoint; some are old handwritten scans, only images. " +
-        "Amendments change older contracts, and the same clause comes in different words. " +
-        "Your lawyers check against your corporate guidelines, and the contract storage may only receive an additional copy.",
-      // Riverty's agent sentence is taken up on 'agent' (part 2), where the measurement is
-      "Your measure of success is productivity: more with the same people. And agents, you write, often fail on the sheer size of their environment. " +
-        "So my first requirement: cover every contract, and prove it.",
-      "And you encourage AI, as long as you understand what is happening – so every result needs its evidence.",
+      // how I identified them: every sentence of the task classified - a problem to solve, a rule to keep,
+      // or the goal (docs/context/briefing.md, section 4); the numbers of the former card 'today' (a deep
+      // dive now); five minutes per contract is my assumption
+      "I went through the case study sentence by sentence and sorted what I found: a problem, a rule, or the goal. " +
+        "The task gives two problems: prove that a passage is missing, and find every former company name. " +
+        `The third is the cost today: open, search, check by hand – over ${n(CONTRACTS)} contracts, at an assumed ${MINUTES} minutes each about ${HOURS} hours per question.`,
+      // the difficulties of the former card 'hard' (a deep dive now): other words, amendments, scans
+      "The technical outline adds two more: the same clause comes in other words, and amendments change older contracts – " +
+        "and some contracts are handwritten scans, only images. Two rules: the storage may only receive an additional copy, and best of breed is compared with Microsoft.",
+      // Riverty's agent sentence is picked up again on 'why-fail' (part 2), where the options are tested
+      "The problem description gives the goal – more with the same people – and the sixth problem: agents often fail on the sheer size of their environment. " +
+        "So coverage must be proven, not claimed.",
+      "And the last rule: AI is welcome, as long as the team understands what is happening – so every result needs its evidence.",
     ],
     words: [{ word: "identified", say: "eye-DEN-tih-fyd" }, { word: "merchants", say: "MUR-chunts" }, { word: "amendments", say: "uh-MEND-ments" },
-      { word: "guidelines", say: "GIDE-lines" }, { word: "productivity", say: "proh-duk-TIV-ih-tee" }, { word: "requirement", say: "rih-KWIRE-ment" }],
+      { word: "guidelines", say: "GIDE-lines" }, { word: "coverage", say: "KUV-er-ij" }, { word: "evidence", say: "EV-ih-dence" }],
   },
   {
     // Dima, 2.11.: no "Finding is easy" - a plain statement; the lever itself opens part 2 ('levers')

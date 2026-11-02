@@ -1,9 +1,12 @@
-// The order of the talk (decision 76; the parts of decisions 90 and 99). One place to change the
+// The order of the talk (decision 76; the parts of decisions 90, 99 and 100). One place to change the
 // storyline: parts, then screens. The talk follows Dima's path through Riverty's outline (decision 99,
-// Dima 2.11.: "identify, how I solve it, what the architecture looks like"): 1 the problem - what I
-// identified, 2 my approach - how I work, the levers, the options I tested, 3 the technical solution -
-// the architecture, its parts, the proof, 4 the basic implementation, live - right after the solution
-// it shows, 5 infrastructure, 6 adoption and the close. Each opener shows its line of the case study
+// Dima 2.11.: "identify, how I solve it, what the architecture looks like"): 1 the problem - the
+// problems I identified, numbered, 2 my approach - how I work, the levers, the question the case study
+// raises (why do the usual AI approaches fail here?), the options tested, per step code or AI, 3 the
+// technical solution - the architecture with its stack, how I implemented it, the checks, the register,
+// how a finding reaches a person, the proof, 4 the basic implementation, live - right after the solution
+// it shows, 5 infrastructure, 6 adoption and the close. Titles are plain presentation titles - never
+// "your case study" (decision 100). Each opener shows its line of the case study
 // word for word (guarded below). The deep dives after the close are opened only on a question.
 // Riverty asks for 15-20 minutes; since
 // 1.11. (Dima: no cuts) each card's seconds are what its notes need at about 115 words per minute
@@ -34,8 +37,8 @@ export const ACTS: Act[] = [
 
 export const SLIDES: Slide[] = [
   ...ACT1,                              // 1 the problem: what I identified
-  ...ACT2,                              // 2 my approach: how I work, the levers, the options I tested, three guarantees
-  ...ACT3, RESULTS,                     // 3 the technical solution: the architecture, its parts, the proof
+  ...ACT2,                              // 2 my approach: how I work, the levers, why the usual approaches fail, the options tested, code or AI, three guarantees
+  ...ACT3, RESULTS,                     // 3 the technical solution: the architecture with its stack, its parts, how a finding reaches a person, the proof
   ...LIVE,                              // 4 the basic implementation, live
   ...INFRASTRUCTURE,                    // 5
   ...ADOPTION, ...CLOSE,                // 6 adoption, then the close

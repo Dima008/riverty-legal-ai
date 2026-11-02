@@ -10,7 +10,7 @@ import runPy from "../../../../pipeline/run.py?raw";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import { HARD, TASK, TODAY } from "./act1";
-import { EMBEDDING_MAP } from "./act2";
+import { EMBEDDING_MAP, RAG } from "./act2";
 import { FOLLOW_M18, INJECTION, REGISTER_INDEX, TOMORROW } from "./act3";
 import { TEST_SET } from "./act4";
 import { SHAREPOINT } from "./act5";
@@ -19,37 +19,10 @@ import { CHECKER, CHECKER_ASK, CLAUSES, READER, READER_ASK, RULES, Say, TEMPERAT
 import "./acts.css";
 import deck from "./deck-data.json";
 
-// ---------------------------------------------------------------- each problem picked its technique
-// Moved here from act 3 (decision 88): as a preview it put about nine terms on screen before the
-// main track explained them. Every row's rejected alternative is also said on the main track
-// (keywords: 'hard'; top-k and a free agent: act 2; the model's own confidence: 'checks'; automatic
-// copies: 'human'). Amendments: renames are resolved today (Q2), clause changes are a known gap.
-const CHOICES = [
-  { problem: "Prove what is missing", tech: "Read every contract into a register", sub: "one table: every contract against Legal's playbook", not: "top-k search · a free agent" },
-  { problem: "Scans and photos", tech: "OCR, page by page, with a confidence", sub: "Tesseract now · planned: Content Understanding on Azure", not: "" },
-  { problem: "Amendments", tech: "Read with their contract", sub: "names today, clause changes planned", not: "each file alone" },
-  { problem: "Same clause, other words", tech: "A model reads against the playbook", sub: "the same definitions for every contract", not: "keywords" },
-  { problem: "A model can be wrong", tech: "A quote we find + a second model call", sub: "", not: "the model's own confidence" },
-  { problem: "Hidden instructions", tech: "A pattern check", sub: "next: Microsoft Prompt Shields", not: "" },
-  { problem: "Lawyers decide", tech: "Triage · four eyes · approval gate", sub: "sorted by how sure we are; risky = two people", not: "automatic archive copies" },
-];
+// The former deep dive 'choices' (each problem picked its technique) is the main-track card 'code-or-ai'
+// since decision 100 - nothing is said twice.
 
-function Choices() {
-  return (
-    <div className="x-choices">
-      <div className="x-choice-head"><span>Problem</span><span /><span>Technique</span><span>Rejected</span></div>
-      {CHOICES.map((c, i) => (
-        <Build key={c.problem} at={i} className="x-choice">
-          <span className="x-choice-problem">{c.problem}</span>
-          <span className="x-arrow" aria-hidden>→</span>
-          <span className="x-choice-tech">{c.tech}{c.sub && <small>{c.sub}</small>}</span>
-          <span className="x-choice-not">{c.not ? <s>{c.not}</s> : "–"}</span>
-        </Build>
-      ))}
-    </div>
-  );
-}
-
+// ---------------------------------------------------------------- the decoy: embeddings know the topic
 // The similarities the notes say: M10's clause without a cap, M19's real cap in German.
 const DECOY = deck.embedding.decoy;
 const SIM = (id: string) => DECOY.sims.find((s) => s.id === id)?.sim ?? NaN;
@@ -437,23 +410,11 @@ export const DEEP: Slide[] = [
     id: "deep-dives", act: 7, kind: "opener", title: "Deep dives – for your questions", steps: 0, seconds: 6, deep: true,
     notes: ["If you want to see a technique closer, I pick a card."],
   },
-  {
-    id: "choices", act: 7, kind: "content", title: "Each problem picked its technique.", steps: 6, seconds: 45, deep: true, Body: Choices,
-    notes: [
-      "Each problem picked its technique. Prove what is missing: read every contract into the register.",
-      "Scans: OCR reads each page, with a confidence.",
-      "Amendments: read with their contract. Old names work today; clause changes are planned.",
-      "Other words: the model reads against the playbook. Keywords miss M02.",
-      "Models can be wrong: a quote we find, and a second model call.",
-      "Hidden instructions: a pattern check, next Microsoft Prompt Shields.",
-      "Lawyers decide: triage. Unclear goes to one lawyer, risky to two – four eyes.",
-    ],
-    words: [{ word: "technique", say: "tek-NEEK" }, { word: "playbook", say: "PLAY-book" }, { word: "triage", say: "TREE-ahzh" }],
-  },
   TASK,               // part 1 (decision 98): the former first cards, their points said on 'case-study'
   TODAY,
   HARD,
   TEST_SET,
+  RAG,               // option A step by step (decision 100: the main track says top-k in one sentence on 'rag-fails')
   EMBEDDING_MAP,
   {
     id: "decoy", act: 7, kind: "content", title: "Embeddings know the topic – not whether the clause is there.", steps: 1, seconds: 40, deep: true, Body: Decoy,

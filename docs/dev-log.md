@@ -7,6 +7,43 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-02 · The talk follows the case study's outline with plain titles: numbered problems, the question "why do the usual AI approaches fail?", per step code or AI, the architecture with its stack, how a finding reaches a person
+
+- **Problem:** Dima after reading the deck: the talk is not well structured although the case study says how to
+  present; there is no architecture diagram and no tech stack in "The technical solution"; it is unclear which
+  problems were identified and how; the talk says how we would do it instead of deriving per step from the case
+  study what is deterministic and what is a model; "Riverty cannot share contracts" is no presentation title;
+  the RAG card "comes out of nowhere"; "What we use" came before any architecture; the technical path of a finding
+  to the human in the loop had no diagram; "Built with Claude Code" should go; titles like "Your case study says"
+  are not how a presentation speaks; cards are overloaded for an audience that will see the Workbench anyway.
+- **Cause:** decision 99 added the levers and an architecture overview but kept the RAG/agent story of decision 88
+  as the centre of part 2, the architecture card had no technology on it, "what I identified" were free bullets
+  without numbers, and the decision "code or AI per step" (roadmap step 4) lived only in the notes.
+- **Technique and why:** part 1: the case-study card lists what I identified as P1–P6 (problems), R1–R3 (rules),
+  G1 (goal), numbered across the parts so later cards point back (`FOUND` in act1.tsx, guarded). Part 2: the roadmap
+  without the Claude line; a bridge card `why-fail` (the case study's own sentence on agents as the question, the
+  two usual options named, "both tested on contracts with known answers"); the test-set title is a plain title;
+  option A (RAG) and option B (agent) as the tested options; the new card `code-or-ai` derives per step code or AI
+  from the problems (their ids on the card); then the guarantees. Part 3: the architecture card is a diagram with
+  the technology under every box (prototype → Azure target) and a stack line; `what-we-use` becomes "How I
+  implemented it" (Azure OpenAI set up, two models deployed, playbook as data, prompts, checks) and comes after
+  the diagram; `human` is the flow a finding takes: the five checks → a computed confidence → confirm / review /
+  four eyes → decision with reason → the gate. Titles never say "your" (plain presentation titles); the on-screen
+  text of the new and the overloaded cards was cut to a few words per box (the Workbench shows the detail). The
+  former deep dive `choices` is deleted (the main-track card says it); `rag` (option A step by step) is a deep
+  dive, `rag-fails` says top-k in one sentence. Time measured through vite SSR with the DEV guards (scratchpad
+  script): 24:20 after the restructure, trimmed to 21:59 planned; at 115 words/min the notes need 22:31, at 124
+  words/min 20:56. Nothing from Riverty's outline removed; Azure and adoption stay last, after the demo.
+- **Rejected alternative:** keep `rag` on the main track and cut `insight` or `needs` instead (both carry a point
+  said once: the hinge of part 1, the three guarantees that later cards name); a separate "tech stack" card
+  (one more card, the stack belongs under the boxes it runs on); screenshots of the Workbench instead of the
+  human-in-the-loop flow (the demo shows the Workbench; the card must show the mechanism).
+- **Metric before → after:** main track 27 → 28 cards (`why-fail`, `code-or-ai` new, `rag` a deep dive);
+  planned 21:55 → 21:59 (hard max 22:00); DEV guards 0 → 0 problems; words on the architecture card's boxes
+  about 95 → about 55; titles addressing Riverty ("your") 3 → 0.
+
+---
+
 ## 2026-11-02 · The talk shows my path: what I identified, my levers, the architecture – the demo right after the solution
 
 - **Problem:** Dima: part 2 "My approach" described how RAG and agents work, not his own path – "what did I

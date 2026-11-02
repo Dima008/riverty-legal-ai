@@ -495,3 +495,19 @@ only unclear findings go to a person (lever 3). The decision is not automated: t
 what the text says, a lawyer decides, and only after approval is a copy stored.
 
 *Where:* card "levers" (part 2), card "architecture" (part 3), decision 99.
+
+**42. On the card "Per step: code or AI?" the AI does only two of seven steps. How did you decide
+where a model is allowed – and why is "which contracts lack X?" answered by code?**
+
+I went through the process step by step and asked: does this step need meaning, or can code do it?
+Getting a contract and reading its text is code – OCR for an image, with a confidence. Only one step
+needs meaning: find a clause when it is written in other words (problem four). So a model reads
+there. A model can be wrong, so code checks its quote, and a second model call gives an opinion
+from only a definition and the quote. The question itself is a lookup over every row of the
+register. Code can show that every contract is in the table – coverage is a fact, not a claim
+(problems one and six). And the decision stays with a lawyer: observations, not verdicts. My rule:
+as little freedom for the AI as works.
+
+*Numbers:* two model calls per contract (the reader for all 47, the checker only where something
+was "found"); everything else is code.
+*Where:* card "code-or-ai" (part 2), `pipeline/extract.py`, `pipeline/portfolio.py`, decision 100.
