@@ -7,6 +7,22 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-02 · The live click script follows the new Workbench
+
+- **Problem:** The note of the card 'live' still walked the old Workbench ("I ask Q1", a table "to
+  look at", M08 "highlighted" as evidence) – the tool now shows analysis boxes, a contract step and
+  every contract in green / orange / red, and M08's rejected passage is only outlined.
+- **Cause:** The Workbench changed (decision 95) after the notes pass.
+- **Technique and why:** The six numbered steps still match the six boxes on the card: choose the
+  analysis; the contracts and Confirm the plan; the answer with every contract in its colour (H01
+  orange: a poor scan cannot prove an absence); M08 outlined as rejected, then M01 green with its
+  passage in yellow; four eyes on M14; the archive copy. Ids come from the register snapshot; a new
+  guard checks that M01 is green.
+- **Rejected alternative:** Keeping "highlighted" for M08 (it is not evidence, F41).
+- **Metric before → after:** 'live' note 148 → 181 spoken words, needs 96 s of its 115 s (the rest
+  is clicking time, decision 92); main track still 1319 s (21:59); no guard fires.
+- **Links:** decisions 92, 95; `web/src/deck/slides/act6.tsx`, `docs/demo.md`
+
 ## 2026-11-02 · The Workbench as Dima described it: analysis, contracts, Go, every contract green / orange / red, the passage in yellow
 
 - **Problem:** Dima: "I choose the analysis in clear boxes, then the contracts, then Go; then I see

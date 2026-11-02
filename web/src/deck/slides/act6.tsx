@@ -143,6 +143,7 @@ const Q1_UNCLEAR = Q1_ROWS.filter((r) => r.cells[0] === "UNCLEAR").map((r) => r.
 const COPY = deck.register.rows.find((r) => r.copy_of);
 const EVIDENCE = "M08";
 const FOUR_EYES = "M14";
+const GREEN = "M01";          // a green tile of the answer (decision 95): its checked passage is marked in yellow
 const list = (ids: string[]) => ids.join(", ");
 
 if (import.meta.env.DEV) {
@@ -153,6 +154,7 @@ if (import.meta.env.DEV) {
     !(Q1_NOT_FOUND.includes(FOUR_EYES) && deck.m14.finding.status === "ABSENT") && `card 'live': the script reviews ${FOUR_EYES} as not found`,
     !deck.triage.four_eyes.some((s) => s.includes("injection")) && `card 'live': the script says ${FOUR_EYES} needs four eyes`,
     !COPY && "card 'live': the script says a copy is excluded - the register has none",
+    Q1_ROWS.find((r) => r.id === GREEN)?.cells[0] !== "PRESENT" && `card 'live': the script opens ${GREEN} as a green tile - the register says otherwise`,
     HANDWRITTEN.status !== "LOW_QUALITY" && `card 'live': the script says ${HANDWRITTEN.doc_id} is a poor scan`,
   ].filter(Boolean);
   for (const p of problems) console.error(`part 6: ${p}`);
@@ -221,18 +223,20 @@ export const ACT6: Slide[] = [
     id: "live", act: 6, kind: "content", title: "The Legal Workbench, live.", steps: 0, seconds: 115, Body: Live,
     notes: [
       // a click script: what to click, and what to say while it loads
-      // what the Workbench shows for Q1 with H01 in the register (docs/demo.md): the tool opens on Ask with "1 new" in the
-      // header and H01 in "New in the register"; the plan card names the check and "every merchant agreement"; Confirm the plan;
-      // the answer has a tile per merchant agreement and the table "To look at", H01 first ('Not found · Poor scan · Review');
-      // a tile or row opens step 3 (Decide) with the decision on the same screen
+      // the Workbench of decision 95 (docs/demo.md): 1 the analysis box "Missing clause" (limitation of liability),
+      // 2 the contracts (every merchant agreement, the copy named) and Confirm the plan, 3 the answer - every contract
+      // in a lane: red = the clause is missing, orange = a person looks (the poor scan H01 too: it cannot prove an
+      // absence), green = the clause is there; 4 a tile opens the page in the middle and the finding on the right -
+      // M08's rejected passage is only outlined, M01's checked passage is yellow; 5 four eyes on M14; 6 the archive copy
       // the task: "A basic front-end demonstrating how the solution can be used" + "Frontend written in React and TypeScript"
       "Now the tool for Legal, live. It is React and TypeScript, like these slides. It has seen the new contract too: " + `${HANDWRITTEN.doc_id}, new, a poor scan. ` +
-        "One: I ask Q1. Which merchant agreements lack a limitation of liability? " +
-        "Two: the plan. This check, on every merchant agreement. In the tool, nothing runs before I confirm it. " +
-        `Three: the answer, with coverage. A tile for every merchant agreement, ${HANDWRITTEN.doc_id} too. ` +
-        `${COPY?.id} is excluded as a copy, with the reason. Not found: ${list(Q1_NOT_FOUND)}. Unclear: ${list(Q1_UNCLEAR)}. ` +
-        `And ${HANDWRITTEN.doc_id}, the handwritten one: not found. But it is a poor scan, so a person checks the page. ` +
-        `Four: ${EVIDENCE}. The passage is highlighted on the page. The checks overruled the model. ` +
+        "One: I choose the analysis. A missing clause: the limitation of liability. " +
+        `Two: the contracts. Every merchant agreement. The copy, ${COPY?.id}, is named with its reason. Nothing runs before I confirm the plan. I confirm. ` +
+        "Three: the answer, with coverage. Every contract has a colour. " +
+        `Red, the clause is missing: ${list(Q1_NOT_FOUND)}. Orange, a person looks: ${list(Q1_UNCLEAR)}, and ${HANDWRITTEN.doc_id}. ` +
+        "A poor scan cannot prove that a clause is missing. Green: the clause is there. " +
+        `Four: the evidence on the page. ${EVIDENCE} is only outlined. The model proposed this passage, and the checks rejected it. ` +
+        `Now a green one, ${GREEN}. Its passage is checked and marked in yellow. ` +
         `Five: ${FOUR_EYES} needs four eyes. Reviewer A approves. I switch to B, who approves too. ` +
         "Six: only now the archive copy, and only once. Then back to the talk.",
     ],
