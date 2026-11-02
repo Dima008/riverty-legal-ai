@@ -7,6 +7,38 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-02 · The talk rebuilt: 17 content cards, one line of title, a few words on screen, 17 minutes – identify, narrow down, build
+
+- **Problem:** Dima after the restructure of the same day: "Wir müssen die komplette Präsentation neu bauen" – too long,
+  too much on the cards, hard to read, and an odd structure: after adoption came the deep dives, which looked like
+  more implementation. The interview is about how structured he worked, as an architect: problem recognition,
+  narrowing down, execution. The roadmap card only announced what the next cards show.
+- **Cause:** every previous pass added cards and kept the old ones; 28 cards at 22 minutes with lists of ten items,
+  and the deep dives rendered on the page and reachable with → in present mode, so they read as part of the talk.
+- **Technique and why:** rebuilt along the case study's outline with the three verbs in the part titles ("The
+  problem · what I identified", "My approach · how I narrowed it down", "The technical solution · how I built it").
+  Part 1: the two questions (with the task sentence), the cost today (three numbers from the addendum: 100+ vendors,
+  1,000+ merchants), three things that make it hard (a scan, three wordings, the case study's agent sentence).
+  Part 2: the lever, a search cannot prove what is missing (the measured tiles), an agent stops when it decides it
+  is done, per step code or AI (five rows), three guarantees. Part 3: the architecture with its stack, the register
+  as a lookup, how a finding reaches a person, the proof as three numbers. Then live, Azure, adoption, close.
+  Every card: a title of one line, a few words per box. Moved to the deep dives, nothing deleted: the numbered
+  problem list, the hinge, the roadmap, the bridge question, the test set, the RAG explanation, the implementation
+  card (Azure OpenAI, two prompts), the M08 example, the full proof with confidence bands. The deep dives are
+  no longer part of the page or of present mode: `DEEP_FROM` in slides.ts, → stops at the close (nav.ts), the page
+  shows them only behind "Cards for questions" (Page.tsx) or when the address names one. Screenshots of every card
+  with headless Edge (no overflow marker on any card); time measured through vite SSR with the DEV guards.
+- **Rejected alternative:** keep trimming notes on the 28-card deck (two passes had reached 22:16 and 21:19 with
+  cards still overloaded); delete the moved cards (they answer likely questions); a separate agenda card (the part
+  titles carry the three verbs instead).
+- **Metric before → after:** main track 28 → 24 cards (17 content + title + 6 openers); planned 21:19 → 17:03;
+  needed at 115 words/min 21:53 → 16:33; cards with an overflow marker 1 → 0; longest on-screen list 10 → 5 items;
+  DEV guards 0 → 0 problems; deep dives reachable with → in present mode: yes → no; production build:
+  2,245 modules, 0 errors.
+- **Links:** decision 101; `web/src/deck`, `docs/approach.md`, `docs/check-questions.md`
+
+---
+
 ## 2026-11-02 · The talk follows the case study's outline with plain titles: numbered problems, the question "why do the usual AI approaches fail?", per step code or AI, the architecture with its stack, how a finding reaches a person
 
 - **Problem:** Dima after reading the deck: the talk is not well structured although the case study says how to

@@ -53,6 +53,12 @@
   .x-coa-why small { margin-left: 0.6cqw; font-size: 0.95cqw; font-weight: 800; letter-spacing: 0.06em; color: var(--red); white-space: nowrap; }
   .x-coa-foot { grid-column: 1 / -1; margin-top: 0.8cqw; font-size: 1.45cqw; font-weight: 650; color: var(--mint); }
 
+  /* --- the two questions, with the sentence they come from (part 1, decision 101) */
+  .x-q2 { display: flex; flex-direction: column; gap: 2cqw; }
+  .x-from .x-cs-crop { width: 70%; }
+  .hard-visual.crop { padding: 1cqw; }
+  .hard-visual.crop .x-cs-crop { width: 100%; }
+
   /* --- the test bench (act 2): a little less air, so it fits the small views too */
   .x-tset.tset { gap: 1.1cqw; }
   .x-tset .tset-group { padding-block: 0.9cqw; }
@@ -270,7 +276,9 @@
   .x-arch-legal { display: flex; align-items: center; gap: 0.6cqw; flex-wrap: wrap; }
   .x-arch-legal .x-box { font-size: 1.2cqw; padding: 0.8cqw 1.1cqw; }
   /* decision 100: the technology under every box, and Legal's row as boxes too; the stack line at the end */
-  .x-arch { gap: 1.6cqw; }
+  .x-arch { gap: 1.2cqw; }
+  .x-arch-once .x-st, .x-arch-legal3 .x-st { padding: 0.8cqw 1cqw; gap: 0.35cqw; }
+  .x-arch .x-arch-label { margin-bottom: 0.5cqw; }
   .x-st-tech { margin-top: auto; padding-top: 0.5cqw; border-top: 1px dashed rgba(255, 255, 255, 0.14); font-size: 1cqw; line-height: 1.3; color: var(--cyan); font-weight: 650; }
   .x-st.model .x-st-tech { color: var(--violet); }
   .x-st.store .x-st-tech { color: var(--mint); }

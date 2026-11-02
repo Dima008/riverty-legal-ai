@@ -454,19 +454,47 @@ if (import.meta.env.DEV) {
 }
 
 // ---------------------------------------------------------------- the cards
-export const RESULTS: Slide = {
-  id: "results", act: 3, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 61, Body: Results,
+// Three numbers (decision 101): complete runs, the real contracts, the sealed set next.
+function Proof() {
+  return (
+    <div className="p-three">
+      <div className="p-num">
+        <span className="p-big2">{COMPLETE} of {QS.length}</span>questions complete
+        <small>{RUNS.length} runs from scratch · no false alarm</small>
+      </div>
+      <Build at={1} className="p-num">
+        <span className="p-big2">{CUAD_AGREE} of {CUAD_N}</span>real contracts agree with the experts
+        <small>{FOUND_BY_CUAD.length} errors found by them – fixed</small>
+      </Build>
+      <Build at={2} className="p-num">
+        <span className="p-big2">{DISTINCT}</span>contracts – and I tuned on them
+        <small>next: a sealed test set <span className="p-tag">planned</span></small>
+      </Build>
+    </div>
+  );
+}
+
+export const RESULTS_FULL: Slide = {
+  id: "results-full", act: 7, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 61, deep: true, Body: Results,
   notes: [
-    // 'Deliver' is the third phase of the card 'how-i-worked'; the CUAD sentence came from the card
-    // 'test-set' (a deep dive since decision 90). The task: "while learning and improving ourselves".
-    `It works on every test: I built the register from scratch ${RUNS.length} times – every expected contract found, no false alarm. ` +
+    `I built the register from scratch ${RUNS.length} times – every expected contract found, no false alarm. ` +
       `On real contracts labelled by legal experts, we agree on ${CUAD_AGREE} of ${CUAD_N} – and they showed ${FOUND_BY_CUAD.length} errors my own traps had missed. All fixed.`,
     `How sure can we be? Q1 found ${Q1_N} of ${Q1_N} – but with 95 percent confidence, the true rate could still be as low as ${Math.round(Q1.recall_lower_95 * 100)} percent. ` +
       `And ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
     `All ${POOLED.expected} answers together give at least ${Math.round(POOLED.recall_lower_95 * 100)} percent. But they come from only ${DISTINCT} contracts, and I tuned on this test set. ` +
       "So next: a sealed test set, with new contracts I never tune on.",
   ],
-  words: [{ word: "scratch", say: "SKRATCH" }, { word: "confidence", say: "KON-fih-dence" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
+  words: [{ word: "confidence", say: "KON-fih-dence" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
+};
+
+export const RESULTS: Slide = {
+  id: "results", act: 3, kind: "content", title: "Does it work? Measured, not claimed.", steps: 2, seconds: 42, Body: Proof,
+  notes: [
+    `I built the register from scratch ${RUNS.length} times: every expected contract found, no false alarm – ${COMPLETE} of ${QS.length} questions.`,
+    `On real public contracts labelled by legal experts, we agree on ${CUAD_AGREE} of ${CUAD_N} – and they showed me ${FOUND_BY_CUAD.length} errors my own traps had missed. Fixed.`,
+    `But it is a small test set – ${DISTINCT} contracts – and I tuned on it. Next: a sealed set I never tune on.`,
+  ],
+  words: [{ word: "scratch", say: "SKRATCH" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
 };
 
 export const WHAT_IF: Slide = {

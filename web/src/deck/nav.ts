@@ -11,7 +11,7 @@
 //   window that is already presenting back to its own start card.
 import { useEffect } from "react";
 import { navigate, parseHash } from "../routing";
-import { SLIDES } from "./slides";
+import { DEEP_FROM, SLIDES } from "./slides";
 
 export type DeckLayer = "present" | "presenter";
 
@@ -55,11 +55,13 @@ export function useDeckNav(layer: DeckLayer, slideId: string, step: number) {
     const r = parseHash(location.hash);
     return position(r.page, r.step);
   };
-  /** true if it moved; false at the last build of the last card */
+  /** true if it moved; false at the last build of the last card of the talk - the deep dives after the
+   *  close are opened by a jump (O, a link), never by → (decision 101) */
   const forward = (): boolean => {
     const { index, slide, current } = now();
+    const last = DEEP_FROM > 0 && index < DEEP_FROM ? DEEP_FROM - 1 : SLIDES.length - 1;
     if (current < slide.steps) go(index, current + 1);
-    else if (index < SLIDES.length - 1) go(index + 1);
+    else if (index < last) go(index + 1);
     else return false;
     return true;
   };

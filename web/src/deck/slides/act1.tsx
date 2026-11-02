@@ -1,10 +1,9 @@
-// Part 1 - the problem (decision 90): Riverty's case study as Riverty wrote it - sentence screenshots
-// of the PDF, part by part, with what I identified in each - numbered problems, rules and the goal
-// (decisions 98, 99, 100: Dima 2.11., 'which problems did I identify, and how') - and the problem
-// everything else builds on: to prove that something is missing you read everything, and today that
-// reading starts again for every new question. Part 1 says no solution (Dima, 2.11.): the levers
-// open part 2, the architecture part 3. The former cards 'task', 'today' and 'hard' are deep dives
-// now (decision 98); their points are said on 'case-study'.
+// Part 1 - the problem (decision 101, the rebuild of 2.11.: 18 cards, one line of title, a few words on
+// screen): the two questions of the task, what one question costs today, and three things that make it
+// hard - scans, the same clause in other words, and the case study's own sentence on agents. Every card
+// shows the sentence of the case study it comes from (decision 98: sentence screenshots of the PDF).
+// The numbered list of problems ('case-study'), the hinge ('insight') and the six sentences ('task')
+// are deep dives now; their points are said on these three cards.
 // Numbers come from the case study (?raw), deck-data.json and pipeline/catalogue.py.
 import { useState } from "react";
 import caseStudy from "../../../../docs/context/case-study.md?raw";
@@ -59,6 +58,31 @@ function TaskSnippets() {
   );
 }
 
+// ---------------------------------------------------------------- the two questions (decision 101)
+const TASK_SENTENCE = "contracts that do not contain a certain text passage or contracts in which a company name needs to be updated.";
+
+function TwoQuestions() {
+  return (
+    <div className="x-q2">
+      <div className="q2">
+        <div className="card q2-card">
+          <div className="label">Question 1</div>
+          <div className="q2-q">Which contracts lack clause X?</div>
+          <div className="q2-eg">for example a limitation of liability</div>
+        </div>
+        <Build at={1} className="card q2-card">
+          <div className="label">Question 2</div>
+          <div className="q2-q">Which contracts still name a former company?</div>
+          <div className="q2-eg">after a rename</div>
+        </Build>
+      </div>
+      <Build at={2} className="x-from">
+        <img className="x-cs-crop" src="/case-study/the-task.png" alt={TASK_SENTENCE} />
+      </Build>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------- today: one question in hours
 // The partner counts are Riverty's (the addendum of the case study); "over 1,100 contracts" is my
 // lower bound from them - at least one contract per partner - and the note says so (order pass #38).
@@ -108,30 +132,32 @@ function ScanThumb() {
   );
 }
 
-function Hard() {
+// ---------------------------------------------------------------- three things make it hard (decision 101)
+// Scans (M18's page), the same clause in other words (three wordings), and the case study's own
+// sentence on agents - the problem the approach of part 2 starts from.
+const AGENTS_SENTENCE = "in day-to-day operations they often fail due to the sheer size and complexity of the environments they have to operate in.";
+
+function HardThree() {
   return (
     <div className="three">
       <Build at={1} className="card hard">
         <div className="hard-visual"><ScanThumb /></div>
-        <div className="hard-title">Scans and photos</div>
-        <div className="hard-text">Old contracts exist only as images. The text has to be read first.</div>
+        <div className="hard-title">Scans – only images</div>
+        <div className="hard-text">The text has to be read first.</div>
       </Build>
       <Build at={2} className="card hard">
-        <div className="hard-visual docs">
-          <div className="doc">{year(RENAME.amends_date)}<b>“{RENAME.old}”</b></div>
-          <div className="doc amend">Amendment · {year(RENAME.date)}<b>read as “{RENAME.to}”</b></div>
-        </div>
-        <div className="hard-title">Amendments change contracts</div>
-        <div className="hard-text">The answer depends on the contract and every amendment.</div>
-      </Build>
-      <Build at={3} className="card hard">
         <div className="hard-visual quotes">
           <q>total <b>liability</b> … limited to the total fees paid</q>
           <q>neither side will have to pay the other more than … charged in fees</q>
           <q>Gesamthaftung … auf die Summe der Entgelte begrenzt</q>
         </div>
-        <div className="hard-title">Same clause, different words</div>
-        <div className="hard-text">Three contracts, one cap on liability – not one common keyword.</div>
+        <div className="hard-title">Same clause, other words</div>
+        <div className="hard-text">Keywords miss two of three.</div>
+      </Build>
+      <Build at={3} className="card hard">
+        <div className="hard-visual crop"><img className="x-cs-crop" src="/case-study/agents-fail.png" alt={AGENTS_SENTENCE} /></div>
+        <div className="hard-title">Agents fail on size</div>
+        <div className="hard-text">{n(CONTRACTS)}+ contracts fit into no context window.</div>
       </Build>
     </div>
   );
@@ -226,6 +252,8 @@ function Insight() {
 if (import.meta.env.DEV) {
   const problems = [
     ...SNIPPETS.filter((s) => !CASE.includes(s.quote)).map((s) => `card 'task' quotes a sentence that is not in the case study: "${s.quote}"`),
+    !CASE.includes(TASK_SENTENCE) && "card 'questions': the task sentence is not in the case study word for word",
+    !CASE.includes(AGENTS_SENTENCE) && "card 'hard': the agent sentence is not in the case study word for word",
     // the crops' sentences, word for word (the PDF has typographic apostrophes, the .md plain ones)
     ...SECTIONS.flatMap((s) => s.crops).filter((c) => !CASE.includes(c.sentence.replace(/’/g, "'")))
       .map((c) => `card 'case-study': crop '${c.id}' is not a sentence of the case study: "${c.sentence}"`),
@@ -246,101 +274,90 @@ if (import.meta.env.DEV) {
   for (const p of problems) console.error(`act 1: ${p}`);
 }
 
+// On the main track (decision 101); proof.tsx reads "about N hours" from its notes.
+export const TODAY: Slide = {
+  id: "today", act: 1, kind: "content", title: "Today: open, search, note – by hand.", steps: 2, seconds: 30, Body: Today,
+  notes: [
+    `What does one question cost today? Over ${n(VENDORS)} vendors and over ${n(MERCHANTS)} merchants – over ${n(CONTRACTS)} contracts.`,
+    `I assume ${MINUTES} minutes per contract: open, search, note. To be measured with Legal first.`,
+    `That's about ${HOURS} hours for one question – and again for the next one.`,     // proof.tsx reads "about N hours" from this note
+  ],
+  words: [{ word: "vendors", say: "VEN-derz" }, { word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }],
+};
+const TODAY_CARD = TODAY;
+
 export const ACT1: Slide[] = [
   {
-    // The seconds are the note's need at about 115 wpm plus about 15 s for Dima's own introduction
-    // (the line in square brackets: shown in the presenter view, not spoken by the script's count).
+    // The seconds are the note's need plus about 15 s for Dima's own introduction (the line in square
+    // brackets: shown in the presenter view, not spoken by the script's count).
     // TODO(Dima): write that introduction yourself - Riverty: "we want to get to know you, not only
     // your slides". Not invented for you on purpose; replace the bracketed line with your own words.
-    // Each point is said once across the first cards: here what the case study is about and the agenda
-    // (Dima, 2.11.: what I identified, how I solve it, the architecture - no solution yet); 'case-study'
-    // what I identified; 'insight' the problem my approach starts from.
-    id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 53, Body: TitleBody,
+    id: "title", act: 1, kind: "title", title: "Which contracts are missing something?", steps: 0, seconds: 45, Body: TitleBody,
     notes: [
       "Hello, I'm Dima. [Here you introduce yourself – in your own words.] " +
-        "The case study is about making the legal team more efficient. " +
-        "Most of their work is reviewing and comparing contracts, and checking them against the corporate guidelines – largely by hand. " +
-        "AI should take over the repetitive part, so the same lawyers can answer more questions. " +
-        "I'll show you what I identified, how I would solve it and what the architecture looks like – " +
-        "then the prototype, live, and finally the infrastructure and adoption.",
+        "The case study asks how AI can make the legal team more efficient: most of their work is reviewing and comparing contracts, by hand. " +
+        "I'll show you the problem, my approach and the technical solution – then the prototype live, the infrastructure and adoption.",
     ],
-    words: [{ word: "Riverty's", say: "RIV-er-teez" }, { word: "assistant", say: "uh-SIS-tunt" }, { word: "infrastructure", say: "IN-fruh-struk-cher" },
-      { word: "adoption", say: "uh-DOP-shun" }, { word: "prototype", say: "PROH-tuh-type" }],
+    words: [{ word: "infrastructure", say: "IN-fruh-struk-cher" }, { word: "adoption", say: "uh-DOP-shun" }, { word: "prototype", say: "PROH-tuh-type" }],
   },
   {
-    id: "part-1", act: 1, kind: "opener", title: "The problem", steps: 0, seconds: 5,
+    id: "part-1", act: 1, kind: "opener", title: "The problem · what I identified", steps: 0, seconds: 4,
     quote: ["One of these challenges is making our legal team more efficient."],
-    notes: [
-      // Dima, 2.11.: not "Legal asked whether AI could help" - the title says what the case study is about
-      "First, the problem: what I identified in the case study.",
-    ],
-    words: [{ word: "identified", say: "eye-DEN-tih-fyd" }],
+    notes: ["First, the problem."],
   },
   {
-    // decisions 98, 99: Riverty's case study as sentence screenshots, part by part, and what I identified -
-    // findings and requirements only; the playbook (the guidelines as data) is solution, said on 'architecture'
-    id: "case-study", act: 1, kind: "content", title: `The case study, sentence by sentence: ${say(PROBLEMS)} problems, ${say(FOUND.filter((f) => f.kind === "rule").length)} rules, one goal.`, steps: 3, seconds: 84, Body: CaseStudyCard,
+    id: "questions", act: 1, kind: "content", title: "Two questions, again and again.", steps: 2, seconds: 32, Body: TwoQuestions,
     notes: [
-      // how I identified them: every sentence of the task classified - a problem to solve, a rule to keep,
-      // or the goal (docs/context/briefing.md, section 4); the numbers of the former card 'today' (a deep
-      // dive now); five minutes per contract is my assumption
-      "I went through the case study sentence by sentence and sorted what I found: a problem, a rule, or the goal. " +
-        "The task gives two problems: prove that a passage is missing, and find every former company name. " +
-        `The third is the cost today: open, search, check by hand – over ${n(CONTRACTS)} contracts, at an assumed ${MINUTES} minutes each about ${HOURS} hours per question.`,
-      // the difficulties of the former card 'hard' (a deep dive now): other words, amendments, scans
-      "The technical outline adds two more: the same clause comes in other words, and amendments change older contracts – " +
-        "and some contracts are handwritten scans, only images. Two rules: the storage may only receive an additional copy, and best of breed is compared with Microsoft.",
-      // Riverty's agent sentence is picked up again on 'why-fail' (part 2), where the options are tested
-      "The problem description gives the goal – more with the same people – and the sixth problem: agents often fail on the sheer size of their environment. " +
-        "So coverage must be proven, not claimed.",
-      "And the last rule: AI is welcome, as long as the team understands what is happening – so every result needs its evidence.",
+      "The task names two questions that come back again and again. First: which contracts lack a certain clause – for example a limitation of liability?",
+      "Second: which contracts still name a former company, after a rename?",
+      "Both come straight from the case study – and both are about every contract.",
     ],
-    words: [{ word: "identified", say: "eye-DEN-tih-fyd" }, { word: "merchants", say: "MUR-chunts" }, { word: "amendments", say: "uh-MEND-ments" },
-      { word: "guidelines", say: "GIDE-lines" }, { word: "coverage", say: "KUV-er-ij" }, { word: "evidence", say: "EV-ih-dence" }],
+    words: [{ word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "former", say: "FOR-mer" }],
   },
+  TODAY_CARD,
   {
-    // Dima, 2.11.: no "Finding is easy" - a plain statement; the lever itself opens part 2 ('levers')
-    id: "insight", act: 1, kind: "statement", title: "To prove that something is missing, you have to read everything.", steps: 1, seconds: 25, Body: Insight,
+    id: "hard", act: 1, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 48, Body: HardThree,
     notes: [
-      "Both questions need every contract. To prove that a passage is missing, or that no old name is left, you have to read every contract and every page.",
-      "And today, that reading starts again with every new question. That is the problem my approach starts from.",
+      "Three things make it hard – all three are in the case study.",
+      "Some contracts are old scans, only images. The text has to be read first.",
+      "The same clause comes in other words. All three cap liability; the second never says 'liability', the third is German. Keywords miss them.",
+      `And the case study says it itself: agents often fail on the sheer size of the environment. Over ${n(CONTRACTS)} contracts fit into no context window.`,
     ],
-    words: [{ word: "prove", say: "PROOV" }, { word: "approach", say: "uh-PROHCH" }],
+    words: [{ word: "OCR", say: "oh-see-AR" }, { word: "Gesamthaftung", say: "geh-ZAMT-haf-tung" }, { word: "environment", say: "en-VY-run-ment" }, { word: "context window", say: "KON-tekst WIN-doh" }],
   },
 ];
 
-// Deep dives since decision 98: their points are said on 'case-study'; listed in deep.tsx.
+// Deep dives (decision 98, 101): their points are said on the three cards above; listed in deep.tsx.
+export const CASE_STUDY: Slide = {
+  id: "case-study", act: 7, kind: "content", title: `The case study, sentence by sentence: ${say(PROBLEMS)} problems, ${say(FOUND.filter((f) => f.kind === "rule").length)} rules, one goal.`, steps: 3, seconds: 84, deep: true, Body: CaseStudyCard,
+  notes: [
+    "I went through the case study sentence by sentence and sorted what I found: a problem, a rule, or the goal. " +
+      "The task gives two problems: prove that a passage is missing, and find every former company name. " +
+      `The third is the cost today: open, search, check by hand – over ${n(CONTRACTS)} contracts, at an assumed ${MINUTES} minutes each about ${HOURS} hours per question.`,
+    "The technical outline adds two more: the same clause comes in other words, and amendments change older contracts – " +
+      "and some contracts are handwritten scans, only images. Two rules: the storage may only receive an additional copy, and best of breed is compared with Microsoft.",
+    "The problem description gives the goal – more with the same people – and the sixth problem: agents often fail on the sheer size of their environment. " +
+      "So coverage must be proven, not claimed.",
+    "And the last rule: AI is welcome, as long as the team understands what is happening – so every result needs its evidence.",
+  ],
+  words: [{ word: "identified", say: "eye-DEN-tih-fyd" }, { word: "amendments", say: "uh-MEND-ments" }, { word: "coverage", say: "KUV-er-ij" }],
+};
+
+export const INSIGHT: Slide = {
+  id: "insight", act: 7, kind: "statement", title: "To prove that something is missing, you have to read everything.", steps: 1, seconds: 25, deep: true, Body: Insight,
+  notes: [
+    "Both questions need every contract. To prove that a passage is missing, or that no old name is left, you have to read every contract and every page.",
+    "And today, that reading starts again with every new question.",
+  ],
+  words: [{ word: "prove", say: "PROOV" }],
+};
+
 export const TASK: Slide = {
   id: "task", act: 7, kind: "content", title: "Six sentences that shaped the solution.", steps: 2, seconds: 40, deep: true, Body: TaskSnippets,
   notes: [
-    "I started with your words, sentence by sentence. Two are Legal's questions. First: contracts without a certain passage. Second: contracts with a former company name. Both are about every contract.",
+    "I started with the case study's words, sentence by sentence. Two are Legal's questions. First: contracts without a certain passage. Second: contracts with a former company name. Both are about every contract.",
     "Today, lawyers do it by hand: open, search, verify. Some contracts are old handwritten scans, only images.",
-    "Two sentences set the rules. The storage may only get a copy. You want to understand what happens. So every finding needs evidence.",
+    "Two sentences set the rules. The storage may only get a copy. The team wants to understand what happens. So every finding needs evidence.",
   ],
-  words: [{ word: "passage", say: "PASS-ij" }, { word: "former", say: "FOR-mer" }, { word: "verify", say: "VER-ih-fy" }, { word: "evidence", say: "EV-ih-dence" }],
-};
-
-// proof.tsx reads "about N hours" from this card's note.
-export const TODAY: Slide = {
-  id: "today", act: 7, kind: "content", title: "Today: open every contract, search, note it down.", steps: 2, seconds: 26, deep: true, Body: Today,
-  notes: [
-    // "again for every new question" is said once, on 'insight' (2.11.); the steps are the card's title
-    `What does one question cost today? You work with over ${n(VENDORS)} vendors and over ${n(MERCHANTS)} merchants. So over ${n(CONTRACTS)} contracts.`,
-    `I assume ${MINUTES} minutes per contract. We'd measure it with Legal first.`,
-    `That's about ${HOURS} hours for one question.`,     // proof.tsx reads "about N hours" from this note
-  ],
-  words: [{ word: "vendors", say: "VEN-derz" }, { word: "merchants", say: "MUR-chunts" }, { word: "assume", say: "uh-SOOM" }, { word: "measure", say: "MEZH-er" }],
-};
-
-// The three difficulties, with the scan, the amendment and the three wordings.
-export const HARD: Slide = {
-  id: "hard", act: 7, kind: "content", title: "Three things make it hard.", steps: 3, seconds: 48, deep: true, Body: Hard,
-  notes: [
-    "Why not search for a word?",
-    "First, scans. Most PDFs have text: we read it directly. Some are only images, like this one. OCR, text recognition, reads them. Later, a handwritten one, live.",
-    `Second, amendments. A contract from ${year(RENAME.amends_date)} names ${RENAME.old.split(" ")[0]}, Riverty's old name. Its ${year(RENAME.date)} amendment says: read as ${RENAME.to.split(" ")[0]}. The answer needs both.`,
-    "Third, wording. All three cap liability. The second never says liability. The third is German. Keywords miss them. Remember the second one.",
-  ],
-  words: [{ word: "PDFs", say: "pee-dee-EFFS" }, { word: "OCR", say: "oh-see-AR" }, { word: "recognition", say: "rek-ug-NISH-un" },
-    { word: "Arvato", say: "ar-VAH-toh" }, { word: "amendment", say: "uh-MEND-ment" }, { word: "liability", say: "lie-uh-BIL-ih-tee" }],
+  words: [{ word: "passage", say: "PASS-ij" }, { word: "verify", say: "VER-ih-fy" }, { word: "evidence", say: "EV-ih-dence" }],
 };

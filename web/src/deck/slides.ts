@@ -1,20 +1,13 @@
-// The order of the talk (decision 76; the parts of decisions 90, 99 and 100). One place to change the
-// storyline: parts, then screens. The talk follows Dima's path through Riverty's outline (decision 99,
-// Dima 2.11.: "identify, how I solve it, what the architecture looks like"): 1 the problem - the
-// problems I identified, numbered, 2 my approach - how I work, the levers, the question the case study
-// raises (why do the usual AI approaches fail here?), the options tested, per step code or AI, 3 the
-// technical solution - the architecture with its stack, how I implemented it, the checks, the register,
-// how a finding reaches a person, the proof, 4 the basic implementation, live - right after the solution
-// it shows, 5 infrastructure, 6 adoption and the close. Titles are plain presentation titles - never
-// "your case study" (decision 100). Each opener shows its line of the case study
-// word for word (guarded below). The deep dives after the close are opened only on a question.
-// Riverty asks for 15-20 minutes; since
-// 1.11. (Dima: no cuts) each card's seconds are what its notes need at about 115 words per minute
-// (plus about 15 s on the title for Dima's own introduction, 2.11.), and the main track may grow past
-// 20:00 - never past 22:00. To stay under it, decision 96 moved
-// four cards to the deep dives, nothing deleted: 'injection', 'what-if', 'sharepoint' and 'cost';
-// what they said first (M14 and four eyes, Prompt Shields, the cents of a full run, productivity)
-// is said once on the main track ('human', 'what-we-use', 'run-it').
+// The order of the talk (decision 76; the parts of decisions 90, 99, 100 and 101 - the rebuild of 2.11.:
+// 17 content cards, one title and six part openers, a one-line title each, a few words on screen,
+// about 17 minutes). The talk follows
+// Dima's path through Riverty's outline - identify, narrow down, build: 1 the problem (the two questions,
+// the cost today, three things that make it hard), 2 my approach (the lever, two options tested and
+// rejected with numbers, per step code or AI, three guarantees), 3 the technical solution (the
+// architecture with its stack, the register, how a finding reaches a person, the proof), 4 the basic
+// implementation live, 5 infrastructure, 6 adoption and the close. Each opener shows its line of the
+// case study word for word (guarded below). The deep dives after the close are not part of the talk:
+// hidden on the page behind "For questions", never reached by → in present mode.
 import caseStudy from "../../../docs/context/case-study.md?raw";
 import { ACT1 } from "./slides/act1";
 import { ACT2 } from "./slides/act2";
@@ -26,24 +19,27 @@ import { RESULTS } from "./slides/proof";
 import type { Act, Slide } from "./types";
 
 export const ACTS: Act[] = [
-  { n: 1, title: "The problem" },
-  { n: 2, title: "My approach" },
-  { n: 3, title: "The technical solution" },
+  { n: 1, title: "The problem · what I identified" },
+  { n: 2, title: "My approach · how I narrowed it down" },
+  { n: 3, title: "The technical solution · how I built it" },
   { n: 4, title: "The basic implementation, live" },
-  { n: 5, title: "Infrastructure" },
-  { n: 6, title: "Adoption" },
-  { n: 7, title: "Deep dives" },
+  { n: 5, title: "Infrastructure · where it runs" },
+  { n: 6, title: "Adoption · how Legal gets the value" },
+  { n: 7, title: "For questions" },
 ];
 
 export const SLIDES: Slide[] = [
-  ...ACT1,                              // 1 the problem: what I identified
-  ...ACT2,                              // 2 my approach: how I work, the levers, why the usual approaches fail, the options tested, code or AI, three guarantees
-  ...ACT3, RESULTS,                     // 3 the technical solution: the architecture with its stack, its parts, how a finding reaches a person, the proof
+  ...ACT1,                              // 1 the problem: the two questions, the cost today, what makes it hard
+  ...ACT2,                              // 2 my approach: the lever, a search and an agent tested, code or AI, three guarantees
+  ...ACT3, RESULTS,                     // 3 the technical solution: the architecture with its stack, the register, a finding to a person, the proof
   ...LIVE,                              // 4 the basic implementation, live
   ...INFRASTRUCTURE,                    // 5
   ...ADOPTION, ...CLOSE,                // 6 adoption, then the close
-  ...DEEP,
+  ...DEEP,                              // for questions only
 ];
+
+/** The first card after the talk: the deep dives start here (present mode stops before it). */
+export const DEEP_FROM = SLIDES.findIndex((s) => s.deep);
 
 /** The timed track: deep dives after the close are opened only on a question (decision 78). */
 export const TOTAL_SECONDS = SLIDES.filter((s) => !s.deep).reduce((sum, s) => sum + s.seconds, 0);
@@ -51,15 +47,15 @@ export const TOTAL_SECONDS = SLIDES.filter((s) => !s.deep).reduce((sum, s) => su
 /** Planned start of card `index` on the timed track, in seconds. */
 export const plannedStart = (index: number) => SLIDES.slice(0, index).reduce((sum, s) => sum + s.seconds, 0);
 
-/** Clock checkpoints of the presenter view (decision 90): the start of parts 2 to 6, and 'what-we-use'
- *  in the long part 3 - computed from the order and the seconds above, never typed. */
+/** Clock checkpoints of the presenter view (decision 90): the start of parts 2 to 6 - computed from the
+ *  order and the seconds above, never typed. */
 export const CHECKPOINTS = SLIDES.flatMap((s, index) =>
-  !s.deep && ((s.kind === "opener" && s.act > 1) || s.id === "what-we-use")
+  !s.deep && s.kind === "opener" && s.act > 1
     ? [{ index, label: s.kind === "opener" ? `part ${s.act}` : s.id, at: plannedStart(index) }]
     : []);
 
-/** What to skip when late, in this order - before the demo, so it keeps its time; never 'what-we-use',
- *  'run-it', 'live-add' or 'live'. `build`: skip from this build on; none: skip the whole card. */
+/** What to skip when late, in this order - before the demo, so it keeps its time; never 'run-it',
+ *  'live-add' or 'live'. `build`: skip from this build on; none: skip the whole card. */
 export const SKIP_IF_LATE: { id: string; build?: number }[] = [{ id: "results", build: 2 }];   // 'what-if' and 'sharepoint' are deep dives (decision 96)
 
 /** 75 -> "1:15" */
@@ -94,7 +90,6 @@ if (import.meta.env.DEV) {
     new Set(SLIDES.map((s) => s.id)).size !== SLIDES.length && "two cards share an id",
     SLIDES.some((s, i) => i > 0 && s.act < SLIDES[i - 1].act) && "the parts are not in order",
     SLIDES.some((s) => (s.act === 7) !== !!s.deep) && "a deep dive is not in act 7, or a card of act 7 is not a deep dive",
-    index("what-we-use") < 0 && "the checkpoint 'what-we-use' has no card",
     ...SKIP_IF_LATE.map((k) => {
       const s = SLIDES[index(k.id)];
       return !s ? `SKIP_IF_LATE names "${k.id}" - no such card`

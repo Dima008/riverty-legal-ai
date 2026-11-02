@@ -8,7 +8,7 @@ import { navigate, parseHash } from "../routing";
 import { useDeckKeys } from "./nav";
 import { openPresenter } from "./Present";
 import { SlideView } from "./SlideView";
-import { ACTS, mmss, pad, SLIDES, TOTAL_SECONDS } from "./slides";
+import { ACTS, DEEP_FROM, mmss, pad, SLIDES, TOTAL_SECONDS } from "./slides";
 import type { Slide } from "./types";
 import "./deck.css";
 
@@ -93,6 +93,10 @@ function Card({ slide, index }: { slide: Slide; index: number }) {
 export function Page({ slideId }: { slideId: string }) {
   const [current, setCurrent] = useState(SLIDES.some((s) => s.id === slideId) ? slideId : SLIDES[0].id);
   const [outline, setOutline] = useState(savedOutline);
+  // the deep dives are not part of the talk (decision 101): shown only on request, or when the address names one
+  const [deep, setDeep] = useState(() => !!SLIDES.find((s) => s.id === slideId)?.deep);
+  const TALK = DEEP_FROM > 0 ? SLIDES.slice(0, DEEP_FROM) : SLIDES;
+  const shown = deep ? SLIDES : TALK;
   const pending = useRef<{ i: number; until: number } | null>(null);
 
   // open on the card named in the address, and go to it when the address changes on the page
@@ -171,7 +175,7 @@ export function Page({ slideId }: { slideId: string }) {
     <div className={`talk-bg talk${outline ? "" : " no-nav"}`}>
       <header className="talk-top" onMouseUp={blur}>
         <a className="talk-brand" href="#/story/title">Which contracts are missing something?</a>
-        <span className="talk-meta">{SLIDES.length} cards · {mmss(TOTAL_SECONDS)} min · ← → card by card</span>
+        <span className="talk-meta">{TALK.length} cards · {mmss(TOTAL_SECONDS)} min · ← → card by card</span>
         <div className="spacer" />
         <button type="button" className="pill" onClick={toggleOutline} aria-pressed={outline}>Outline</button>
         <button type="button" className="pill primary" onClick={() => startPresenting(current)} title="Full screen, one card at a time (Ctrl+Shift+Enter)">▶ Present</button>
@@ -183,7 +187,7 @@ export function Page({ slideId }: { slideId: string }) {
       </header>
 
       <nav className="talk-nav" aria-label="Outline" onMouseUp={blur}>
-        {ACTS.map((act) => (
+        {ACTS.filter((act) => deep || act.n < 7).map((act) => (
           <div key={act.n} className={`talk-act${act.n === currentAct ? " on" : ""}`}>
             <div className="talk-act-title">{pad(act.n)} · {act.title}</div>
             <ol>
@@ -201,9 +205,19 @@ export function Page({ slideId }: { slideId: string }) {
       </nav>
 
       <main className="talk-cards">
-        {SLIDES.map((s, i) => <Card key={s.id} slide={s} index={i} />)}
+        {shown.map((s, i) => (
+          <span key={s.id} style={{ display: "contents" }}>
+            {i === DEEP_FROM && <div className="talk-divider">For questions – not part of the talk</div>}
+            <Card slide={s} index={i} />
+          </span>
+        ))}
         <footer className="talk-end">
           <button type="button" className="pill primary" onClick={() => navigate("/tool/workbench")}>Open the Legal Workbench</button>
+          {DEEP_FROM > 0 && (
+            <button type="button" className="pill" onClick={() => setDeep((d) => !d)} aria-pressed={deep}>
+              {deep ? "Hide the cards for questions" : `Cards for questions (${SLIDES.length - DEEP_FROM})`}
+            </button>
+          )}
         </footer>
       </main>
     </div>

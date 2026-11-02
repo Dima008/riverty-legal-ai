@@ -511,3 +511,15 @@ as little freedom for the AI as works.
 *Numbers:* two model calls per contract (the reader for all 47, the checker only where something
 was "found"); everything else is code.
 *Where:* card "code-or-ai" (part 2), `pipeline/extract.py`, `pipeline/portfolio.py`, decision 100.
+
+**43. Your talk has three verbs in its part titles: identified, narrowed down, built. What did you
+narrow down, and with what evidence?**
+
+I narrowed the problem to the reading: it is the step that grows with every contract and repeats
+for every question. Then I narrowed the options with numbers, on contracts with known answers. A
+search cannot prove what is missing: with the top ten passages, 7 false alarms and M14 missed. An
+agent stops when it decides it is done: in a study, agents skipped files in 68 percent of runs. So
+the AI reads every contract once, into a register, and only one step is a model: finding a clause
+in any words. Everything else is code, and a lawyer decides.
+
+*Where:* cards "levers", "rag-fails", "agent", "code-or-ai" (part 2), decision 101.

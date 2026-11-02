@@ -1,20 +1,15 @@
-// Part 2 - my approach (decisions 90, 99, 100; Dima, 2.11.: "what did I identify, where are the biggest
-// levers, how did I work"): how I work (the roadmap), then the levers - today's process per step and
-// what my approach does with it - then the question the case study itself raises (why do the usual AI
-// approaches fail here?), the test bench (47 documents with known answers, decision 88) and the two
-// options tested on it: a chatbot over documents (RAG, top-k) cannot prove absence, a free agent cannot
-// prove it read everything. From that, per step: code or AI (the decision derived from the problems of
-// part 1), and three guarantees. The register's own result is NOT shown here: part 3 reveals it. The
-// embedding map is a deep dive since decision 90. Titles are plain presentation titles - no "your"
-// (decision 100).
-// Numbers come from the test-set files, deck-data.json, eval/results and docs (?raw).
+// Part 2 - my approach (decision 101, the rebuild of 2.11.): the levers (today's process per step and what
+// my approach does with it), the two usual options tested on contracts with known answers - a search
+// cannot prove what is missing, an agent stops when it decides it is done - then per step code or AI,
+// and the three guarantees. The roadmap, the bridge question, the test set and the RAG explanation are
+// deep dives; the test set is said in one sentence on 'rag-fails'.
 import measurement from "../../../../eval/results/2026-10-31_negative_search.json";
 import negativeSearchPy from "../../../../eval/negative_search.py?raw";
 import caseStudy from "../../../../docs/context/case-study.md?raw";
 import research from "../../../../docs/research.md?raw";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
-import { CONTRACTS as PORTFOLIO, FOUND, HOURS, n } from "./act1";
+import { CONTRACTS as PORTFOLIO, HOURS } from "./act1";
 import "./acts.css";
 import deck from "./deck-data.json";
 import { CUAD, DOCS, QUESTIONS_N } from "./testset-data";
@@ -336,15 +331,12 @@ function Agent() {
 // reason. The rule of the roadmap's step 5: as little freedom for the AI as works. The kinds are the
 // colours of the architecture card: code, AI, register, person.
 const STEPS = [
-  { at: 0, step: "Get the contract", kind: "code", who: "Code", why: "nothing to judge", p: "" },
-  { at: 0, step: "Read the text – or OCR for an image", kind: "code", who: "Code", why: "text, with a confidence", p: "P5" },
-  { at: 1, step: "Find each clause – in any words", kind: "model", who: "AI", why: "the only step that needs meaning", p: "P4" },
+  { at: 0, step: "Read the text – or OCR for an image", kind: "code", who: "Code", why: "text, with a confidence", p: "" },
+  { at: 1, step: "Find each clause – in any words", kind: "model", who: "AI", why: "the only step that needs meaning", p: "" },
   { at: 1, step: "Check: is the quote in the text?", kind: "code", who: "Code", why: "a model can be wrong", p: "" },
-  { at: 1, step: "A second opinion on every “found”", kind: "model", who: "AI · a second call", why: "sees only a definition and a quote", p: "" },
-  { at: 2, step: "Answer: which contracts lack X?", kind: "store", who: "Code · a lookup", why: "every contract is a row", p: "P1, P6" },
-  { at: 2, step: "Decide", kind: "person", who: "A lawyer", why: "observations, not verdicts", p: "R3" },
+  { at: 2, step: "Answer: which contracts lack X?", kind: "store", who: "Code · a lookup", why: "every contract is a row", p: "" },
+  { at: 2, step: "Decide", kind: "person", who: "A lawyer", why: "observations, not verdicts", p: "" },
 ];
-const problem = (id: string) => FOUND.find((f) => f.id === id);
 
 function CodeOrAi() {
   return (
@@ -357,7 +349,7 @@ function CodeOrAi() {
           <span className="x-coa-why">{st.why}{st.p && <small>{st.p}</small>}</span>
         </Build>
       ))}
-      <Build at={2} className="x-coa-foot">Two model calls per contract. Everything else is code.</Build>
+      <Build at={2} className="x-coa-foot">The AI reads. Code checks and answers. A lawyer decides.</Build>
     </div>
   );
 }
@@ -396,53 +388,85 @@ if (import.meta.env.DEV) {
     !caseStudy.replace(/\s+/g, " ").includes(RIVERTY_AGENTS) && "card 'agent': Riverty's sentence is not in the case study word for word",
     !(PORTFOLIO > 1000) && `card 'agent': the note says over ${PORTFOLIO} contracts fit into no context window - the count of 'today' (act1.tsx, from the case study) is no longer over a thousand`,
     // the problems 'code-or-ai' points back to (act1.tsx FOUND): the ids must still mean what the rows say
-    !/images/.test(problem("P5")?.text ?? "") && "card 'code-or-ai': P5 is no longer the images problem of 'case-study'",
-    !/other words/.test(problem("P4")?.text ?? "") && "card 'code-or-ai': P4 is no longer the other-words problem of 'case-study'",
-    !/missing/.test(problem("P1")?.text ?? "") && "card 'code-or-ai': P1 is no longer the missing-passage problem of 'case-study'",
-    !/coverage/.test(problem("P6")?.text ?? "") && "card 'code-or-ai': P6 is no longer the coverage problem of 'case-study'",
-    !/evidence/i.test(problem("R3")?.text ?? "") && "card 'code-or-ai': R3 is no longer the evidence rule of 'case-study'",
-    STEPS.filter((st) => st.kind === "model").length !== 2 && "card 'code-or-ai': the foot says two model calls per contract",
+    STEPS.filter((st) => st.kind === "model").length !== 1 && "card 'code-or-ai': the foot says the AI reads - one model row",
   ].filter(Boolean);
   for (const p of problems) console.error(`act 2: ${p}`);
 }
 
 export const ACT2: Slide[] = [
   {
-    id: "part-2", act: 2, kind: "opener", title: "My approach", steps: 0, seconds: 7,
+    id: "part-2", act: 2, kind: "opener", title: "My approach · how I narrowed it down", steps: 0, seconds: 5,
     quote: ["A solution explaining how you would tackle the challenge"],
-    notes: [
-      "My approach: how I work, my levers, and what I tested before I chose.",
-    ],
-    words: [{ word: "levers", say: "LEE-verz" }],
+    notes: ["My approach: where the lever is, what I tested, and what I decided."],
+    words: [{ word: "lever", say: "LEE-ver" }],
   },
   {
-    // "How I work": steps 8 and 9 (platform, adoption) are planned, not done (order pass #6)
-    id: "how-i-worked", act: 2, kind: "content", title: "How I work: from the problem to the platform.", steps: 2, seconds: 40, Body: HowIWorked,
+    // decision 99 (Dima, 2.11.: "where are the biggest levers, where do I see the most automation")
+    id: "levers", act: 2, kind: "content", title: "The biggest lever: read every contract only once.", steps: 3, seconds: 48, Body: Levers,
     notes: [
-      // steps 1 to 3: the pilot (part 1), today's process and its rethinking (the next card, 'levers')
-      "I work in three phases. First, understand: I qualified the pilot – the two questions – mapped today's process and looked for the biggest levers.",
-      "Then design: for every step, code or AI – and as little freedom for the AI as works. The architecture follows from that.",
-      "Then deliver: I evaluated the prototype on contracts with known answers. Azure and the rollout are planned, not built yet.",
+      "I mapped today's process for one question: open, search and read, note, verify, decide – for every contract, and again for every question.",
+      "The biggest lever is the reading. So the AI reads every contract only once, when it arrives, into a structured register: compile, don't search.",
+      `Then a question becomes a lookup – seconds instead of about ${HOURS} hours, always over every contract.`,
+      "Verifying means the passage on the page; only unclear goes to a person. The decision stays with the lawyer – on purpose.",
     ],
-    words: [{ word: "pilot", say: "PIE-lut" }, { word: "process", say: "PROH-ses" }, { word: "architecture", say: "AR-kih-tek-cher" }],
+    words: [{ word: "compile", say: "kum-PILE" }, { word: "register", say: "REJ-ih-ster" }],
   },
   {
-    // decision 99 (Dima, 2.11.: "where are the biggest levers, where do I see the most automation") - the
-    // former card 'tomorrow' (a deep dive now), turned into the levers; the architecture opens part 3
-    id: "levers", act: 2, kind: "content", title: "Three levers – the biggest: read every contract only once.", steps: 3, seconds: 52, Body: Levers,
+    // the test set is said here in one sentence (its card is a deep dive, decision 101)
+    id: "rag-fails", act: 2, kind: "content", title: "A search cannot prove what is missing.", steps: 4, seconds: 80, Body: RagFails,
     notes: [
-      "To find the levers, I mapped today's process for one question.",
-      "The biggest lever is the reading. It grows with every contract and is repeated for every question. " +
-        "So the AI reads every contract only once, when it arrives, into a structured register: compile, don't search.",
-      `Second: with the register, a new question becomes a lookup – seconds instead of about ${HOURS} hours, always over every contract.`,
-      "Third, verifying: the lawyer sees the exact passage on the page, and only unclear findings need a person. " +
-        "One step I deliberately don't automate: the decision stays with the lawyer.",
+      "Before I built that, I tested the usual approach: a chatbot over the documents – search first, then a model answers. " +
+        `I wrote ${ALL_DOCS} test contracts with known answers, because Riverty's are confidential. Question 1 on the merchant agreements: ` +
+        `${measurement.contracts} contracts, ${COPY.id} is a copy of ${COPY.copy_of}.`,
+      `A search keeps only the passages most similar to the question – here the top ${K}. They come from only ${AT_K.contracts_in_top_k} contracts.`,
+      `So for the search, the other ${NOT_RANKED} lack the clause?`,
+      `No: ${AT_K.false_alarms.length} are false alarms – they cap liability in other words or in German, like M02. ` +
+        `And ${AT_K.missed.join(", ")} is missed: no cap, but a hidden instruction for the AI mentions liability.`,
+      // Dima's wish (Notion card 10, 1.11.), in his own words (decision 98): why top-k can never prove absence
+      `A missing clause has no passage, so it never shows up – a larger k does not help: ${NEVER} contracts never match. ` +
+        "A search ranks what is there; it cannot prove what is missing.",
     ],
-    words: [{ word: "levers", say: "LEE-verz" }, { word: "compile", say: "kum-PILE" }, { word: "deliberately", say: "dih-LIB-er-it-lee" }, { word: "register", say: "REJ-ih-ster" }],
+    words: [{ word: "merchant", say: "MUR-chunt" }, { word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "instruction", say: "in-STRUK-shun" }],
   },
   {
-    // decision 100: the bridge - the sixth problem of part 1 becomes the question, the options are named
-    id: "why-fail", act: 2, kind: "content", title: "Why do the usual AI approaches fail at this task?", steps: 2, seconds: 36, Body: WhyFail,
+    id: "agent", act: 2, kind: "content", title: "An agent stops when it decides it is done.", steps: 3, seconds: 50, Body: Agent,
+    notes: [
+      "The second usual option: an agent. A model decides a step, calls a tool – open a file, search, note – and repeats.",
+      // Dima's wish (Notion card 11, 1.11.), in his own words (decision 98)
+      "It decides itself when it is done – so it can stop early, and nobody notices.",
+      `A ${STUDY_YEAR} study, OverclaimBench, told agents to review every file: they skipped files in ${SKIPPED} percent of the runs, ` +
+        `and in ${HID_OF_5} of 5 of those, the report hid it.`,
+      // "one model call per contract": the reader; the checker is a second call for each "found" (said on 'code-or-ai')
+      `That is the sentence from the case study. So I read every contract once, completely: one model call per contract.`,
+    ],
+    words: [{ word: "agent", say: "AY-junt" }, { word: "OverclaimBench", say: "OH-ver-klaym-bench" }],
+  },
+  {
+    // decision 100: the decision per step, derived from the problems
+    id: "code-or-ai", act: 2, kind: "content", title: "Per step: code – AI only where meaning is needed.", steps: 2, seconds: 50, Body: CodeOrAi,
+    notes: [
+      "From that, per step: code or a model? My rule: as little freedom for the AI as works. Reading the text is code – OCR for an image, with a confidence.",
+      "One step needs meaning: find a clause in any words. Only here a model reads – and because it can be wrong, " +
+        "code checks that its quote is really in the text, and a second model call gives an opinion.",
+      "The question itself is a lookup over every row of the register: coverage is a fact. And a lawyer decides.",
+    ],
+    words: [{ word: "OCR", say: "oh-see-AR" }, { word: "verdicts", say: "VUR-dikts" }],
+  },
+  {
+    id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 22, Body: Needs,
+    notes: [
+      "From all this, three guarantees.",
+      "First, every contract is read – and we can prove it, not just claim it.",
+      "Second, every finding shows its passage on the page.",
+      "And third, a lawyer decides.",
+    ],
+    words: [{ word: "guarantees", say: "gair-un-TEEZ" }],
+  },
+];
+
+// Deep dives since decision 101: the bridge question and the test set (said in one sentence on 'rag-fails').
+export const WHY_FAIL: Slide = {
+    id: "why-fail", act: 7, kind: "content", title: "Why do the usual AI approaches fail at this task?", steps: 2, seconds: 36, deep: true, Body: WhyFail,
     notes: [
       "Before I chose how the AI reads, I took the sixth problem seriously: the case study itself says that agents often fail on the size of the environment. " +
         "I wanted to see that on the biggest lever, the reading.",
@@ -450,9 +474,10 @@ export const ACT2: Slide[] = [
       "I tested both on contracts with known answers. First, the test set.",
     ],
     words: [{ word: "approaches", say: "uh-PROH-chiz" }, { word: "environment", say: "en-VY-run-ment" }, { word: "agent", say: "AY-junt" }],
-  },
-  {
-    id: "contracts", act: 2, kind: "content", title: `A test set: ${ALL_DOCS} contracts, every answer known.`, steps: 3, seconds: 53, Body: TestSet,
+};
+
+export const TEST_CONTRACTS: Slide = {
+    id: "contracts", act: 7, kind: "content", title: `A test set: ${ALL_DOCS} contracts, every answer known.`, steps: 3, seconds: 53, deep: true, Body: TestSet,
     notes: [
       "To test the options, I need contracts with known answers. Riverty's are confidential, so I built a test set.",
       // Riverty's addendum: "These agreements cover both B2B and B2B2C business models"; the scan card 'hard'
@@ -465,66 +490,18 @@ export const ACT2: Slide[] = [
     ],
     words: [{ word: "B2B2C", say: "bee-two-bee-two-SEE" }, { word: "M05-A", say: "em-zero-five-AY" }, { word: "amendment", say: "uh-MEND-ment" },
       { word: "labelled", say: "LAY-buld" }, { word: "CUAD", say: "KWAD" }],
-  },
-  {
-    id: "rag-fails", act: 2, kind: "content", title: "Option A fails when the answer is what is not in the text.", steps: 4, seconds: 73, Body: RagFails,
+};
+
+export const HOW_I_WORKED: Slide = {
+    id: "how-i-worked", act: 7, kind: "content", title: "How I work: from the problem to the platform.", steps: 2, seconds: 40, deep: true, Body: HowIWorked,
     notes: [
-      `Option A on the real question, Q1: which merchant agreements lack a limitation of liability – a cap on what a party must pay? ` +
-        `${measurement.contracts} contracts, because ${COPY.id} is a copy of ${COPY.copy_of}.`,
-      // top-k in one sentence (the card 'rag' explains it step by step, a deep dive since decision 100)
-      `A chatbot searches first: it keeps only the k passages most similar to the question, and the model answers from those. ` +
-        `A keyword search for '${measurement.query}' keeps the top ${K} – from only ${AT_K.contracts_in_top_k} contracts.`,
-      `So for the search, the other ${NOT_RANKED} seem to lack the clause.`,
-      `But ${AT_K.false_alarms.length} are false alarms: they cap liability in other words or in German, like M02. ` +
-        `And ${AT_K.missed.join(", ")} is missed: no cap, but a hidden instruction for the AI mentions liability.`,
-      // Dima's wish (Notion card 10, 1.11.), in his own words (decision 98): why top-k can never prove absence
-      `A missing clause has no passage, so it can never show up – a larger k does not help: ${NEVER} contracts never match. ` +
-        "Embeddings rank too. Top-k ranks what is there; it can't prove what is missing.",
+      // steps 1 to 3: the pilot (part 1), today's process and its rethinking (the next card, 'levers')
+      "I work in three phases. First, understand: I qualified the pilot – the two questions – mapped today's process and looked for the biggest levers.",
+      "Then design: for every step, code or AI – and as little freedom for the AI as works. The architecture follows from that.",
+      "Then deliver: I evaluated the prototype on contracts with known answers. Azure and the rollout are planned, not built yet.",
     ],
-    words: [{ word: "merchant", say: "MUR-chunt" }, { word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "instruction", say: "in-STRUK-shun" }],
-  },
-  {
-    id: "agent", act: 2, kind: "content", title: "Option B: an AI agent that reads everything itself?", steps: 3, seconds: 58, Body: Agent,
-    notes: [
-      "Option B, the agent: a model decides a step, calls a tool – open a file, search, note – and repeats.",
-      // Dima's wish (Notion card 11, 1.11.), in his own words (decision 98)
-      "The weak point: it decides itself when it has seen enough – so it can stop early, and nobody notices.",
-      `A ${STUDY_YEAR} study, OverclaimBench, told agents to review every file: they skipped files in ${SKIPPED} percent of the runs, ` +
-        `and in ${HID_OF_5} of 5 of those, the report hid it.`,
-      // Riverty's sentence (on 'why-fail' as the crop) and why every contract is read once. The count is the one
-      // of 'today' (act1.tsx, parsed from the case study). "one AI call per contract": the reader (guarded on
-      // 'what-we-use'); the checker is a second call for each "found".
-      `That is the sentence from the case study: over ${n(PORTFOLIO)} contracts fit into no context window, so an agent sees only a part – ` +
-        "and a missed contract never shows up. So I read every contract once, completely: one AI call per contract.",
-    ],
-    words: [{ word: "agent", say: "AY-junt" }, { word: "OverclaimBench", say: "OH-ver-klaym-bench" }, { word: "environment", say: "en-VY-run-ment" },
-      { word: "context window", say: "KON-tekst WIN-doh" }],
-  },
-  {
-    // decision 100: the decision per step, derived from the problems of part 1 (their ids on the card)
-    id: "code-or-ai", act: 2, kind: "content", title: "Per step: code wherever it can be tested – AI only where meaning is needed.", steps: 2, seconds: 57, Body: CodeOrAi,
-    notes: [
-      "From the problems, I decided per step: code, or a model? My rule: as little freedom for the AI as works. " +
-        "Getting the contract and reading its text is code – OCR for an image, with a confidence: problem five.",
-      "One step needs meaning: find each clause, in any words – problem four. Only here a model reads. " +
-        "A model can be wrong, so code checks the quote, and a second model call gives an opinion.",
-      "The question itself – which contracts lack a passage – is a lookup in code over every row: coverage is a fact, problems one and six. " +
-        "The decision stays with a lawyer: observations, not verdicts.",
-    ],
-    words: [{ word: "deterministic", say: "dee-ter-min-IS-tik" }, { word: "OCR", say: "oh-see-AR" }, { word: "recognition", say: "rek-ug-NISH-un" },
-      { word: "definition", say: "def-ih-NISH-un" }, { word: "verdicts", say: "VUR-dikts" }],
-  },
-  {
-    id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 25, Body: Needs,
-    notes: [
-      "From all this, I derived three guarantees.",
-      "First, every contract is read – and we can prove it, not just claim it.",
-      "Second, every finding shows its passage on the page, so a lawyer can check it in seconds.",
-      "And third, a lawyer decides.",
-    ],
-    words: [{ word: "guarantees", say: "gair-un-TEEZ" }, { word: "lawyer", say: "LOY-er" }],
-  },
-];
+    words: [{ word: "pilot", say: "PIE-lut" }, { word: "process", say: "PROH-ses" }, { word: "architecture", say: "AR-kih-tek-cher" }],
+};
 
 // Deep dives (decisions 90, 100 - to keep the main track under 22:00): opened on a question, listed in
 // deep.tsx. Their data and guards stay here, next to the cards they belong to. 'rag' explains option A

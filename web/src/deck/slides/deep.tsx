@@ -9,12 +9,12 @@ import shieldsProbePy from "../../../../eval/prompt_shields_probe.py?raw";
 import runPy from "../../../../pipeline/run.py?raw";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
-import { HARD, TASK, TODAY } from "./act1";
-import { EMBEDDING_MAP, RAG } from "./act2";
-import { FOLLOW_M18, INJECTION, REGISTER_INDEX, TOMORROW } from "./act3";
+import { CASE_STUDY, INSIGHT, TASK } from "./act1";
+import { EMBEDDING_MAP, HOW_I_WORKED, RAG, TEST_CONTRACTS, WHY_FAIL } from "./act2";
+import { CHECKS, FOLLOW_M18, INJECTION, REGISTER_INDEX, TOMORROW, WHAT_WE_USE } from "./act3";
 import { TEST_SET } from "./act4";
 import { SHAREPOINT } from "./act5";
-import { COST, WHAT_IF } from "./proof";
+import { COST, RESULTS_FULL, WHAT_IF } from "./proof";
 import { CHECKER, CHECKER_ASK, CLAUSES, READER, READER_ASK, RULES, Say, TEMPERATURE, say } from "./prompts-data";
 import "./acts.css";
 import deck from "./deck-data.json";
@@ -410,11 +410,14 @@ export const DEEP: Slide[] = [
     id: "deep-dives", act: 7, kind: "opener", title: "Deep dives – for your questions", steps: 0, seconds: 6, deep: true,
     notes: ["If you want to see a technique closer, I pick a card."],
   },
-  TASK,               // part 1 (decision 98): the former first cards, their points said on 'case-study'
-  TODAY,
-  HARD,
+  CASE_STUDY,         // part 1: the numbered problems, rules and the goal (decision 100)
+  TASK,
+  INSIGHT,
   TEST_SET,
-  RAG,               // option A step by step (decision 100: the main track says top-k in one sentence on 'rag-fails')
+  HOW_I_WORKED,       // part 2: the roadmap (decision 101)
+  WHY_FAIL,
+  TEST_CONTRACTS,
+  RAG,
   EMBEDDING_MAP,
   {
     id: "decoy", act: 7, kind: "content", title: "Embeddings know the topic – not whether the clause is there.", steps: 1, seconds: 40, deep: true, Body: Decoy,
@@ -424,6 +427,8 @@ export const DEEP: Slide[] = [
     ],
     words: [{ word: "indemnification", say: "in-dem-nih-fih-KAY-shun" }, { word: "similarity", say: "sim-ih-LAR-ih-tee" }],
   },
+  WHAT_WE_USE,        // part 3: the implementation - Azure OpenAI, the two prompts (decision 101)
+  CHECKS,             // M08: the model said found, the register says unclear
   TOMORROW,           // the process tomorrow (decision 99: the levers of part 2 and the card 'architecture' now)
   FOLLOW_M18,         // one contract step by step (decision 98), then its steps in detail
   {
@@ -492,6 +497,7 @@ export const DEEP: Slide[] = [
     ],
     words: [{ word: "hybrid", say: "HY-brid" }, { word: "reranker", say: "ree-RANK-er" }, { word: "damages", say: "DAM-ih-jiz" }],
   },
+  RESULTS_FULL,       // the proof with its confidence bands (decision 101)
   WHAT_IF,            // the proof after 'results': a safeguard off, then the cost and the bigger model
   COST,
   {

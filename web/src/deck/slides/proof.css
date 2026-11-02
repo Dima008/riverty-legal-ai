@@ -83,6 +83,10 @@
 
   /* --- cost: once, then free; the small model */
   .p-cost { display: flex; flex-direction: column; gap: 1.2cqw; }
+  .p-three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2cqw; }
+  .p-three .p-num { padding: 2cqw 2.2cqw; font-size: 1.7cqw; }
+  .p-three .p-num small { font-size: 1.3cqw; margin-top: 0.8cqw; }
+  .p-three .p-big2 { font-size: 5.2cqw; }
   .p-two { display: grid; grid-template-columns: 1fr 1fr; gap: 2cqw; }
   .p-num { padding: 1.1cqw 1.8cqw; border-radius: 1.2cqw; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.09); font-size: 1.45cqw; color: var(--ink); }
   .p-num small { display: block; margin-top: 0.3cqw; font-size: 1.2cqw; color: var(--ink-2); }

@@ -2013,6 +2013,7 @@ browser has the deck open; then request the module with curl.
 
 | Issue | Fix |
 | --- | --- |
+| Found while regenerating the speaker-note snapshot (2 Nov): piping a PowerShell here-string into Node used the console code page, so typographic UTF-8 characters became literal `?` (`# Approach ? the talk`, `Dima?s`, `0:00?0:45`) although the source deck was correct | Set PowerShell's pipeline and console output encoding explicitly to UTF-8 before invoking Node; verify the generated file with a search for the broken strings before staging |
 | No quota for the newest models in the EU data zone on the trial account | gpt-4.1-mini Global Standard for the prototype; EU data zone required for production |
 | HTTP 429 rate limit on embeddings | honour `Retry-After`, batches of 16 |
 | SQLite "bad parameter or other API misuse" under parallel extraction | worker threads never touch the shared connection; one connection per thread for cost logging |

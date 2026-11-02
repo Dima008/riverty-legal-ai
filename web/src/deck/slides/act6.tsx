@@ -195,10 +195,10 @@ function Close() {
 /** Part 4: the basic implementation, live (decision 99). */
 export const LIVE: Slide[] = [
   {
-    id: "part-4", act: 4, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 8,
+    id: "part-4", act: 4, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 6,
     quote: ["Basic implementation demonstrating the foundation of the concept"],
     notes: [
-      "Now the basic implementation, live: the pipeline, the front-end and the whole workflow.",
+      "Now the basic implementation, live: the pipeline, the tool and the whole workflow.",
     ],
     words: [{ word: "implementation", say: "im-pluh-men-TAY-shun" }],
   },
@@ -248,14 +248,12 @@ export const LIVE: Slide[] = [
 /** The close: the last card of part 6 (adoption), after 'run-it' - "who would pilot it?" follows the pilot plan. */
 export const CLOSE: Slide[] = [
   {
-    id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 36, Body: Close,
+    id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 34, Body: Close,
     notes: [
-      // the task: "while learning and improving ourselves", "start a meaningful conversation"; the honest gap
-      // list of CLAUDE.md (no Azure deployment, the planner has no model, handwriting needs a multimodal reader)
+      // the task: "while learning and improving ourselves", "start a meaningful conversation"
       "What I learned: no model is always right. So every contract is read, every answer is traced back to a page, and a lawyer decides. " +
         "Not built yet: the Azure platform, the SharePoint connector, a model that plans, and one that reads handwriting well. " +
-        "Two questions for you. I assumed that a missed contract hurts more than a false alarm – is that right for Legal? " +
-        "And who would pilot it? Thank you.",
+        "Two questions for you: is a missed contract worse for Legal than a false alarm? And who would pilot it? Thank you.",
     ],
     words: [{ word: "traceable", say: "TRAY-suh-bul" }, { word: "accurate", say: "AK-yur-it" }, { word: "connector", say: "kuh-NEK-ter" }, { word: "assumed", say: "uh-SOOMD" }],
   },

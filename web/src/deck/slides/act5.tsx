@@ -32,17 +32,14 @@ const IAC = Object.keys(import.meta.glob(["../../../../Dockerfile", "../../../..
 
 // target vs prototype, per role (web/src/story/chapters/architecture/map.ts, decisions 35, 79, 80)
 const ROLES = [
-  // Microsoft Graph is introduced in the deep dive 'sharepoint' (order pass #32, decision 96)
-  { role: "Contracts", proto: "data/inbox folder", target: "SharePoint library" },
   { role: "Read scans", proto: "Tesseract", target: "Content Understanding" },
-  // the prototype already calls Azure OpenAI (Global Standard, decision 34) with test data only:
-  // synthetic contracts and public CUAD contracts (decisions 29, 30) - never "synthetic data only"
-  { role: "Read and check", proto: `${MODEL} on Azure OpenAI (Global Standard, test data only)`, target: "Azure OpenAI in Foundry, EU data zone" },
+  // the prototype already calls Azure OpenAI (Global Standard, decision 34) with test data only
+  { role: "Read and check", proto: `${MODEL} on Azure OpenAI`, target: "Azure OpenAI in Foundry, EU data zone" },
   { role: "Register", proto: "SQLite", target: "PostgreSQL" },
   { role: "Search", proto: "SQLite keywords + embeddings", target: "Azure AI Search" },
   { role: "Hidden instructions", proto: "a pattern check", target: "+ Prompt Shields" },
   { role: "Who may decide", proto: "two simulated reviewers", target: "Entra ID roles" },
-  { role: "Runs", proto: "on the laptop", target: "Container Apps" },
+  { role: "Runs", proto: "on the laptop", target: "Container Apps · Terraform" },
 ];
 
 function Azure() {
@@ -57,18 +54,14 @@ function Azure() {
       <div className="x-buy">
         <Build at={1} className="x-buy-box">
           <h3>Buy</h3>
-          <p>The building blocks: reading scans, search, models, identity – Azure services.</p>
+          <p>Scans, search, models, identity – Azure services.</p>
         </Build>
         <Build at={1} className="x-buy-box built">
           <h3>Build</h3>
-          <p>What is Riverty's: the playbook, the evidence trail, the storage boundary.</p>
-        </Build>
-        <Build at={2} className="x-key">
-          The value is not a framework. It is the architecture: <em>a small, structured world for the AI</em> – every
-          finding with evidence.
+          <p>The playbook, the evidence, the storage boundary.</p>
         </Build>
         <Build at={2} className="x-az-plan">
-          Orchestration: Microsoft Agent Framework, LangGraph as fallback – replaceable · the Azure column is the target, not built yet
+          Azure column: the target, not built yet · Microsoft Agent Framework, LangGraph as fallback
         </Build>
       </div>
     </div>
@@ -126,16 +119,15 @@ function Adoption() {
         <h3>Start small</h3>
         <ol className="x-ol">
           <li>Measure today, with {FEW_LO}–{FEW_HI} lawyers</li>
-          <li>One question next to the old way, for a few weeks</li>
-          <li>Training: read the evidence on the page – don't trust blindly</li>
-          <li>Then the next question, the next team</li>
+          <li>One question next to the old way</li>
+          <li>Training: read the evidence</li>
         </ol>
       </div>
       <Build at={1}>
         <h3>Legal owns it</h3>
         <ol className="x-ol">
-          <li>The playbook is Legal's – their guidelines, as data</li>
-          <li>Corrections go into the test set, after review</li>
+          <li>The playbook is Legal's</li>
+          <li>Corrections go into the test set</li>
         </ol>
       </Build>
       <Build at={2}>
@@ -143,7 +135,6 @@ function Adoption() {
         <ol className="x-ol">
           <li>Time per question – against today</li>
           <li><span>How often lawyers overrule <span className="x-ra-tag">counted already</span></span></li>
-          <li>A review is stored and reused</li>
           <li>German or English</li>
         </ol>
       </Build>
@@ -175,24 +166,22 @@ if (import.meta.env.DEV) {
 /** Part 5: infrastructure - after the demo (decision 99). */
 export const INFRASTRUCTURE: Slide[] = [
   {
-    id: "part-5", act: 5, kind: "opener", title: "Infrastructure", steps: 0, seconds: 6,
+    id: "part-5", act: 5, kind: "opener", title: "Infrastructure · where it runs", steps: 0, seconds: 5,
     quote: ["A basic explanation of the infrastructure you would leverage"],
     notes: [
-      "Now the infrastructure: where this would run at Riverty.",
+      "The infrastructure: where this would run at Riverty.",
     ],
     words: [{ word: "infrastructure", say: "IN-fruh-struk-cher" }],
   },
   {
-    id: "azure", act: 5, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 70, Body: Azure,
+    id: "azure", act: 5, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 64, Body: Azure,
     notes: [
       "Today it runs on my laptop; only the model calls go to Azure, with test data only. " +
-        "Following your principle – best of breed, then Microsoft – I measured Prompt Shields and a bigger model. " +
-        "On Azure, each part gets its service – Content Understanding for scans, Azure OpenAI in the EU data zone, Entra ID, " +
-        "Container Apps with Terraform – all planned, not built yet.",
-      "We buy the building blocks, and we build what is yours: the playbook, the evidence and the storage boundary.",
-      `Gemini? The model sits behind one small adapter file, but any model must first pass the ${QUESTIONS} test questions. ` +
-        "LangGraph? Not needed today – our code fixes the order; the target is the Microsoft Agent Framework, with LangGraph as fallback. " +
-        "The real value is the architecture: a small, structured world for the AI.",
+        "Following Riverty's principle – best of breed, then Microsoft – I measured Prompt Shields and a bigger model. " +
+        "On Azure, each part gets its service: Content Understanding for scans, Azure OpenAI in the EU data zone, Entra ID, Container Apps with Terraform – planned, not built.",
+      "We buy the building blocks and build what is Riverty's: the playbook, the evidence and the storage boundary.",
+      `Gemini? The model sits behind one adapter file – but any model must first pass the ${QUESTIONS} test questions. ` +
+        "LangGraph? Not needed today: code fixes the order. The target is the Microsoft Agent Framework, with LangGraph as fallback.",
     ],
     words: [{ word: "Azure", say: "AZH-er" }, { word: "Entra", say: "EN-truh" }, { word: "Terraform", say: "TER-uh-form" }, { word: "Gemini", say: "JEM-ih-nye" },
       { word: "adapter", say: "uh-DAP-ter" }, { word: "LangGraph", say: "LANG-graf" }, { word: "architecture", say: "AR-kih-tek-cher" }],
@@ -218,7 +207,7 @@ export const SHAREPOINT: Slide = {
  *  also carries the outline's last bullet, which the close answers ("What did I learn?"). */
 export const ADOPTION: Slide[] = [
   {
-    id: "part-6", act: 6, kind: "opener", title: "Adoption", steps: 0, seconds: 4,
+    id: "part-6", act: 6, kind: "opener", title: "Adoption · how Legal gets the value", steps: 0, seconds: 4,
     quote: [
       "A concept for helping our colleagues adopt the solution and ensure they get the most value out of it",
       "Anything else you feel is relevant to understanding your approach to solving the challenge",
@@ -229,17 +218,16 @@ export const ADOPTION: Slide[] = [
     words: [{ word: "adoption", say: "uh-DOP-shun" }],
   },
   {
-    id: "run-it", act: 6, kind: "content", title: "Adoption: one team, one question – measured against today.", steps: 2, seconds: 61, Body: Adoption,
+    id: "run-it", act: 6, kind: "content", title: "One team, one question – measured against today.", steps: 2, seconds: 57, Body: Adoption,
     notes: [
       // the task: "Our legal colleagues currently leverage a variety of tools"
-      "Legal already uses many tools, so this one must earn its place. It starts with a pilot: one team, one question. " +
-        `First we measure today's effort with ${FEW_LO} or ${FEW_HI} lawyers; then the new way runs next to the old one for a few weeks. ` +
-        "In the training, lawyers learn to read the evidence on the page, not to trust it blindly. Then the next question, the next team.",
-      // "their guidelines, as data" is explained on 'architecture' and stays on screen here
-      "Legal owns it, because the playbook is theirs – and every correction goes into the test set.",
-      // the task: "create more with the same number of engineers" - first picked up on 'case-study', measured here
-      "We measure the value with your definition of productivity: time per question, against today. " +
-        "The prototype already counts how often lawyers overrule it, reviews are reused, and lawyers can work in German or English.",
+      "Legal already uses many tools, so this one must earn its place: a pilot with one team and one question. " +
+        `We measure today's effort with ${FEW_LO} or ${FEW_HI} lawyers, then the new way runs next to the old one for a few weeks. ` +
+        "In the training, lawyers learn to read the evidence on the page, not to trust it blindly.",
+      "Legal owns it: the playbook is theirs, and every correction goes into the test set.",
+      // the task: "create more with the same number of engineers"
+      "We measure the value as the case study defines productivity: time per question, against today. " +
+        "The prototype already counts how often lawyers overrule it, and works in German or English.",
     ],
     words: [{ word: "variety", say: "vuh-RY-ih-tee" }, { word: "adoption", say: "uh-DOP-shun" }, { word: "blindly", say: "BLYND-lee" },
       { word: "productivity", say: "proh-duk-TIV-ih-tee" }, { word: "overrule", say: "oh-ver-ROOL" }],
