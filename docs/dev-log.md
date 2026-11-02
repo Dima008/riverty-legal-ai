@@ -7,6 +7,24 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-02 · Legal's decision in the register is a person, not a second check mark
+
+- **Problem:** Dima asked why some register cells have a "double check": M03 showed a red ✕ with a
+  small green ✓, C13 a grey dash with a green ✓. The small mark is Legal's decision ("confirmed by
+  Legal"), but it looked exactly like the "found" icon.
+- **Cause:** The review mark (D19) used the same glyph family as the status: ✓ / ✗ / … in a
+  coloured circle.
+- **Technique and why:** The mark is now a person icon in a white badge – person with a check
+  (confirmed), person with a stop sign (Legal disagrees), person with a clock (in review) – and the
+  legend says "Legal's decision". A status icon and a person's decision can no longer be confused.
+- **Rejected alternative:** A coloured dot (no meaning without the tooltip); the text "Legal ✓" in
+  the cell (too wide for a 48 × 5 grid).
+- **Metric before → after:** review marks that share a glyph with a status icon 3 of 3 → 0 of 3;
+  tsc 0 errors; register screenshots EN and DE with the 2 stored decisions (M03, C13), 0 browser
+  errors.
+- **Links:** decision 91 (D19); `web/src/register/Register.tsx`, `web/src/labels.ts`,
+  `web/src/app.css`, `web/src/register/register.css`
+
 ## 2026-11-02 · The live click script follows the new Workbench
 
 - **Problem:** The note of the card 'live' still walked the old Workbench ("I ask Q1", a table "to

@@ -50,9 +50,9 @@
 .register tr.failed .mx-stage { color: var(--amber-ink); font-weight: 600; }   /* 5.0:1 */
 
 /* Legal's decision on a finding (D19): three marks - confirmed, disagrees, in review - on the cell's corner */
-.register .mx-rev.k-confirmed { background: var(--green); }                     /* white on it: 5.3:1 */
-.register .mx-rev.k-disagrees { background: var(--red); }                       /* 5.4:1 */
-.register .mx-rev.k-in-review { background: var(--amber-ink); }                 /* 5.4:1 */
+.register .mx-rev.k-confirmed { color: var(--green); }                          /* on white: 5.3:1 */
+.register .mx-rev.k-disagrees { color: var(--red); }                            /* 5.4:1 */
+.register .mx-rev.k-in-review { color: var(--amber-ink); }                      /* 5.4:1 */
 
 /* ---- the contract file (ContractFile.tsx): read-only. The drawer is rendered outside .register and the
    Workbench opens the same file, so these rules start with .contract-drawer. */

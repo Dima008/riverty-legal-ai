@@ -11,6 +11,9 @@ import {
   CheckmarkCircle16Regular,
   ChevronRight16Regular,
   DismissCircle16Filled,
+  PersonAvailable16Filled,
+  PersonClock16Filled,
+  PersonProhibited16Filled,
   QuestionCircle16Filled,
   QuestionCircle16Regular,
   Subtract16Regular,
@@ -68,6 +71,13 @@ const exactState = (s: ReviewStateName, t: T) =>
 // "6 to check for a former name (5 name one · 1 cannot be ruled out)" with the numbers in bold
 const boldNumbers = (text: string): ReactNode[] => text.split(/(\d+)/).map((part, i) => (i % 2 ? <b key={i}>{part}</b> : part));
 
+// Legal's decision, drawn as a person: confirmed, disagrees, in review
+const LEGAL_ICON: Record<string, ReactNode> = {
+  confirmed: <PersonAvailable16Filled />,
+  disagrees: <PersonProhibited16Filled />,
+  "in-review": <PersonClock16Filled />,
+};
+
 function Cell({ cell, label, review, onOpen }: { cell?: MatrixCell; label: string; review?: ReviewStateName; onOpen: () => void }) {
   const t = useT();
   if (!cell) return <td className="mx-cell none">·</td>;
@@ -76,7 +86,8 @@ function Cell({ cell, label, review, onOpen }: { cell?: MatrixCell; label: strin
   const icon = !cell.required
     ? (cell.status === "PRESENT" ? <CheckmarkCircle16Regular /> : cell.status === "ABSENT" ? <Subtract16Regular /> : <QuestionCircle16Regular />)
     : cell.status === "PRESENT" ? <CheckmarkCircle16Filled /> : cell.status === "ABSENT" ? <DismissCircle16Filled /> : <QuestionCircle16Filled />;
-  // Legal's decision as one of three marks (D19); the exact state is in the tooltip
+  // Legal's decision as one of three marks (D19): a person, so it never looks like a status icon (a check
+  // here read as "found"); the exact state is in the tooltip
   const mark = review ? REVIEW_MARK[review] : undefined;
   const text =
     `${label}: ${statusWord(cell.status, t)}` +
@@ -86,7 +97,7 @@ function Cell({ cell, label, review, onOpen }: { cell?: MatrixCell; label: strin
     <td className={`mx-cell s-${cell.status.toLowerCase()} ${cell.required ? "req" : "opt"}`}>
       <button type="button" onClick={onOpen} aria-label={text} title={text}>
         {icon}
-        {mark && <span className={`mx-rev k-${mark.kind}`} aria-hidden>{mark.mark}</span>}
+        {mark && <span className={`mx-rev k-${mark.kind}`} aria-hidden>{LEGAL_ICON[mark.kind]}</span>}
       </button>
     </td>
   );
@@ -331,6 +342,7 @@ export function Register() {
           <span className="legend-inline">
             <CheckmarkCircle16Filled className="c-ok" /> {word("PRESENT")} <DismissCircle16Filled className="c-bad" /> {word("ABSENT")}{" "}
             <QuestionCircle16Filled className="c-warn" /> {word("UNCLEAR")} · {t("grey = not required for this type")}
+            {" · "}<PersonAvailable16Filled className="c-ok" /> {t("Legal's decision")}
           </span>
           <Button as="a" href={handOver} size="small" appearance="primary" className="rg-handover"
                   title={t("Carries type, law, dates and search; a clause becomes the question. Result filters (only gaps, Legal's decision) stay here.")}>

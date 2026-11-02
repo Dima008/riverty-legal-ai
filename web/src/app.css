@@ -366,10 +366,12 @@ p { margin: 0; }
 
 /* ---------------------------------------------------------------- Legal's decision on a register cell (D19) */
 /* the mark on the cell's corner; its colour per kind is in register.css */
+/* a person in a white badge, so it never reads as a second status icon */
 .mx-rev {
-  position: absolute; right: -6px; bottom: -6px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px;
-  font-size: 11px; line-height: 15px; font-weight: 700; color: #fff; background: var(--green);
+  position: absolute; right: -7px; bottom: -7px; width: 17px; height: 17px; border-radius: 999px;
+  display: grid; place-items: center; background: #fff; border: 1.5px solid currentColor; color: var(--green);
 }
+.mx-rev svg { width: 12px; height: 12px; }
 
 /* ---------------------------------------------------------------- loading and motion */
 /* text for screen readers only */

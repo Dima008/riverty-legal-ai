@@ -274,14 +274,15 @@ export const STAGE_WORD: Record<string, string> = {
   failed: "could not be read – a person reads it",
 };
 
-/** Legal's decision in a register cell (D19): three marks instead of six; the exact state is in the tooltip. */
-export const REVIEW_MARK: Partial<Record<ReviewStateName, { mark: string; label: string; kind: string }>> = {
-  CONFIRMED: { mark: "✓", label: "confirmed by Legal", kind: "confirmed" },
-  REJECTED: { mark: "✗", label: "Legal disagrees", kind: "disagrees" },
-  CORRECTED: { mark: "✗", label: "Legal disagrees", kind: "disagrees" },
-  IN_REVIEW: { mark: "…", label: "in review", kind: "in-review" },
-  ESCALATED: { mark: "…", label: "in review", kind: "in-review" },
-  DISPUTED: { mark: "…", label: "in review", kind: "in-review" },
+/** Legal's decision in a register cell (D19): three kinds instead of six, drawn as a person (Register.tsx);
+ *  the exact state is in the tooltip. */
+export const REVIEW_MARK: Partial<Record<ReviewStateName, { label: string; kind: string }>> = {
+  CONFIRMED: { label: "confirmed by Legal", kind: "confirmed" },
+  REJECTED: { label: "Legal disagrees", kind: "disagrees" },
+  CORRECTED: { label: "Legal disagrees", kind: "disagrees" },
+  IN_REVIEW: { label: "in review", kind: "in-review" },
+  ESCALATED: { label: "in review", kind: "in-review" },
+  DISPUTED: { label: "in review", kind: "in-review" },
 };
 
 // The kind of question: the topic a question is grouped under in step 1 (decision 93)
