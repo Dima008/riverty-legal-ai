@@ -47,6 +47,7 @@ Template per case: **symptom → evidence → root cause → layer → fix → p
 | F43 | A poor scan was green "Unique" in the copy question - a misread text cannot prove that no copy exists (H01) | queries | nobody at first - found by building the traffic light against a register copy with H01 | fixed - orange "No copy found – poor scan", regression test |
 | F44 | The step-4 rail put two green lanes under the last lane's word: "RESOLVED · 39" in Q2, "ORIGINAL · 46" in Q8 | frontend | the screenshot check of the unfinished build (before commit) | fixed - the rail has the lanes' groups and order |
 | F45 | An answer from before the traffic light said "not found in 0 of 19 contracts" and "0 more are unclear" next to 3 red and 2 orange tiles | frontend | the screenshot check of the unfinished build (before commit) | fixed - counted from its rows, its own headline |
+| F46 | After a script rewrote a deck file, the dev server served it as an empty module: every card failed with "does not provide an export named 'EMBEDDING_MAP'" | dev environment (Vite) | the timing script, which loads the deck in a browser | fixed - touch the files; rule for the talk day |
 | F31 | A register selection made with the type toggle would have left out a contract that is still being read: its type is not known yet, so "Merchant agreements" did not contain it (H01) | frontend | nobody at first - found by the design review of the Workbench redesign | fixed - the tick boxes are gone; a filter keeps what it cannot judge and names it (decision 91) |
 | F32 | Former names counted 5 on the Workbench's start strip but 6 in Q2 with the poor scan: the strip counted only contracts with a name hit, not "cannot be ruled out" (H01) | frontend | nobody at first - found by the design review of the Workbench redesign | fixed - one rule for the register and Q2, the strip is gone; regression test |
 | F33 | Raw server text reached the lawyer: "tool gate: archive copy only after approval; M14 is IN_REVIEW" (M14) | frontend | nobody at first - found by the end-to-end walkthrough of the four-eyes path | fixed - fixed sentences in lawyers' words, EN and DE |
@@ -1982,6 +1983,32 @@ stored", "1 Excluded"; "20 in scope = ✕ 3 + ? 2 + – 1 + 14 evaluated earlier
 
 ---
 
+
+## F46 - The dev server served a rewritten file as empty (act2.tsx)
+
+**Symptom.** After the speaker-notes pass (decision 98) rewrote `web/src/deck/slides/act2.tsx` with a
+script, the whole deck stopped loading: the presenter, the page and the timing script all failed.
+
+**Evidence.** The timing script and the Vite log: "SyntaxError: The requested module
+'/src/deck/slides/act2.tsx?t=1793608847066' does not provide an export named 'EMBEDDING_MAP'".
+`curl http://localhost:5173/src/deck/slides/act2.tsx` returned 163 bytes: only a source map with
+`"sourcesContent":[""]`. The file on disk was complete, and `tsc` was green.
+
+**Root cause.** Vite read the file while the script was writing it (Windows: the file is briefly
+empty), transformed the empty text and cached that module. Later saves of other files did not
+change act2.tsx, so the empty module stayed.
+
+**Layer.** Development environment, not the product.
+
+**Fix.** `touch` the deck files, so Vite reads them again; after that the module had its exports
+and every check passed. Rule for the talk day: never edit deck files while presenting; if the deck
+shows a blank screen after an edit, touch the file or restart `npm run dev`.
+
+**Proof.** 2 Nov: after `touch web/src/deck/slides/*.tsx` the served act2.tsx contains
+`EMBEDDING_MAP` again; honest timing, newcards (0 problems) and deck.mjs (0 errors) ran on all cards.
+
+**Reproduce.** With `npm run dev` running, overwrite a deck file from a script in one write while the
+browser has the deck open; then request the module with curl.
 ## Engineering issues (short)
 
 | Issue | Fix |

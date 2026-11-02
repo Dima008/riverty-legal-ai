@@ -460,6 +460,18 @@ not measure embedding top-k, so I do not claim a number for it.
 19 merchant agreements never match the keywords at all. *Where:* `eval/negative_search.py`,
 card "rag-fails".
 
+**40. The case-study card says "Guidelines as data: Legal's playbook". Is the playbook in your case
+study?**
+
+The word is not. The case study says Legal must check that contracts "comply with our corporate
+guidelines". The playbook is how I built those guidelines: the clauses each contract type must
+have, written as data that Legal owns – one file, so a change is a new version and is tested. Its
+five clauses are my assumption, because you could not share your real guidelines. In a pilot,
+Legal writes the real ones, and the same checks run against them.
+
+*Where:* `pipeline/catalogue.py` (the playbook), card "case-study" build 1 (the sentence from the
+PDF), decision 98.
+
 ## How I worked
 
 **17. Which step of the path "from process to platform" decides between a fixed workflow and an

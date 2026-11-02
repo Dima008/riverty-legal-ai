@@ -7,6 +7,31 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-02 · The talk starts from Riverty's own case study, and the notes read as spoken prose
+
+- **Problem:** Dima walked through the talk: no real introduction to what the case study says and what I
+  took from it, no excerpts of the case study, and speaker notes that were "nur Stichworte … nicht gut
+  geschrieben" – hard to read aloud.
+- **Cause:** the readability pass 037e2b3 squeezed every note into sentences of at most 15 words, one idea
+  each, to fit 22:00; the card `task` showed six retyped snippets without the case study's structure.
+- **Technique and why:** a new card `case-study` walks the case study part by part with sentence
+  screenshots of the PDF (`tools/case_study_snips.py`: finds each sentence with PyMuPDF, marks it like a
+  highlighter, crops whole text lines; it fails if a sentence is not found) and adds "what I took from it"
+  per part; a guard checks each crop's sentence word for word against `case-study.md`. All 26 main-track
+  notes rewritten as flowing spoken prose; Dima's own Notion sentences restored in his words. To make
+  room, `task`, `today`, `hard` and `follow-m18` became deep dives (decision 98); their points are said on
+  `case-study`, `what-we-use` (model, fixed form, OCR) and `register` (guarantee one). Seconds are planned
+  at about 124 words per minute; Dima rehearses with the presenter clock (his decision).
+- **Rejected alternative:** retyped quotes (not the original, can drift from the PDF); keeping keyword
+  notes; all 29 cards in flowing prose (measured 26:40); merging cards or moving another one before the
+  rehearsal shows it is needed.
+- **Metric before → after:** main track 29 cards, 2,290 spoken words, 21:59 at 115 wpm (keyword notes) →
+  26 cards, 2,499 spoken words: first draft 26:40, tightened to 23:32 at 115 wpm, planned 21:51 at 124 wpm;
+  10 of 10 sentences found and cropped from the PDF; newcards 0 problems, deck.mjs 0 errors, tsc green;
+  new failure case F46 (dev server cached an empty module).
+- **Links:** decision 98, F46, check question 40, `web/src/deck/slides/act1.tsx`, `web/public/case-study/`,
+  `tools/case_study_snips.py`, `docs/approach.md`.
+
 ## 2026-11-02 · Legal's decision in the register is a person, not a second check mark
 
 - **Problem:** Dima asked why some register cells have a "double check": M03 showed a red ✕ with a

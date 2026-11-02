@@ -315,90 +315,93 @@ export const ACT2: Slide[] = [
     id: "part-2", act: 2, kind: "opener", title: "My approach", steps: 0, seconds: 6,
     quote: ["A solution explaining how you would tackle the challenge"],
     notes: [
-      "How would I tackle it? Here's my roadmap.",
+      "So how would I tackle it? Here is my roadmap.",
     ],
     words: [{ word: "roadmap", say: "ROHD-map" }],
   },
   {
     // "How I work": steps 8 and 9 (platform, adoption) are planned, not done (order pass #6)
-    id: "how-i-worked", act: 2, kind: "content", title: "How I work: from the problem to the platform.", steps: 3, seconds: 45, Body: HowIWorked,
+    id: "how-i-worked", act: 2, kind: "content", title: "How I work: from the problem to the platform.", steps: 3, seconds: 53, Body: HowIWorked,
     notes: [
       // part 1 walked steps 1 and 2 (the task's two questions, today's process) - the rethinking is part 3 ('tomorrow')
-      "How I work. You saw steps one and two: Legal's two questions as the pilot, and today's process. Step three, rethinking it, comes in part three.",
-      "Design: per step, code or AI. As little AI freedom as works. Then the architecture.",
-      "Deliver: I tested it. Azure and the rollout to lawyers are planned.",
-      "You encourage AI. I built this with Claude Code. Every AI commit is marked in git. I can explain every line.",
+      "This is how I work, from the problem to the platform. You've seen the first two steps: Legal's two questions and today's process. " +
+        "Step three, rethinking that process, comes in part three.",
+      "Then the design: for every step, code or AI – with as little AI freedom as works. The architecture follows from that.",
+      "Then delivery: I tested the prototype. Azure and the rollout to the lawyers are planned, not built.",
+      "You encourage AI, and I used it: I built this with Claude Code, every AI-assisted commit is marked in git, and I can explain every line.",
     ],
     words: [{ word: "pilot", say: "PIE-lut" }, { word: "process", say: "PROH-ses" }, { word: "architecture", say: "AR-kih-tek-cher" }, { word: "Claude", say: "KLAWD" }],
   },
   {
-    id: "contracts", act: 2, kind: "content", title: `Riverty cannot share contracts – so I put together ${ALL_DOCS} with known answers.`, steps: 3, seconds: 57, Body: TestSet,
+    id: "contracts", act: 2, kind: "content", title: `Riverty cannot share contracts – so I put together ${ALL_DOCS} with known answers.`, steps: 3, seconds: 59, Body: TestSet,
     notes: [
-      "To test any approach, I need known answers. You can't share contracts, so I built a test set.",
-      // the ranges of V and C are on screen (prefix and tiles) - said only for M, to keep the card in time
-      // Riverty's addendum: "These agreements cover both B2B and B2B2C business models"
-      `I wrote ${M_IDS.length} merchant agreements, ${range(M_IDS)}, with traps. They are B2B. With consumer terms in the checkout, also B2B2C. ` +
-        "M18: the scan you saw. M05 and its amendment M05-A: the former name. M02: a cap in other words.",
-      `${V_IDS.length} data processing agreements: the vendor side.`,
+      "To test any approach, I need contracts with known answers. You can't share yours, so I built a test set.",
+      // Riverty's addendum: "These agreements cover both B2B and B2B2C business models"; the scan card 'hard'
+      // is a deep dive since decision 98, so M18, M05/M05-A and M02 are introduced here
+      `I wrote ${M_IDS.length} merchant agreements, ${range(M_IDS)}, with traps. They are B2B, and with consumer terms in the checkout also B2B2C. ` +
+        "M18 is a scan. M05 names the former company, and its amendment M05-A renames it. And M02 limits liability in other words.",
+      `Then ${V_IDS.length} data processing agreements, the vendor side.`,
       // the evaluation: known answers (the answer key, written first) and CUAD - public contracts with experts' labels
-      `${C_IDS.length} real public contracts from CUAD, labelled by legal experts. For ${QUESTIONS_N} test questions, I wrote the answers first.`,
+      `And ${C_IDS.length} real public contracts from CUAD, the Contract Understanding Atticus Dataset, labelled by legal experts. ` +
+        `For ${QUESTIONS_N} test questions, I wrote the answers first.`,
     ],
     words: [{ word: "B2B2C", say: "bee-two-bee-two-SEE" }, { word: "M05-A", say: "em-zero-five-AY" }, { word: "amendment", say: "uh-MEND-ment" },
       { word: "labelled", say: "LAY-buld" }, { word: "CUAD", say: "KWAD" }],
   },
   {
-    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 60, Body: Rag,
+    id: "rag", act: 2, kind: "content", title: "The usual approach: a chatbot over your documents.", steps: 4, seconds: 59, Body: Rag,
     notes: [
-      "Most document assistants work like this. For example, you ask about liability in M01, the Nordlicht contract.",
+      "So how do most document assistants work? Say you ask about liability in M01, the Nordlicht contract.",
       // the first word on embeddings (rag-fails says "Embeddings rank too"; the map is a deep dive)
-      "A search compares your question with every passage, a short piece of a contract. It returns the most similar ones. " +
-        "It compares meaning: each passage becomes numbers, called embeddings. Near means similar.",
-      `This is called top-k. Here k is ${E.k}: only the ${E.k} best passages.`,
+      "A search compares your question with every passage – every short piece of a contract – and returns the most similar ones. " +
+        "It compares meaning: each passage becomes a list of numbers, called an embedding.",
+      `This is called top-k. Here k is ${E.k}: the search keeps only the ${E.k} best passages.`,
       `Then a language model reads only these ${E.k} and writes the answer. For M01 this works: the search finds clause ${M01_CLAUSE}.`,
-      "This is called RAG: retrieval-augmented generation. The model only sees what the search returns.",
+      "This is called RAG, retrieval-augmented generation. The key point: the model only sees what the search returns.",
     ],
     words: [{ word: "Nordlicht", say: "NORD-likht" }, { word: "embeddings", say: "em-BED-ingz" }, { word: "top-k", say: "top-KAY" },
       { word: "retrieval", say: "rih-TREE-vul" }, { word: "augmented", say: "awg-MEN-tid" }],
   },
   {
-    id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 4, seconds: 80, Body: RagFails,
+    id: "rag-fails", act: 2, kind: "content", title: "It fails when the answer is what is not in the text.", steps: 4, seconds: 77, Body: RagFails,
     notes: [
-      `Legal's question, our Q1: which merchant agreements lack a limitation of liability? A cap, like the ones you saw. ${measurement.contracts} contracts: ${COPY.id} is a copy of ${COPY.copy_of} and counts once.`,
-      `Now a keyword search over these ${measurement.contracts}: '${measurement.query}', top ${K}. The ${K} best passages come from ${AT_K.contracts_in_top_k} contracts.`,
-      `For the search, the other ${NOT_RANKED} seem to lack it.`,
-      `${AT_K.false_alarms.length} of the ${NOT_RANKED} are false alarms. They cap liability in other words or in German, like M02. ` +
-        `And ${AT_K.missed.join(", ")} is missed: no cap, but its hidden instruction for the AI mentions liability. So it ranks high.`,
-      // Dima's wish (Notion card 10, 1.11.): why top-k can never prove absence
-      `A missing clause has no passage. It never shows up. A larger k does not help: ${NEVER} contracts never match the keywords. ` +
-        "Embeddings rank too. Top-k ranks what is there. It cannot prove that something is missing.",
+      `Now Legal's real question, our Q1: which merchant agreements lack a limitation of liability – a cap on what a party must pay? ` +
+        `That's ${measurement.contracts} contracts, because ${COPY.id} is a copy of ${COPY.copy_of}.`,
+      `A keyword search for '${measurement.query}' keeps the top ${K} passages. They come from only ${AT_K.contracts_in_top_k} contracts.`,
+      `So for the search, the other ${NOT_RANKED} seem to lack the clause.`,
+      `But ${AT_K.false_alarms.length} of them are false alarms: they cap liability in other words or in German, like M02. ` +
+        `And ${AT_K.missed.join(", ")} is missed: it has no cap, but a hidden instruction for the AI mentions liability, so it ranks high.`,
+      // Dima's wish (Notion card 10, 1.11.), in his own words (decision 98): why top-k can never prove absence
+      `A missing clause has no passage – so it can never show up. A larger k does not help: ${NEVER} contracts never match the keywords. ` +
+        "Embeddings rank too. Top-k ranks what is there – search can't prove that something is missing.",
     ],
     words: [{ word: "merchant", say: "MUR-chunt" }, { word: "liability", say: "lie-uh-BIL-ih-tee" }, { word: "instruction", say: "in-STRUK-shun" }],
   },
   {
-    id: "agent", act: 2, kind: "content", title: "And an AI agent that reads everything itself?", steps: 3, seconds: 73, Body: Agent,
+    id: "agent", act: 2, kind: "content", title: "And an AI agent that reads everything itself?", steps: 3, seconds: 71, Body: Agent,
     notes: [
-      "Second idea: an agent. A model plans a step, calls a tool, and repeats. Its tools open files, search and take notes.",
-      // Dima's wish (Notion card 11, 1.11.)
-      "The weak point: it decides itself when it has seen enough. So it can stop early, and nobody notices.",
-      `A ${STUDY_YEAR} study, OverclaimBench, told agents to review every file. They skipped files in ${SKIPPED} percent of runs. In ${HID_OF_5} of 5 of those runs, the report hid it.`,
-      // Dima's wish (Notion cards 3 and 11, 1.11.): Riverty's sentence on agents, and why every contract is
-      // read once. The count is the one of 'today' (act1.tsx: parsed from the case study, guarded there).
-      // Riverty's sentence stays on screen too - Dima's one exception to decision 90c.
-      // "to read it": the reader is one call per contract (guarded on 'what-we-use', act3.tsx); the
-      // checker is a second call for each contract with a "found" ('checks', 'what-we-use').
-      `Your task says agents fail on the size of the environment. I found the same. Over ${n(PORTFOLIO)} contracts fit into no context window. An agent sees only a part. ` +
-        "A missed contract never shows up, and the answer still sounds complete. That's why I read every contract once, completely. One AI call reads each contract.",
+      "The second idea is an agent: a model plans a step, calls a tool – open a file, search, take notes – and repeats.",
+      // Dima's wish (Notion card 11, 1.11.), in his own words (decision 98)
+      "The weak point: it decides itself when it has seen enough – so it can stop early, and nobody notices.",
+      `A ${STUDY_YEAR} study, OverclaimBench, told agents to review every file. They skipped files in ${SKIPPED} percent of the runs, ` +
+        `and in ${HID_OF_5} of 5 of those runs, the report hid it.`,
+      // Dima's wish (Notion cards 3 and 11, 1.11.), in his own words (decision 98): Riverty's sentence on agents, and
+      // why every contract is read once. The count is the one of 'today' (act1.tsx, parsed from the case study).
+      // Riverty's sentence stays on screen too - Dima's one exception to decision 90c. "to read it": the reader
+      // is one call per contract (guarded on 'what-we-use'); the checker is a second call for each "found".
+      `Riverty's task says agents fail on the size of the environment. That matches what I found: over ${n(PORTFOLIO)} contracts fit into no context window, so an agent sees only a part. ` +
+        "A missed contract never shows up – and the answer still sounds complete. That's why I read every contract once, completely: one AI call per contract to read it.",
     ],
     words: [{ word: "agent", say: "AY-junt" }, { word: "OverclaimBench", say: "OH-ver-klaym-bench" }, { word: "environment", say: "en-VY-run-ment" },
       { word: "context window", say: "KON-tekst WIN-doh" }],
   },
   {
-    id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 23, Body: Needs,
+    id: "needs", act: 2, kind: "content", title: "So we need three guarantees.", steps: 3, seconds: 24, Body: Needs,
     notes: [
       "So we need three guarantees.",
-      "One: every contract is read. We prove it, not just claim it.",
-      "Two: every finding shows its passage on the page. A lawyer checks it in seconds.",
-      "Three: a lawyer decides.",
+      "First, every contract is read – and we can prove it, not just claim it.",
+      "Second, every finding shows its passage on the page, so a lawyer can check it in seconds.",
+      "And third, a lawyer decides.",
     ],
     words: [{ word: "guarantees", say: "gair-un-TEEZ" }, { word: "lawyer", say: "LOY-er" }],
   },

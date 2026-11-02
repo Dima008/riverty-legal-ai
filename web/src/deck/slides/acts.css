@@ -11,6 +11,19 @@
   .x-snip b { font-size: 1.3cqw; color: var(--mint); font-weight: 650; }
   .x-snip-label { font-size: 1cqw; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-weight: 650; }
 
+  /* --- the case study, as Riverty wrote it (act 1, decision 98): sentence screenshots, what I took from them */
+  .x-cs { display: grid; grid-template-columns: 1.35fr 1fr; gap: 2.6cqw; align-items: start; min-height: 27cqw; }   /* the tallest part: the title never jumps between builds */
+  .x-cs-label { font-size: 1cqw; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-weight: 650; margin-bottom: 1cqw; }
+  .x-cs-doc { display: flex; flex-direction: column; gap: 0.9cqw; animation: x-cs-in 0.45s ease; }
+  .x-cs-doc .x-cs-label { margin-bottom: 0.1cqw; }
+  .x-cs-crop { display: block; width: 100%; height: auto; box-sizing: border-box; background: #fff; border-radius: 0.5cqw;
+    padding: 0.45cqw 0.6cqw; box-shadow: 0 0.4cqw 1.4cqw rgba(0, 0, 0, 0.35); }
+  .x-cs-took ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7cqw; }
+  .x-cs-took li { position: relative; padding-left: 1.6cqw; font-size: 1.35cqw; line-height: 1.3; color: var(--ink-2); }
+  .x-cs-took li::before { content: "→"; position: absolute; left: 0; color: var(--ink-3); }
+  .x-cs-took li.now { color: var(--mint); font-weight: 650; }
+  .x-cs-took li.now::before { color: var(--mint); }
+
   /* --- the test bench (act 2): a little less air, so it fits the small views too */
   .x-tset.tset { gap: 1.1cqw; }
   .x-tset .tset-group { padding-block: 0.9cqw; }
@@ -349,3 +362,4 @@
   .x-hs-links line { stroke: rgba(92, 200, 255, 0.65); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
   .x-hs-links line.both { stroke: rgba(68, 226, 176, 0.8); }
 }
+@keyframes x-cs-in { from { opacity: 0; transform: translateY(0.6cqw); } to { opacity: 1; transform: none; } }

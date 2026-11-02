@@ -21,7 +21,7 @@ import stats from "../../../../eval/results/2026-10-31_extract-v2_stats.json";
 import stored from "../../../../eval/results/2026-10-31_what_if.json";
 import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
-import { ACT1 } from "./act1";
+import { TODAY } from "./act1";
 import deck from "./deck-data.json";
 import { say } from "./prompts-data";
 import { CUAD_AGREE, CUAD_N, FOUND_BY_CUAD } from "./testset-data";
@@ -358,8 +358,9 @@ const TIME_RATIO = Math.round(mean(BIG_ROW.seconds) / mean(MINI_ROW.seconds));
 const MAX_COST = Math.max(...RUNS.map((r) => r.cost));
 const TIMED = RUNS.filter((r) => r.seconds !== null).length;
 const Q1_N = Q1.expected.length;
-// The hours of one question today, as the card 'today' (act 1) said them - the lever closes here.
-const HOURS = Number(/about (\d+) hours/.exec(ACT1.find((s) => s.id === "today")?.notes.join(" ") ?? "")?.[1]);
+// The hours of one question today, as the card 'today' says them (a deep dive since decision 98; the same
+// number is said on 'case-study') - the lever closes here.
+const HOURS = Number(/about (\d+) hours/.exec(TODAY.notes.join(" "))?.[1]);
 
 function Cost() {
   return (
@@ -454,15 +455,16 @@ if (import.meta.env.DEV) {
 
 // ---------------------------------------------------------------- the cards
 export const RESULTS: Slide = {
-  id: "results", act: 3, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 54, Body: Results,
+  id: "results", act: 3, kind: "content", title: `${COMPLETE} of ${QS.length} questions complete – and how sure we can be.`, steps: 2, seconds: 60, Body: Results,
   notes: [
     // 'Deliver' is the third phase of the card 'how-i-worked'; the CUAD sentence came from the card
     // 'test-set' (a deep dive since decision 90). The task: "while learning and improving ourselves".
-    `Deliver: does it work? ${RUNS.length} runs from scratch: every expected contract found, no false alarm. ` +
-      `Real contracts, labelled by experts: we agree on ${CUAD_AGREE} of ${CUAD_N}. They showed ${FOUND_BY_CUAD.length} errors my traps missed. All fixed.`,
-    `How sure? ${Q1_N} of ${Q1_N}. At 95 percent confidence, the true rate could still be ${Math.round(Q1.recall_lower_95 * 100)} percent. ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
-    `All ${POOLED.expected} answers together: at least ${Math.round(POOLED.recall_lower_95 * 100)} percent. But they come from only ${DISTINCT} contracts. And I tuned on this test set. ` +
-      "Planned: a sealed test set, with new contracts I never tune on.",
+    `Deliver: does it work? I built the register from scratch ${RUNS.length} times: every expected contract found, no false alarm. ` +
+      `On real contracts labelled by legal experts, we agree on ${CUAD_AGREE} of ${CUAD_N} – and they showed ${FOUND_BY_CUAD.length} errors my own traps had missed. All fixed.`,
+    `How sure can we be? Q1 found ${Q1_N} of ${Q1_N} – but with 95 percent confidence, the true rate could still be as low as ${Math.round(Q1.recall_lower_95 * 100)} percent. ` +
+      `And ${WEAKEST.expected.length} of ${WEAKEST.expected.length} says almost nothing.`,
+    `All ${POOLED.expected} answers together give at least ${Math.round(POOLED.recall_lower_95 * 100)} percent. But they come from only ${DISTINCT} contracts, and I tuned on this test set. ` +
+      "So next: a sealed test set, with new contracts I never tune on.",
   ],
   words: [{ word: "scratch", say: "SKRATCH" }, { word: "confidence", say: "KON-fih-dence" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
 };

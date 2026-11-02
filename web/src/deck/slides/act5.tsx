@@ -175,26 +175,24 @@ if (import.meta.env.DEV) {
 /** Part 4: infrastructure. */
 export const INFRASTRUCTURE: Slide[] = [
   {
-    id: "part-4", act: 4, kind: "opener", title: "Infrastructure", steps: 0, seconds: 5,
+    id: "part-4", act: 4, kind: "opener", title: "Infrastructure", steps: 0, seconds: 4,
     quote: ["A basic explanation of the infrastructure you would leverage"],
-    notes: ["Where would it run at Riverty?"],
+    notes: [
+      "So where would it run at Riverty?",
+    ],
     words: [{ word: "infrastructure", say: "IN-fruh-struk-cher" }],
   },
   {
-    id: "azure", act: 4, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 77, Body: Azure,
+    id: "azure", act: 4, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 78, Body: Azure,
     notes: [
-      // the task: "two guiding principles" (best of breed, then compared with Microsoft) and its stack list -
-      // what is planned is said as planned: no Dockerfile, no Terraform file in the repository. Today
-      // (panel design, fact-checked): the laptop; only the model calls (reader, checker, embeddings, all
-      // through pipeline/llm.py) go to Azure OpenAI, with test data only - synthetic or public (CUAD).
-      "Today it runs on my laptop. Only the model calls go to Azure, with test data only. " +
-        "You choose in two steps: best of breed, then compare with Microsoft. I measured Prompt Shields and a bigger model. " +
-        "On Azure, each part would get its service. Content Understanding for scans. Azure OpenAI in the EU data zone. Entra ID for approvals. " +
-        "Container Apps, set up with Terraform. All this is planned: no Dockerfile or Terraform yet.",
-      "We buy the building blocks. We build what is Riverty's: playbook, evidence, storage boundary.",
-      `Gemini? The model sits behind one small adapter file. Any model must first pass the ${QUESTIONS} test questions. ` +
-        "LangChain or LangGraph? Not needed today: code fixes the order. Target: Microsoft Agent Framework, LangGraph as fallback. " +
-        "The value is the architecture: a small, structured world for the AI.",
+      "Today it runs on my laptop; only the model calls go to Azure, with test data only. " +
+        "You choose in two steps – best of breed, then a comparison with Microsoft – so I measured Prompt Shields and a bigger model. " +
+        "On Azure, each part gets its service: Content Understanding for scans, Azure OpenAI in the EU data zone, Entra ID for approvals, " +
+        "and Container Apps with Terraform. All of this is planned – there is no Dockerfile or Terraform yet.",
+      "We buy the building blocks, and we build what is Riverty's: the playbook, the evidence and the storage boundary.",
+      `Gemini? The model sits behind one small adapter file, but any model must first pass the ${QUESTIONS} test questions. ` +
+        "LangChain or LangGraph? Not needed today – our code fixes the order. The target is the Microsoft Agent Framework, with LangGraph as fallback. " +
+        "The real value is the architecture: a small, structured world for the AI.",
     ],
     words: [{ word: "Azure", say: "AZH-er" }, { word: "Entra", say: "EN-truh" }, { word: "Terraform", say: "TER-uh-form" }, { word: "Gemini", say: "JEM-ih-nye" },
       { word: "adapter", say: "uh-DAP-ter" }, { word: "LangGraph", say: "LANG-graf" }, { word: "architecture", say: "AR-kih-tek-cher" }],
@@ -219,24 +217,26 @@ export const SHAREPOINT: Slide = {
 /** Part 5: adoption. */
 export const ADOPTION: Slide[] = [
   {
-    id: "part-5", act: 5, kind: "opener", title: "Adoption", steps: 0, seconds: 5,
+    id: "part-5", act: 5, kind: "opener", title: "Adoption", steps: 0, seconds: 6,
     quote: ["A concept for helping our colleagues adopt the solution and ensure they get the most value out of it"],
-    notes: ["How do lawyers get the most value?"],
+    notes: [
+      "And how do the lawyers get the most out of it?",
+    ],
     words: [{ word: "adoption", say: "uh-DOP-shun" }],
   },
   {
-    id: "run-it", act: 5, kind: "content", title: "Adoption: one team, one question – measured against today.", steps: 2, seconds: 62, Body: Adoption,
+    id: "run-it", act: 5, kind: "content", title: "Adoption: one team, one question – measured against today.", steps: 2, seconds: 65, Body: Adoption,
     notes: [
       // the task: "Our legal colleagues currently leverage a variety of tools"
-      "Legal already has a variety of tools. This one must earn its place. " +
-        `Adoption starts with a pilot: one team, one question. First we measure today, with ${FEW_LO} or ${FEW_HI} lawyers. ` +
-        "Then the question runs next to the old way, for a few weeks. Training: read the evidence on the page, don't trust it blindly. Then the next question, the next team.",
-      // "their guidelines, as data" is explained on 'checks' and stays on screen here
-      "Legal owns it: the playbook is theirs. Corrections go into the test set.",
-      // the task: "create more with the same number of engineers" - said for Legal (picked up from the deep dive 'cost', decision 96)
-      "Value, measured: your definition of productivity. The same lawyers answer more questions. " +
-        "We compare time per question with today. The prototype already counts how often lawyers overrule it. " +
-        "Reviews are reused. And lawyers work in German or English.",
+      "Legal already uses many tools, so this one must earn its place. It starts with a pilot: one team, one question. " +
+        `First we measure today's effort with ${FEW_LO} or ${FEW_HI} lawyers; then the new way runs next to the old one for a few weeks. ` +
+        "In the training, lawyers learn to read the evidence on the page, not to trust it blindly. Then the next question, the next team.",
+      // "their guidelines, as data" is explained on 'case-study' and stays on screen here
+      "Legal owns it, because the playbook is theirs – and every correction goes into the test set.",
+      // the task: "create more with the same number of engineers" - first picked up on 'case-study', measured here
+      "The value is measured with your definition of productivity: the same lawyers answer more questions. " +
+        "We compare the time per question with today; the prototype already counts how often lawyers overrule it, and reviews are reused. " +
+        "And lawyers can work in German or English.",
     ],
     words: [{ word: "variety", say: "vuh-RY-ih-tee" }, { word: "adoption", say: "uh-DOP-shun" }, { word: "blindly", say: "BLYND-lee" },
       { word: "productivity", say: "proh-duk-TIV-ih-tee" }, { word: "overrule", say: "oh-ver-ROOL" }],

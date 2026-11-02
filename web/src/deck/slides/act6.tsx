@@ -193,51 +193,52 @@ function Close() {
 
 export const ACT6: Slide[] = [
   {
-    id: "part-6", act: 6, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 11,
+    id: "part-6", act: 6, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 12,
     quote: [
       "Basic implementation demonstrating the foundation of the concept",
       "Anything else you feel is relevant to understanding your approach to solving the challenge",
     ],
-    notes: ["Your second list: pipeline, front-end, the whole workflow. Then anything else: what I learned. Let me show you."],
+    notes: [
+      "Now your second list: the pipeline, the front-end and the whole workflow – and anything else I learned. Let me show you.",
+    ],
     words: [{ word: "implementation", say: "im-pluh-men-TAY-shun" }],
   },
   {
-    id: "live-add", act: 6, kind: "content", title: "A handwritten contract arrives – watch what is found.", steps: 1, seconds: 54, Body: LiveAdd,
+    id: "live-add", act: 6, kind: "content", title: "A handwritten contract arrives – watch what is found.", steps: 1, seconds: 56, Body: LiveAdd,
     notes: [
       // b0 fills the wait: from the drop, 48 shows after 8-12 s and the findings after 14-15 s
-      // (measured in Edge on a register copy, docs/demo.md) - the words after 'I copy it' take 13-15 s
+      // (measured in Edge on a register copy, docs/demo.md) - the words after 'I copy it' take 13-15 s.
       // H01 is rendered from handwriting fonts, with photo effects (tools/make_handwritten.py) - nobody
       // photographed it, so the note says it is made to look like a phone photo
-      `Now live. You have handwritten contracts, only as JPEG. I made one: ${HANDWRITTEN.doc_id}, dated ${H01_YEAR}, made to look like a phone photo. ` +
-        `I copy it into the folder, our stand-in for SharePoint. Watch the number. ` +
-        `The watcher looks every ${WATCH_S} seconds. Then OCR reads the image, one model call, the checks: like M18.`,
+      `Now live. You have old handwritten contracts, only as JPEG files. I made one: ${HANDWRITTEN.doc_id}, dated ${H01_YEAR}, made to look like a phone photo. ` +
+        "I copy it into the folder, our stand-in for SharePoint – watch the number. " +
+        `The watcher checks every ${WATCH_S} seconds; then OCR, one model call and the checks run, as for every contract.`,
       // F19 (decision 89): the former name is not found on this scan - the register says it cannot rule it out.
       // The poor scan itself is named, not "sent to a person": its findings go to one (panel design, 'Nicht sagen')
-      `${deck.register.documents + 1} documents. Handwriting, hard to read: a poor scan. ` +
-        "Not found: limitation of liability, data processing agreement. Consumer terms: unclear, a person looks. " +
-        "Former name: cannot be ruled out on this scan, a person reads it.",
+      `${deck.register.documents + 1} documents now. The handwriting is hard to read – a poor scan. ` +
+        "Not found: the liability cap and the data processing agreement. The consumer terms are unclear, so a person looks. " +
+        "And the former name can't be ruled out on this scan, so a person reads it.",
     ],
     words: [{ word: "handwritten", say: "HAND-rit-n" }, { word: "JPEG", say: "JAY-peg" }, { word: "watcher", say: "WOTCH-er" }, { word: "ruled out", say: "ROOLD out" }],
   },
   {
     id: "live", act: 6, kind: "content", title: "The Legal Workbench, live.", steps: 0, seconds: 115, Body: Live,
     notes: [
-      // a click script: what to click, and what to say while it loads
-      // the Workbench of decision 95 (docs/demo.md): 1 the analysis box "Missing clause" (limitation of liability),
-      // 2 the contracts (every merchant agreement, the copy named) and Confirm the plan, 3 the answer - every contract
-      // in a lane: red = the clause is missing, orange = a person looks (the poor scan H01 too: it cannot prove an
-      // absence), green = the clause is there; 4 a tile opens the page in the middle and the finding on the right -
-      // M08's rejected passage is only outlined, M01's checked passage is yellow; 5 four eyes on M14; 6 the archive copy
-      // the task: "A basic front-end demonstrating how the solution can be used" + "Frontend written in React and TypeScript"
-      "Now the tool for Legal, live. It is React and TypeScript, like these slides. It has seen the new contract too: " + `${HANDWRITTEN.doc_id}, new, a poor scan. ` +
-        "One: I choose the analysis. A missing clause: the limitation of liability. " +
-        `Two: the contracts. Every merchant agreement. The copy, ${COPY?.id}, is named with its reason. Nothing runs before I confirm the plan. I confirm. ` +
-        "Three: the answer, with coverage. Every contract has a colour. " +
-        `Red, the clause is missing: ${list(Q1_NOT_FOUND)}. Orange, a person looks: ${list(Q1_UNCLEAR)}, and ${HANDWRITTEN.doc_id}. ` +
-        "A poor scan cannot prove that a clause is missing. Green: the clause is there. " +
-        `Four: the evidence on the page. ${EVIDENCE} is only outlined. The model proposed this passage, and the checks rejected it. ` +
-        `Now a green one, ${GREEN}. Its passage is checked and marked in yellow. ` +
-        `Five: ${FOUR_EYES} needs four eyes. Reviewer A approves. I switch to B, who approves too. ` +
+      // a click script: what to click, and what to say while it loads (the Workbench of decision 95, docs/demo.md):
+      // 1 the analysis box, 2 the contracts and Confirm the plan, 3 every contract in a lane (red missing, orange a
+      // person looks - the poor scan H01 too, green there), 4 the page in the middle and the finding on the right
+      // (M08's rejected passage outlined, M01's checked passage yellow), 5 four eyes on M14, 6 the archive copy.
+      // The task: "A basic front-end demonstrating how the solution can be used", "Frontend written in React and
+      // TypeScript". Dima's wish (2.11.): step one says what the boxes check against - Legal's playbook.
+      "Now the tool for Legal, live – React and TypeScript, like these slides. It has already seen the new contract: " + `${HANDWRITTEN.doc_id}, new, a poor scan. ` +
+        "One: I choose the analysis – a missing clause, the limitation of liability. The boxes check against Legal's playbook: it decides what counts as missing. " +
+        `Two: the contracts – every merchant agreement; the copy, ${COPY?.id}, is listed with its reason. Nothing runs before I confirm the plan. I confirm. ` +
+        "Three: the answer, with coverage. Every contract gets a colour. " +
+        `Red, the clause is missing: ${list(Q1_NOT_FOUND)}. Orange, a person looks: ${list(Q1_UNCLEAR)}, and ${HANDWRITTEN.doc_id} – ` +
+        "a poor scan cannot prove that a clause is missing. Green, the clause is there. " +
+        `Four: the evidence on the page. ${EVIDENCE} is only outlined: the model proposed it, our checks rejected it. ` +
+        `Now a green one, ${GREEN}: its passage is checked and marked in yellow. ` +
+        `Five: ${FOUR_EYES} needs four eyes. Reviewer A approves; I switch to B, who approves too. ` +
         "Six: only now the archive copy, and only once. Then back to the talk.",
     ],
     words: [{ word: "Workbench", say: "WURK-bench" }, { word: "coverage", say: "KUV-er-ij" }, { word: "highlighted", say: "HY-ly-tid" },
@@ -248,9 +249,10 @@ export const ACT6: Slide[] = [
     notes: [
       // the task: "while learning and improving ourselves", "start a meaningful conversation"; the honest gap
       // list of CLAUDE.md (no Azure deployment, the planner has no model, handwriting needs a multimodal reader)
-      "What I learned: no model is always right. So every contract is read, every answer traced to a page, and a lawyer decides. " +
-        "Not built yet: the Azure platform, the SharePoint connector. Also a model that plans, and one that reads handwriting well. " +
-        "Two questions. I assumed a missed contract hurts more than a false alarm. Right for Legal? And who would pilot it? Thank you.",
+      "What did I learn? No model is always right. So every contract is read, every answer is traced back to a page, and a lawyer decides. " +
+        "Not built yet: the Azure platform, the SharePoint connector, a model that plans, and one that reads handwriting well. " +
+        "Two questions for you. I assumed that a missed contract hurts more than a false alarm – is that right for Legal? " +
+        "And who would pilot it? Thank you.",
     ],
     words: [{ word: "traceable", say: "TRAY-suh-bul" }, { word: "accurate", say: "AK-yur-it" }, { word: "connector", say: "kuh-NEK-ter" }, { word: "assumed", say: "uh-SOOMD" }],
   },
