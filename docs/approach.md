@@ -4,7 +4,7 @@ This is a readable snapshot of the presentation website in `web/src/deck`. The s
 `web/src/deck/slides.ts` for order and timing and `web/src/deck/slides/*.tsx` for cards and speaker
 notes. Regenerate this snapshot whenever those notes change.
 
-**Presentation: 27 cards (20 content cards + title + six part openers), 21:06.**
+**Presentation: 27 cards (20 content cards + title + six part openers), 21:59.**
 **Technical appendix: 5 optional cards, 5:10.**
 Further question cards: 21; hidden until requested.
 
@@ -96,7 +96,7 @@ The system prepares the evidence, but it does not make the legal decision. Uncle
 
 ### `why-fail` · Where RAG and an agent fit – and where they do not.
 
-**Timing:** 4:05–4:41 (36 s)
+**Timing:** 4:05–4:54 (49 s)
 
 **Speaker notes:**
 
@@ -104,11 +104,11 @@ I considered two common approaches. RAG searches for relevant passages before a 
 
 A free agent can choose which files to open and when to stop. That is useful for planning, but not for proving that every contract was checked.
 
-My design therefore uses RAG for open questions and an agent only to draft a supported plan. A fixed workflow processes every contract and records the coverage.
+So I use each where it fits: search for open questions, and later an agent for the plan, which is not built yet. A fixed workflow processes every contract and records the coverage.
 
 ### `needs` · So we need three guarantees.
 
-**Timing:** 4:41–5:05 (24 s)
+**Timing:** 4:54–5:18 (24 s)
 
 **Speaker notes:**
 
@@ -124,7 +124,7 @@ Third, the system reports an observation; a lawyer makes the decision.
 
 ### `part-3` · The technical solution · how I built it
 
-**Timing:** 5:05–5:14 (9 s)
+**Timing:** 5:18–5:27 (9 s)
 
 **Speaker notes:**
 
@@ -132,7 +132,7 @@ I then translated those principles into the technical architecture. Let me walk 
 
 ### `architecture` · The architecture: read once into a register – a lawyer decides.
 
-**Timing:** 5:14–6:39 (85 s)
+**Timing:** 5:27–6:52 (85 s)
 
 **Speaker notes:**
 
@@ -146,7 +146,7 @@ In the Workbench, a lawyer confirms the scope, reads the evidence on the origina
 
 ### `register` · A question becomes a lookup.
 
-**Timing:** 6:39–7:56 (77 s)
+**Timing:** 6:52–8:09 (77 s)
 
 **Speaker notes:**
 
@@ -160,7 +160,7 @@ The same register answers the second pilot question and finds 5 agreements that 
 
 ### `human` · How a finding reaches a person.
 
-**Timing:** 7:56–9:18 (82 s)
+**Timing:** 8:09–9:31 (82 s)
 
 **Speaker notes:**
 
@@ -172,7 +172,7 @@ The lawyer sees the original passage before making a decision and records the re
 
 ### `results` · Evaluation: tested against known answers.
 
-**Timing:** 9:18–10:16 (58 s)
+**Timing:** 9:31–10:29 (58 s)
 
 **Speaker notes:**
 
@@ -180,129 +180,129 @@ For the evaluation, I wrote synthetic contracts and defined the correct answers 
 
 I also tested one clause on 20 public contracts labelled by legal experts. The system matched 19 of 20. This set revealed 3 additional weaknesses, which became regression tests.
 
-The limitation: only 16 contracts appear in the correct answers, and I improved the system using this set. The next step is an independent set of contracts that I have not seen during development.
+There is one limitation. The correct answers involve only 16 different contracts, and I improved the system while using this same set. So the next step is an independent set of contracts that I have not seen during development.
 
 ## 4 · The basic implementation, live
 
 ### `part-4` · The basic implementation, live
 
-**Timing:** 10:16–10:23 (7 s)
+**Timing:** 10:29–10:38 (9 s)
 
 **Speaker notes:**
 
-Now the working implementation. I will first show the experience for Legal, then open the technical pipeline behind it.
+Let me now show you the working implementation: first what Legal would see, then the pipeline behind it.
 
 ### `live-add` · A handwritten contract arrives – watch what is found.
 
-**Timing:** 10:23–11:14 (51 s)
+**Timing:** 10:38–11:39 (61 s)
 
 **Speaker notes:**
 
-You have old handwritten contracts, only as JPEG files. I made one: H01, dated 2009, made to look like a phone photo. I copy it into the folder, our stand-in for SharePoint – watch the number. The watcher checks every 5 seconds; then OCR, one model call and the checks run, as for every contract.
+Some of your oldest contracts are handwritten and exist only as JPEG files, so I created one: H01, dated 2009, made to look like a phone photo. I now copy it into the folder that stands in for SharePoint – please watch the number. Every 5 seconds, a watcher checks the folder and runs OCR, one model call and the checks, as for every contract.
 
-48 documents now. The handwriting is hard to read – a poor scan. Not found: the liability cap and the data processing agreement. The consumer terms are unclear, so a person looks. And the former name can't be ruled out on this scan, so a person reads it.
+There are now 48 documents, and the new one is a poor scan. The model found no liability cap and no data processing agreement, but on a poor scan that is not proof – so a person checks these findings, as well as the unclear consumer terms and the former name.
 
 ### `live` · The Legal Workbench, live.
 
-**Timing:** 11:14–13:09 (115 s)
+**Timing:** 11:39–13:34 (115 s)
 
 **Speaker notes:**
 
-Now the tool for Legal, live – React and TypeScript, like these slides. It has already seen the new contract: H01, new, a poor scan. One: I choose the analysis – a missing clause, the limitation of liability. The boxes check against Legal's playbook: it decides what counts as missing. Two: the contracts – every merchant agreement; the copy, M15, is listed with its reason. Nothing runs before I confirm the plan. I confirm. Three: the answer, with coverage. Every contract gets a colour. Red, the clause is missing: M03, M14, M18. Orange, a person looks: M08, M10, and H01 – a poor scan cannot prove that a clause is missing. Green, the clause is there. Four: the evidence on the page. M08 is only outlined: the model proposed it, our checks rejected it. Now a green one, M01: its passage is checked and marked in yellow. Five: M14 needs four eyes. Reviewer A approves; I switch to B, who approves too. Six: only now the archive copy, and only once. Then back to the slides.
+This is the Legal Workbench, built with React and TypeScript like these slides. It already shows the new contract, H01, as a poor scan. One: I choose the analysis – a missing clause, the limitation of liability. These boxes check against Legal's playbook, which defines what counts as missing. Two: the contracts – every merchant agreement; the duplicate, M15, is listed with its reason. Nothing runs until I confirm the plan, so I confirm it. Three: the answer, with its coverage. Every contract gets a colour. Red means the clause is missing: M03, M14, M18. Orange means a person should look: M08, M10 and H01, the poor scan. Green means the clause is there. Four: the evidence on the page. In M08, the passage is only outlined: the model proposed it, but our checks rejected it. In M01, the checked passage is marked in yellow. Five: M14 needs four eyes. Reviewer A approves; I switch to reviewer B, who approves too. Six: only now can the archive copy be made, and only once. Then back to the slides.
 
 ### `follow-m18` · One contract through the complete pipeline.
 
-**Timing:** 13:09–14:19 (70 s)
+**Timing:** 13:34–14:41 (67 s)
 
 **Speaker notes:**
 
-You have now seen what the workflow does for Legal. Here is one contract from the test set, followed through the technical pipeline behind it. It arrives in a watched folder in the prototype; the target receives it from SharePoint.
+Here is the pipeline behind the Workbench, with M18, one of the red contracts in the demo. It arrives in a watched folder; at Riverty, it would come from SharePoint.
 
-Because it is a scan, OCR converts its 2 pages into text and reports the quality. A low score later forces human review.
+M18 is a scan, so OCR first converts its 2 pages into text and reports how readable they are.
 
-Then the text is cut at its 12 headings into sections. The next card shows why.
+Next, the text is divided into sections at its 12 headings – more on that in a moment.
 
-One reader call reads the whole contract against the playbook and fills a fixed form.
+Then one model call, the reader, compares the whole contract with the playbook and fills in a fixed form.
 
-Code validates the quotation and an independent checker tests its meaning. Only checked facts enter the register.
+After that, our code and an independent checker test each answer; only checked results enter the register.
 
-That fixed sequence is the pipeline. It makes every processed contract visible and does not let an agent decide when the work is complete.
+This fixed order, set in code, is the pipeline. It makes every processed contract visible, and no agent can decide that the work is complete.
 
 ### `chunking` · Chunking: cut at the headings, not at a fixed length.
 
-**Timing:** 14:19–15:13 (54 s)
+**Timing:** 14:41–15:40 (59 s)
 
 **Speaker notes:**
 
-Right after the text is read – by OCR for a scan – the pipeline cuts each contract into passages. This is chunking. A common way is a fixed length, here every 2,000 characters.
+As soon as the text is available – from the PDF or from OCR – the pipeline divides the contract into passages. This is called chunking. The usual way is a fixed length, here every 2,000 characters.
 
-We cut at the numbered headings instead. In test contract M09, the liability clause runs over a page break. The fixed cut splits it in two; our section keeps it whole.
+I cut at the numbered headings instead, where the contract itself separates its clauses. In M09, the liability clause continues across a page break: a fixed cut splits it in two, while our section keeps it together.
 
-We use the sections twice. The reader still receives the whole contract, with every section marked, so each quotation points to one section and one page. And the search index for open questions is built from the same sections.
+The sections serve two purposes. The reader still gets the complete contract, with every section marked, so each quotation can be traced to a section and a page. And the search index for open questions is built from them.
 
 ### `fixed-form` · One model call per contract fills a fixed form.
 
-**Timing:** 15:13–16:17 (64 s)
+**Timing:** 15:40–16:44 (64 s)
 
 **Speaker notes:**
 
-The reader receives one contract, the applicable playbook clauses and a narrow system prompt. The contract is data, never instructions. If the evidence is uncertain, the model must return unclear.
+The marked contract then goes to the reader, together with the playbook clauses and a short system prompt. The prompt says that the contract is data, never instructions, and that the model must answer unclear when it is unsure.
 
-The answer must match a strict JSON schema, which code builds from the playbook file: one field per clause, and only three states – found, not found or unclear. So the model cannot invent a clause or a status. A found without an exact quotation becomes unclear. The schema fixes the shape; it does not prove the answer is true.
+The answer must follow a strict JSON schema, which our code builds from the playbook file: one field per clause, and only three values – found, not found or unclear. So the model cannot invent a clause or a status. But the schema only controls the shape; it cannot prove that the answer is correct.
 
-Our code then adds the page and computes the review score – the next card shows how. 47 contracts needed 47 reader calls: one per contract, not an agent choosing what to read.
+That is why our code checks every answer afterwards, as the next card shows. And it is always one call per contract; no agent chooses what to read.
 
 ### `checks` · Five checks compute confidence – and trigger human review.
 
-**Timing:** 16:17–17:25 (68 s)
+**Timing:** 16:44–17:55 (71 s)
 
 **Speaker notes:**
 
-Here is one human-in-the-loop example. In test contract M08, the reader claims that clause 6.2 is a liability cap. In fact, the quotation is about data processing.
+In the demo, the passage in M08 was only outlined. Here is why: the reader claims that clause 6.2 limits liability, but the quoted text is about data processing.
 
-Five checks run. The quotation, scan quality and injection checks pass. The vocabulary check fails: our playbook file lists the words each clause uses – for liability, words like liability, damages or the German Haftung. I wrote these lists myself, as no real guidelines were shared; in production, Legal owns them. The independent checker rejects the quotation too.
+The five checks I described earlier all run on this finding, and three of them pass. The vocabulary check fails: our playbook file lists typical words for each clause – for liability, words like liability, damages or the German Haftung. I wrote these lists myself, because the case study does not include your guidelines; in production, Legal would own them. The checker rejects the quotation too.
 
-Each failed check sets a maximum: 0.40 and 0.35. The lowest wins, so confidence is 0.35, and found becomes unclear. The rule is explicit: unclear, or below 0.80, means one lawyer reviews it. A suspected prompt injection needs two lawyers. The model never scores itself.
+Each failed check sets an upper limit, and the lowest one applies: 0.35. So found becomes unclear, and M08 is the uncertain case from earlier – anything unclear or below 0.80 goes to one lawyer. The model never rates its own confidence.
 
 ### `cost` · Read once, reuse often: measured cost instead of hidden cost.
 
-**Timing:** 17:25–18:10 (45 s)
+**Timing:** 17:55–18:59 (64 s)
 
 **Speaker notes:**
 
-The model cost occurs when a contract enters the system, not for every later question. Reading and checking all 47 test documents cost 12 cents. Register lookups then need no extraction call. Every call, token and estimated cost is recorded.
+What does this cost? A normal contract needs at most two model calls, and only once, when it enters the system. Reading and checking all 47 test documents cost 12 cents. After that, a question is a register lookup without a model call. Every call is recorded with its cost.
 
-The larger GPT-4.1 model cost 5 times more. After the same checks, both models answered all test questions correctly. So the smaller model stays until an evaluation proves that the extra cost buys better quality.
+The larger GPT-4.1 model cost 5 times more, and after the same checks it answered no better. So the smaller model stays until an evaluation shows that the extra cost buys quality.
 
-A new model, prompt or playbook version is accepted only if all 8 regression questions still pass. That manual prototype gate would become part of the deployment pipeline.
+The 8 test questions also protect every change: a new model, prompt or playbook version is accepted only if all of them still pass. Today I run this check by hand; at Riverty, it would run automatically in the deployment pipeline.
 
 ## 5 · Infrastructure · where it runs
 
 ### `part-5` · Infrastructure · where it runs
 
-**Timing:** 18:10–18:14 (4 s)
+**Timing:** 18:59–19:04 (5 s)
 
 **Speaker notes:**
 
-The infrastructure: where this would run at Riverty.
+Next, let me explain where this would run at Riverty.
 
 ### `azure` · On Azure: buy the building blocks, build what is Riverty's.
 
-**Timing:** 18:14–19:14 (60 s)
+**Timing:** 19:04–19:58 (54 s)
 
 **Speaker notes:**
 
-Today it runs on my laptop; only the model calls go to Azure, with test data only. Following Riverty's principle – best of breed, then Microsoft – I measured Prompt Shields and a bigger model. On Azure, each part gets its service: Content Understanding for scans, Azure OpenAI in the EU data zone, Entra ID, Container Apps with Terraform – planned, not built.
+Today, the prototype runs on my laptop; only the model calls go to Azure, with test data. Following your principle – best of breed, then Microsoft – I measured Prompt Shields against our own check for hidden instructions, and the larger model you just saw. On Azure, each job in this table would get a managed service – planned, not built.
 
-We buy the building blocks and build what is Riverty's: the playbook, the evidence and the storage boundary.
+The rule behind it: we buy the building blocks and build only what is specific to Riverty – the playbook, the evidence and the boundary around contract storage.
 
-Gemini? The model sits behind one adapter file – but any model must first pass the 8 test questions. LangGraph? Not needed today: code fixes the order. The target is the Microsoft Agent Framework, with LangGraph as fallback.
+The planned agent would use the Microsoft Agent Framework, with LangGraph as a fallback.
 
 ## 6 · Adoption · how Legal gets the value
 
 ### `part-6` · Adoption · how Legal gets the value
 
-**Timing:** 19:14–19:26 (12 s)
+**Timing:** 19:58–20:10 (12 s)
 
 **Speaker notes:**
 
@@ -310,7 +310,7 @@ Building the tool is not enough. To create value, Legal has to trust it, know ho
 
 ### `run-it` · Adoption: co-design, pilot, scale.
 
-**Timing:** 19:26–20:34 (68 s)
+**Timing:** 20:10–21:18 (68 s)
 
 **Speaker notes:**
 
@@ -322,11 +322,11 @@ We scale team by team only when the pilot improves quality or time. Legal owns t
 
 ### `close` · 100 % traceable instead of 100 % accurate.
 
-**Timing:** 20:34–21:06 (32 s)
+**Timing:** 21:18–21:59 (41 s)
 
 **Speaker notes:**
 
-What I learned: no model is always right. So every contract is read, every answer is traced back to a page, and a lawyer decides. Not built yet: the Azure platform, the SharePoint connector, a model that plans, and one that reads handwriting well. Two questions for you: is a missed contract worse for Legal than a false alarm? And who would pilot it? Thank you.
+Let me close with what I learned. No model is always right, so the solution does not rely on that: every contract is read, every answer is traced back to a page, and a lawyer decides. Still to build are the Azure platform, the SharePoint connector, the planning agent and a model that reads handwriting well. Two questions for you: is a missed contract worse for Legal than a false alarm? And who would pilot it? Thank you.
 
 ---
 

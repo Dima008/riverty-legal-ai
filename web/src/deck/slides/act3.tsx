@@ -18,7 +18,7 @@ import { Build, useStep } from "../Build";
 import type { Slide } from "../types";
 import "./acts.css";
 import deck from "./deck-data.json";
-import { CLAUSES, RULES, Say, TEMPERATURE, say } from "./prompts-data";
+import { CLAUSES, RULES, TEMPERATURE, say } from "./prompts-data";
 
 /** 0.35 -> "zero point three five": the pronunciation hint of a decimal in the notes, from the data */
 const spell = (x: number) => [...String(x)].map((c) => (c === "." ? "point" : say(Number(c)))).join(" ");
@@ -186,8 +186,8 @@ const CHECKER_CAP = 0.35;                                                  // pi
 const REVIEW_BELOW = deck.triage.review_below;
 const M08_CHECKS = [
   { passed: true, label: "Exact quotation", detail: `${M08.quote_score.toFixed(0)} % text match` },
-  { passed: false, label: "Clause vocabulary", detail: `no liability word → cap at ${VOCAB_CAP.toFixed(2)}` },
-  { passed: false, label: "Independent checker", detail: `rejected → cap at ${CHECKER_CAP.toFixed(2)}` },
+  { passed: false, label: "Clause vocabulary", detail: `no liability word → at most ${VOCAB_CAP.toFixed(2)}` },
+  { passed: false, label: "Independent checker", detail: `rejected → at most ${CHECKER_CAP.toFixed(2)}` },
   { passed: true, label: "Scan quality", detail: "readable document" },
   { passed: true, label: "Prompt injection", detail: "no instruction to the AI" },
 ];
@@ -213,7 +213,7 @@ function ChecksM08() {
       </Build>
       <Build at={2} className="x-verdict">
         <span className="node-kind" style={{ color: "var(--amber)" }}>The calculation</span>
-        <div className="x-calc"><span>failed-check caps</span><b>min({VOCAB_CAP.toFixed(2)}, {CHECKER_CAP.toFixed(2)})</b><strong>= {f.confidence.toFixed(2)}</strong></div>
+        <div className="x-calc"><span>lowest upper limit</span><b>min({VOCAB_CAP.toFixed(2)}, {CHECKER_CAP.toFixed(2)})</b><strong>= {f.confidence.toFixed(2)}</strong></div>
         <div className="x-status-change"><span>model</span><b>found</b><i>→</i><span>register</span><b>unclear</b></div>
         <div className="x-human-trigger">
           <span>Human-in-the-loop rule</span>
@@ -454,6 +454,8 @@ if (import.meta.env.DEV) {
     !extractPy.includes(`f"checker_rejected: {verdict['reason']}", ${CHECKER_CAP}`) && "card 'checks': the checker confidence cap changed in extract.py",
     M08_CHECKS.length !== 5 && "card 'checks': the card no longer shows the five safeguards named in the talk",
     !M08.flags.includes("quote_lacks_clause_terms") && "card 'checks': the note says M08's quote has none of the liability words - the register says otherwise",
+    deck.register.rows.find((r) => r.id === deck.m18.doc_id && !r.copy_of)?.cells[0] !== "ABSENT"
+      && "card 'follow-m18': the note calls M18 one of the red contracts in the demo - its liability cap is no longer 'not found' in the register",
     !['r"liab"', 'r"\\bhaft"', 'r"damages"'].every((w) => catalogueRaw.includes(w))
       && "card 'checks': the note names liability, Haftung and damages as the liability words - pipeline/catalogue.py no longer lists them",
     M08.flags.some((f) => f.includes("ocr") || f.includes("injection")) && "card 'checks': M08 no longer passes the scan and injection checks shown on the card",
@@ -556,19 +558,22 @@ export const WHAT_WE_USE: Slide = {
 };
 
 export const CHECKS: Slide = {
-    id: "checks", act: 7, kind: "content", title: "Five checks compute confidence – and trigger human review.", steps: 2, seconds: 68, deep: true, Body: ChecksM08,
+    id: "checks", act: 7, kind: "content", title: "Five checks compute confidence – and trigger human review.", steps: 2, seconds: 71, deep: true, Body: ChecksM08,
     notes: [
-      `Here is one human-in-the-loop example. In test contract M08, the reader claims that clause ${M08_CLAUSE} is a liability cap. In fact, the quotation is about data processing.`,
+      // M08 is the outlined passage of the demo ('live', step four) - the card explains why
+      `In the demo, the passage in M08 was only outlined. Here is why: the reader claims that clause ${M08_CLAUSE} limits liability, but the quoted text is about data processing.`,
       // the task: "ensuring they comply with our corporate guidelines" - the playbook (introduced on 'case-study');
       // maker-checker: the checker prompt sees only a definition and a quote (guarded in prompts-data.ts).
       // The vocabulary: CLAUSES[...]["keywords"] in pipeline/catalogue.py - regex word lists, written by
-      // Dima as an assumption (Riverty shares no guidelines); the quote must hit one (guarded below)
-      `${Say(M08_CHECKS.length)} checks run. The quotation, scan quality and injection checks pass. ` +
-        "The vocabulary check fails: our playbook file lists the words each clause uses – for liability, words like liability, damages or the German Haftung. " +
-        "I wrote these lists myself, as no real guidelines were shared; in production, Legal owns them. The independent checker rejects the quotation too.",
-      // model_status (what the model said) and status (what the register says after the checks): both stored
-      `Each failed check sets a maximum: ${VOCAB_CAP.toFixed(2)} and ${CHECKER_CAP.toFixed(2)}. The lowest wins, so confidence is ${M08.confidence.toFixed(2)}, and found becomes unclear. ` +
-        `The rule is explicit: unclear, or below ${REVIEW_BELOW.toFixed(2)}, means one lawyer reviews it. A suspected prompt injection needs two lawyers. The model never scores itself.`,
+      // Dima as an assumption (Riverty shares no guidelines); the quote must hit one (guarded below).
+      // 'human' (part 3) lists the five checks first - here they run on one finding
+      `The ${say(M08_CHECKS.length)} checks I described earlier all run on this finding, and three of them pass. ` +
+        "The vocabulary check fails: our playbook file lists typical words for each clause – for liability, words like liability, damages or the German Haftung. " +
+        "I wrote these lists myself, because the case study does not include your guidelines; in production, Legal would own them. The checker rejects the quotation too.",
+      // model_status (what the model said) and status (what the register says after the checks): both stored.
+      // Said as "upper limit", not "cap": on this card "cap" is the liability cap (2.11.)
+      `Each failed check sets an upper limit, and the lowest one applies: ${M08.confidence.toFixed(2)}. So found becomes unclear, and M08 is the uncertain case from earlier – ` +
+        `anything unclear or below ${REVIEW_BELOW.toFixed(2)} goes to one lawyer. The model never rates its own confidence.`,
     ],
     words: [{ word: "playbook", say: "PLAY-book" }, { word: "guidelines", say: "GIDE-lines" }, { word: "maker-checker", say: "MAY-ker CHEK-er" },
       { word: String(M08.confidence), say: spell(M08.confidence) }, { word: "guardrail", say: "GARD-rail" }, { word: "sandwich", say: "SAND-wich" }],
@@ -592,19 +597,23 @@ export const TOMORROW: Slide = {
 // One contract step by step - on the main track since decision 106 (slides.ts), followed by 'chunking',
 // 'fixed-form' and 'checks', which open its steps one by one.
 export const FOLLOW_M18: Slide = {
-  id: "follow-m18", act: 7, kind: "content", title: "One contract through the complete pipeline.", steps: 5, seconds: 70, deep: true, Body: FollowM18,
+  id: "follow-m18", act: 7, kind: "content", title: "One contract through the complete pipeline.", steps: 5, seconds: 67, deep: true, Body: FollowM18,
   notes: [
-    "You have now seen what the workflow does for Legal. Here is one contract from the test set, followed through the technical pipeline behind it. It arrives in a watched folder in the prototype; the target receives it from SharePoint.",
+    // M18 is one of the red tiles of the demo ('live', step three: Q1 not found - guarded below)
+    `Here is the pipeline behind the Workbench, with ${deck.m18.doc_id}, one of the red contracts in the demo. ` +
+      "It arrives in a watched folder; at Riverty, it would come from SharePoint.",
     // a poor scan does not go to a person as such: its findings' confidence is capped at 0.5 (extract.py),
     // so triage sends a reported one to a lawyer (portfolio.py; panel design, 'Nicht sagen'). Said as
-    // "we doubt", not "capped": on this card and others "cap" is the liability cap (2.11.)
-    `Because it is a scan, OCR converts its ${num(J.ingest.pages)} pages into text and reports the quality. A low score later forces human review.`,
+    // "its findings go to a person", not "capped": on this card and others "cap" is the liability cap (2.11.)
+    // what a poor scan means for its findings was shown live with H01 ('live-add') - not said again
+    `${deck.m18.doc_id} is a scan, so OCR first converts its ${num(J.ingest.pages)} pages into text and reports how readable they are.`,
     // 'chunking' follows this card (decision 109): it says where, how and why - here only the step
-    `Then the text is cut at its ${num(J.chunking.sections)} headings into sections. The next card shows why.`,
+    `Next, the text is divided into sections at its ${num(J.chunking.sections)} headings – more on that in a moment.`,
     // 'fixed-form' after 'chunking' explains the form and its three states - here only the step
-    "One reader call reads the whole contract against the playbook and fills a fixed form.",
-    "Code validates the quotation and an independent checker tests its meaning. Only checked facts enter the register.",
-    "That fixed sequence is the pipeline. It makes every processed contract visible and does not let an agent decide when the work is complete.",
+    "Then one model call, the reader, compares the whole contract with the playbook and fills in a fixed form.",
+    // 'checks' opens this step in detail - here only that it happens
+    "After that, our code and an independent checker test each answer; only checked results enter the register.",
+    "This fixed order, set in code, is the pipeline. It makes every processed contract visible, and no agent can decide that the work is complete.",
   ],
   words: [{ word: "OCR", say: "oh-see-AR" }, { word: "average", say: "AV-rij" }, { word: M18_MODEL, say: "G-P-T four point one mini" }, { word: "sections", say: "SEK-shunz" },
     { word: "doubt", say: "DOWT" }],

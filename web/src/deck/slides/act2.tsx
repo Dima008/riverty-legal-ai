@@ -465,11 +465,14 @@ export const ACT2: Slide[] = [
 
 // Deep dives since decision 101: the bridge question and the test set (said in one sentence on 'rag-fails').
 export const WHY_FAIL: Slide = {
-    id: "why-fail", act: 7, kind: "content", title: "Where RAG and an agent fit – and where they do not.", steps: 2, seconds: 36, deep: true, Body: WhyFail,
+    id: "why-fail", act: 7, kind: "content", title: "Where RAG and an agent fit – and where they do not.", steps: 2, seconds: 49, deep: true, Body: WhyFail,
     notes: [
       "I considered two common approaches. RAG searches for relevant passages before a model answers. That works for open questions, but a missing clause produces no passage to retrieve, so RAG alone cannot prove absence.",
       "A free agent can choose which files to open and when to stop. That is useful for planning, but not for proving that every contract was checked.",
-      "My design therefore uses RAG for open questions and an agent only to draft a supported plan. A fixed workflow processes every contract and records the coverage.",
+      // the agent that drafts the plan is planned, not built (close: "the planning agent"); the search for
+      // open questions is built (GET /api/search, pipeline/search.py)
+      "So I use each where it fits: search for open questions, and later an agent for the plan, which is not built yet. " +
+        "A fixed workflow processes every contract and records the coverage.",
     ],
     words: [{ word: "approaches", say: "uh-PROH-chiz" }, { word: "environment", say: "en-VY-run-ment" }, { word: "agent", say: "AY-junt" }],
 };

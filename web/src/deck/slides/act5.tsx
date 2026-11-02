@@ -167,22 +167,27 @@ if (import.meta.env.DEV) {
 /** Part 5: infrastructure - after the demo (decision 99). */
 export const INFRASTRUCTURE: Slide[] = [
   {
-    id: "part-5", act: 5, kind: "opener", title: "Infrastructure · where it runs", steps: 0, seconds: 4,
+    id: "part-5", act: 5, kind: "opener", title: "Infrastructure · where it runs", steps: 0, seconds: 5,
     quote: ["A basic explanation of the infrastructure you would leverage"],
     notes: [
-      "The infrastructure: where this would run at Riverty.",
+      "Next, let me explain where this would run at Riverty.",
     ],
     words: [{ word: "infrastructure", say: "IN-fruh-struk-cher" }],
   },
   {
-    id: "azure", act: 5, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 60, Body: Azure,
+    id: "azure", act: 5, kind: "content", title: "On Azure: buy the building blocks, build what is Riverty's.", steps: 2, seconds: 54, Body: Azure,
     notes: [
-      "Today it runs on my laptop; only the model calls go to Azure, with test data only. " +
-        "Following Riverty's principle – best of breed, then Microsoft – I measured Prompt Shields and a bigger model. " +
-        "On Azure, each part gets its service: Content Understanding for scans, Azure OpenAI in the EU data zone, Entra ID, Container Apps with Terraform – planned, not built.",
-      "We buy the building blocks and build what is Riverty's: the playbook, the evidence and the storage boundary.",
-      `Gemini? The model sits behind one adapter file – but any model must first pass the ${QUESTIONS} test questions. ` +
-        "LangGraph? Not needed today: code fixes the order. The target is the Microsoft Agent Framework, with LangGraph as fallback.",
+      // "best of breed, then Microsoft" (the case study): measured for two parts only - Prompt Shields against
+      // our pattern check, gpt-4.1 against the small model; no end-to-end product was compared, so the note
+      // does not claim more
+      "Today, the prototype runs on my laptop; only the model calls go to Azure, with test data. " +
+        "Following your principle – best of breed, then Microsoft – I measured Prompt Shields against our own check for hidden instructions, and the larger model you just saw. " +
+        "On Azure, each job in this table would get a managed service – planned, not built.",
+      "The rule behind it: we buy the building blocks and build only what is specific to Riverty – the playbook, the evidence and the boundary around contract storage.",
+      // the release gate itself (the test questions) is said on 'cost' - here only that the model can change
+      // LangGraph as the fallback is on the card (build 2); another model (Gemini) sits behind pipeline/llm.py
+      // and must pass the same test questions - answered if asked (guarded above)
+      "The planned agent would use the Microsoft Agent Framework, with LangGraph as a fallback.",
     ],
     words: [{ word: "Azure", say: "AZH-er" }, { word: "Entra", say: "EN-truh" }, { word: "Terraform", say: "TER-uh-form" }, { word: "Gemini", say: "JEM-ih-nye" },
       { word: "adapter", say: "uh-DAP-ter" }, { word: "LangGraph", say: "LANG-graf" }, { word: "architecture", say: "AR-kih-tek-cher" }],

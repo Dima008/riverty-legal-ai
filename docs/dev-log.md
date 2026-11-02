@@ -7,6 +7,34 @@ Failures are detailed in `failure-cases.md`, decisions in `context/decisions.md`
 
 ---
 
+## 2026-11-02 · Parts 4–6 speak like parts 1–3: the case study presented back to Riverty, with honest seconds
+
+- **Problem:** Dima noticed that most speaker notes read as one connected argument, but not all. A read-through
+  of the whole main track found the gaps in part 4 (the technical cards after the demo), part 5 and the close:
+  clipped sentences ("Five checks run.", "This is chunking."), questions nobody asked ("Gemini? … LangGraph?"),
+  colon lists ("What I learned: … Not built yet: …"), no link back to the demo although M18 and M08 had just been
+  shown, and one contradiction: 'why-fail' said the design "uses an agent" that the close lists as not built.
+- **Cause:** the rebuild (decisions 102 and 107) rewrote parts 1–3 and adoption; part 4's technical cards were
+  promoted later from the deep dives and kept their short notes, and my own notes of decision 109 were cut for
+  time until they became telegraphic.
+- **Technique and why:** the style of parts 1–3, presenting Riverty's case study back to Riverty: first person,
+  "your" for Riverty's own things (case study, contracts, guidelines, principle), "Legal" for the team, a bridge
+  into every card. The technical cards now refer back to what the audience just saw: M18 "one of the red
+  contracts in the demo" (guarded), M08 "only outlined in the demo", "the five checks I described earlier".
+  What the screen or the previous card already says is not repeated (the poor scan's reason, the agent, the
+  call count), so fluency did not cost much time. The checks card says "upper limit" / "at most" instead of
+  "cap", which on that card means the liability cap. Planned seconds now follow the words at 115 per minute.
+- **Rejected alternative:** a longer, fully explained version of every card (first draft: 2,768 words = 24:04,
+  over the 22:00 maximum); keep the optimistic seconds (the plan would hide almost a minute).
+- **Metric before → after:** spoken words in the main track 2,402 → 2,453; at 115 words/min 20:53 → 21:20;
+  planned 21:06 → 21:59 (honest seconds: 'why-fail' 36 → 49, 'cost' 45 → 64); cards changed 12; telegraphic
+  fragments and unasked questions in parts 4–6 0 left by a read-through; guard errors 0; production build green;
+  the checks card fits the screen at its last build (headless Edge, 1600×900).
+- **Links:** decision 110; `web/src/deck/slides/act2.tsx`, `act3.tsx`, `act5.tsx`, `act6.tsx`, `deep.tsx`,
+  `proof.tsx`; `docs/approach.md`; check question 45
+
+---
+
 ## 2026-11-02 · Chunking on the main track; the talk says what the clause vocabulary is and who wrote it
 
 - **Problem:** Dima asked whether the card "how chunking works, where we use it, why" had been overlooked: it sat

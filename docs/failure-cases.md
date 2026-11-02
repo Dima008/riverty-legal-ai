@@ -2013,6 +2013,8 @@ browser has the deck open; then request the module with curl.
 
 | Issue | Fix |
 | --- | --- |
+| Measuring the talk after the English pass (2 Nov): several planned seconds were optimistic – 'why-fail' was planned at 36 s for 88 words (46 s at 115 words/min), 'cost' at 45 s for 111 words (58 s); the planned 21:06 hid almost a minute | Planned seconds of the changed cards now follow their words; the main track is planned at 21:59, at the 22:00 maximum – cuts are Dima's decision |
+| First English rewrite of parts 4–6 (2 Nov) grew the main track from 2,402 to 2,768 words = 24:04 at 115 words/min, over the 22:00 maximum | Rewrite each card to about its old length: drop what the previous card or the screen already says; final 2,453 words |
 | Regenerating `docs/approach.md` after the chunking move (2 Nov): the snapshot was stale – it said "9 rules" (the reader prompt has 8) and kept old notes of question cards (`rag-fails`, `agent`, `code-or-ai`, `chunking`) that the deck no longer says | Regenerate the snapshot from the deck itself (Vite SSR load of `slides.ts`) instead of editing it by hand; the new file differs from the old one only where the notes differ |
 | Final documentation search after the reorder (2 Nov) ran from `web/`, so relative `docs/...` paths were not found after the successful build | Run repository-wide documentation checks from the workspace root; no product or build failure |
 | First word-count command for the reordered talk (2 Nov) escaped `\s` twice and therefore treated the whole script as one word | Use the JavaScript whitespace regex directly; final reordered talk measures 2,272 spoken words and 19:45 at 115 words/min |

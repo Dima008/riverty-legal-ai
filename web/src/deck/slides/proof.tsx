@@ -492,7 +492,7 @@ export const RESULTS: Slide = {
   notes: [
     `For the evaluation, I wrote synthetic contracts and defined the correct answers to ${QS.length} portfolio questions first. I rebuilt the register ${RUNS.length} times. Every run answered all ${COMPLETE} correctly, with no missing contract and no false alarm.`,
     `I also tested one clause on ${CUAD_N} public contracts labelled by legal experts. The system matched ${CUAD_AGREE} of ${CUAD_N}. This set revealed ${FOUND_BY_CUAD.length} additional weaknesses, which became regression tests.`,
-    `The limitation: only ${DISTINCT} contracts appear in the correct answers, and I improved the system using this set. The next step is an independent set of contracts that I have not seen during development.`,
+    `There is one limitation. The correct answers involve only ${DISTINCT} different contracts, and I improved the system while using this same set. So the next step is an independent set of contracts that I have not seen during development.`,
   ],
   words: [{ word: "scratch", say: "SKRATCH" }, { word: "tuned", say: "TYOOND" }, { word: "sealed", say: "SEELD" }],
 };
@@ -509,13 +509,17 @@ export const WHAT_IF: Slide = {
 };
 
 export const COST: Slide = {
-  id: "cost", act: 7, kind: "content", title: "Read once, reuse often: measured cost instead of hidden cost.", steps: 2, seconds: 45, deep: true, Body: Cost,
+  id: "cost", act: 7, kind: "content", title: "Read once, reuse often: measured cost instead of hidden cost.", steps: 2, seconds: 64, deep: true, Body: Cost,
   notes: [
     // the task: "create more with the same number of engineers" - said for Legal
-    `The model cost occurs when a contract enters the system, not for every later question. Reading and checking all ${DOCUMENTS} test documents cost ${Math.round(COST_ALL * 100)} cents. Register lookups then need no extraction call. Every call, token and estimated cost is recorded.`,
-    `The larger ${BIG.toUpperCase()} model cost ${RATIO} times more. After the same checks, both models answered all test questions correctly. So the smaller model stays until an evaluation proves that the extra cost buys better quality.`,
+    // the bridge from 'checks': the reader and the checker are the two model calls; the checker runs only
+    // where the reader found something (pipeline/extract.py check_findings)
+    `What does this cost? A normal contract needs at most two model calls, and only once, when it enters the system. Reading and checking all ${DOCUMENTS} test documents cost ${Math.round(COST_ALL * 100)} cents. ` +
+      "After that, a question is a register lookup without a model call. Every call is recorded with its cost.",
+    `The larger ${BIG.toUpperCase()} model cost ${RATIO} times more, and after the same checks it answered no better. So the smaller model stays until an evaluation shows that the extra cost buys quality.`,
     // the gate is a rule: eval.repeat and eval.check_register are run by hand - no CI (no .github folder)
-    `A new model, prompt or playbook version is accepted only if all ${QS.length} regression questions still pass. That manual prototype gate would become part of the deployment pipeline.`,
+    `The ${QS.length} test questions also protect every change: a new model, prompt or playbook version is accepted only if all of them still pass. ` +
+      "Today I run this check by hand; at Riverty, it would run automatically in the deployment pipeline.",
   ],
   words: [{ word: "GPT-4.1", say: "G-P-T four point one" }, { word: "lookup", say: "LOOK-up" }, { word: "playbook", say: "PLAY-book" }],
 };

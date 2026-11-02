@@ -437,13 +437,14 @@ export const DEEP: Slide[] = [
     // we chunk. pipeline/chunking.py cuts at numbered headings, a too long section into overlapping
     // windows; pipeline/extract.py marks the sections [S1] … for the reader and maps each quote to its
     // section and page; pipeline/index.py builds the search index from the same chunks
-    id: "chunking", act: 7, kind: "content", title: "Chunking: cut at the headings, not at a fixed length.", steps: 2, seconds: 54, deep: true, Body: Chunking,
+    id: "chunking", act: 7, kind: "content", title: "Chunking: cut at the headings, not at a fixed length.", steps: 2, seconds: 59, deep: true, Body: Chunking,
     notes: [
-      "Right after the text is read – by OCR for a scan – the pipeline cuts each contract into passages. " +
-        `This is chunking. A common way is a fixed length, here every ${deck.m09.fixed_size.toLocaleString("en")} characters.`,
-      "We cut at the numbered headings instead. In test contract M09, the liability clause runs over a page break. The fixed cut splits it in two; our section keeps it whole.",
-      "We use the sections twice. The reader still receives the whole contract, with every section marked, so each quotation points to one section and one page. " +
-        "And the search index for open questions is built from the same sections.",
+      "As soon as the text is available – from the PDF or from OCR – the pipeline divides the contract into passages. " +
+        `This is called chunking. The usual way is a fixed length, here every ${deck.m09.fixed_size.toLocaleString("en")} characters.`,
+      "I cut at the numbered headings instead, where the contract itself separates its clauses. In M09, the liability clause continues across a page break: " +
+        "a fixed cut splits it in two, while our section keeps it together.",
+      "The sections serve two purposes. The reader still gets the complete contract, with every section marked, so each quotation can be traced to a section and a page. " +
+        "And the search index for open questions is built from them.",
     ],
     words: [{ word: "chunking", say: "CHUNK-ing" }, { word: "characters", say: "KAR-ik-terz" }],
   },
@@ -461,13 +462,15 @@ export const DEEP: Slide[] = [
   {
     id: "fixed-form", act: 7, kind: "content", title: "One model call per contract fills a fixed form.", steps: 2, seconds: 64, deep: true, Body: FixedForm,
     notes: [
-      "The reader receives one contract, the applicable playbook clauses and a narrow system prompt. The contract is data, never instructions. If the evidence is uncertain, the model must return unclear.",
+      // 'architecture' (part 3) named the fixed result first - here it is opened
+      "The marked contract then goes to the reader, together with the playbook clauses and a short system prompt. " +
+        "The prompt says that the contract is data, never instructions, and that the model must answer unclear when it is unsure.",
       // pipeline/extract.py: EXTRACTION_SCHEMA has one property per key of catalogue.CLAUSES, each with the
       // status enum PRESENT / ABSENT / UNCLEAR; strict structured output (llm.py) enforces it
-      "The answer must match a strict JSON schema, which code builds from the playbook file: one field per clause, and only three states – found, not found or unclear. " +
-        "So the model cannot invent a clause or a status. A found without an exact quotation becomes unclear. The schema fixes the shape; it does not prove the answer is true.",
+      "The answer must follow a strict JSON schema, which our code builds from the playbook file: one field per clause, and only three values – found, not found or unclear. " +
+        "So the model cannot invent a clause or a status. But the schema only controls the shape; it cannot prove that the answer is correct.",
       // 'checks' follows: the quotation check, the checker and the score - not said here twice
-      `Our code then adds the page and computes the review score – the next card shows how. ${FORM.documents} contracts needed ${FORM.extract_calls} reader calls: one per contract, not an agent choosing what to read.`,
+      "That is why our code checks every answer afterwards, as the next card shows. And it is always one call per contract; no agent chooses what to read.",
     ],
     words: [{ word: "schema", say: "SKEE-muh" }, { word: "JSON", say: "JAY-sun" }, { word: "characters", say: "KAR-ik-terz" }],
   },

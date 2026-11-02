@@ -195,28 +195,29 @@ function Close() {
 /** Part 4: the basic implementation, live (decision 99). */
 export const LIVE: Slide[] = [
   {
-    id: "part-4", act: 4, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 7,
+    id: "part-4", act: 4, kind: "opener", title: "The basic implementation, live", steps: 0, seconds: 9,
     quote: ["Basic implementation demonstrating the foundation of the concept"],
     notes: [
-      "Now the working implementation. I will first show the experience for Legal, then open the technical pipeline behind it.",
+      "Let me now show you the working implementation: first what Legal would see, then the pipeline behind it.",
     ],
     words: [{ word: "implementation", say: "im-pluh-men-TAY-shun" }],
   },
   {
-    id: "live-add", act: 4, kind: "content", title: "A handwritten contract arrives – watch what is found.", steps: 1, seconds: 51, Body: LiveAdd,
+    id: "live-add", act: 4, kind: "content", title: "A handwritten contract arrives – watch what is found.", steps: 1, seconds: 61, Body: LiveAdd,
     notes: [
       // b0 fills the wait: from the drop, 48 shows after 8-12 s and the findings after 14-15 s
       // (measured in Edge on a register copy, docs/demo.md) - the words after 'I copy it' take 13-15 s.
       // H01 is rendered from handwriting fonts, with photo effects (tools/make_handwritten.py) - nobody
       // photographed it, so the note says it is made to look like a phone photo
-      `You have old handwritten contracts, only as JPEG files. I made one: ${HANDWRITTEN.doc_id}, dated ${H01_YEAR}, made to look like a phone photo. ` +
-        "I copy it into the folder, our stand-in for SharePoint – watch the number. " +
-        `The watcher checks every ${WATCH_S} seconds; then OCR, one model call and the checks run, as for every contract.`,
+      `Some of your oldest contracts are handwritten and exist only as JPEG files, so I created one: ${HANDWRITTEN.doc_id}, dated ${H01_YEAR}, made to look like a phone photo. ` +
+        "I now copy it into the folder that stands in for SharePoint – please watch the number. " +
+        `Every ${WATCH_S} seconds, a watcher checks the folder and runs OCR, one model call and the checks, as for every contract.`,
       // F19 (decision 89): the former name is not found on this scan - the register says it cannot rule it out.
-      // The poor scan itself is named, not "sent to a person": its findings go to one (panel design, 'Nicht sagen')
-      `${deck.register.documents + 1} documents now. The handwriting is hard to read – a poor scan. ` +
-        "Not found: the liability cap and the data processing agreement. The consumer terms are unclear, so a person looks. " +
-        "And the former name can't be ruled out on this scan, so a person reads it.",
+      // The poor scan itself is named, not "sent to a person": its findings go to one (panel design, 'Nicht sagen');
+      // 'live' then shows H01 orange: "a poor scan cannot prove that a clause is missing" - said here already
+      `There are now ${deck.register.documents + 1} documents, and the new one is a poor scan. ` +
+        "The model found no liability cap and no data processing agreement, but on a poor scan that is not proof – " +
+        "so a person checks these findings, as well as the unclear consumer terms and the former name.",
     ],
     words: [{ word: "handwritten", say: "HAND-rit-n" }, { word: "JPEG", say: "JAY-peg" }, { word: "watcher", say: "WOTCH-er" }, { word: "ruled out", say: "ROOLD out" }],
   },
@@ -229,16 +230,17 @@ export const LIVE: Slide[] = [
       // (M08's rejected passage outlined, M01's checked passage yellow), 5 four eyes on M14, 6 the archive copy.
       // The task: "A basic front-end demonstrating how the solution can be used", "Frontend written in React and
       // TypeScript". Dima's wish (2.11.): step one says what the boxes check against - Legal's playbook.
-      "Now the tool for Legal, live – React and TypeScript, like these slides. It has already seen the new contract: " + `${HANDWRITTEN.doc_id}, new, a poor scan. ` +
-        "One: I choose the analysis – a missing clause, the limitation of liability. The boxes check against Legal's playbook: it decides what counts as missing. " +
-        `Two: the contracts – every merchant agreement; the copy, ${COPY?.id}, is listed with its reason. Nothing runs before I confirm the plan. I confirm. ` +
-        "Three: the answer, with coverage. Every contract gets a colour. " +
-        `Red, the clause is missing: ${list(Q1_NOT_FOUND)}. Orange, a person looks: ${list(Q1_UNCLEAR)}, and ${HANDWRITTEN.doc_id} – ` +
-        "a poor scan cannot prove that a clause is missing. Green, the clause is there. " +
-        `Four: the evidence on the page. ${EVIDENCE} is only outlined: the model proposed it, our checks rejected it. ` +
-        `Now a green one, ${GREEN}: its passage is checked and marked in yellow. ` +
-        `Five: ${FOUR_EYES} needs four eyes. Reviewer A approves; I switch to B, who approves too. ` +
-        "Six: only now the archive copy, and only once. Then back to the slides.",
+      "This is the Legal Workbench, built with React and TypeScript like these slides. It already shows the new contract, " + `${HANDWRITTEN.doc_id}, as a poor scan. ` +
+        "One: I choose the analysis – a missing clause, the limitation of liability. These boxes check against Legal's playbook, which defines what counts as missing. " +
+        `Two: the contracts – every merchant agreement; the duplicate, ${COPY?.id}, is listed with its reason. Nothing runs until I confirm the plan, so I confirm it. ` +
+        "Three: the answer, with its coverage. Every contract gets a colour. " +
+        // 'live-add' just said why the poor scan is orange - not said twice
+        `Red means the clause is missing: ${list(Q1_NOT_FOUND)}. Orange means a person should look: ${list(Q1_UNCLEAR)} and ${HANDWRITTEN.doc_id}, the poor scan. ` +
+        "Green means the clause is there. " +
+        `Four: the evidence on the page. In ${EVIDENCE}, the passage is only outlined: the model proposed it, but our checks rejected it. ` +
+        `In ${GREEN}, the checked passage is marked in yellow. ` +
+        `Five: ${FOUR_EYES} needs four eyes. Reviewer A approves; I switch to reviewer B, who approves too. ` +
+        "Six: only now can the archive copy be made, and only once. Then back to the slides.",
     ],
     words: [{ word: "Workbench", say: "WURK-bench" }, { word: "coverage", say: "KUV-er-ij" }, { word: "highlighted", say: "HY-ly-tid" },
       { word: "overruled", say: "oh-ver-ROOLD" }, { word: "archive", say: "AR-kyv" }],
@@ -248,11 +250,11 @@ export const LIVE: Slide[] = [
 /** The close: the last card of part 6 (adoption), after 'run-it' - "who would pilot it?" follows the pilot plan. */
 export const CLOSE: Slide[] = [
   {
-    id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 32, Body: Close,
+    id: "close", act: 6, kind: "statement", title: "100 % traceable instead of 100 % accurate.", steps: 0, seconds: 41, Body: Close,
     notes: [
       // the task: "while learning and improving ourselves", "start a meaningful conversation"
-      "What I learned: no model is always right. So every contract is read, every answer is traced back to a page, and a lawyer decides. " +
-        "Not built yet: the Azure platform, the SharePoint connector, a model that plans, and one that reads handwriting well. " +
+      "Let me close with what I learned. No model is always right, so the solution does not rely on that: every contract is read, every answer is traced back to a page, and a lawyer decides. " +
+        "Still to build are the Azure platform, the SharePoint connector, the planning agent and a model that reads handwriting well. " +
         "Two questions for you: is a missed contract worse for Legal than a false alarm? And who would pilot it? Thank you.",
     ],
     words: [{ word: "traceable", say: "TRAY-suh-bul" }, { word: "accurate", say: "AK-yur-it" }, { word: "connector", say: "kuh-NEK-ter" }, { word: "assumed", say: "uh-SOOMD" }],

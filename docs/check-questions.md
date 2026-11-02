@@ -488,6 +488,17 @@ Legal writes the real ones, and the same checks run against them.
 *Where:* `pipeline/catalogue.py` (the playbook), card "case-study" build 1 (the sentence from the
 PDF), decision 98.
 
+**45. In the demo, H01 is orange although the model found no liability cap. Why is it not red?**
+
+H01 is a poor scan: OCR read it with low confidence, so its status is LOW_QUALITY. On a text that may be
+misread, "not found" proves nothing – the clause could be there in letters OCR did not recognise. So the
+light rule never shows a poor scan as red or green; it shows orange with the reason "poor scan". The same
+holds in the score: a poor scan limits every finding to at most 0.5, below the review line of 0.80, so a
+lawyer looks at it. Recall first: an extra review costs minutes, a missed contract costs much more.
+
+*Where:* `pipeline/portfolio.py` (`light`, `triage`), `pipeline/extract.py` (`assess`, low OCR quality),
+cards "live-add" and "live", F19, decision 89.
+
 ## How I worked
 
 **17. Which step of the path "from process to platform" decides between a fixed workflow and an
